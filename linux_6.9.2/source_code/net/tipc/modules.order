@@ -1,0 +1,2 @@
+net/tipc/tipc.o
+net/tipc/tipc_diag.o

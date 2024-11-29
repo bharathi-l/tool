@@ -1,0 +1,1 @@
+savedcmd_net/bridge/netfilter/ebt_among.ko := ld -r -m elf_x86_64 -z noexecstack --build-id=sha1  -T scripts/module.lds -o net/bridge/netfilter/ebt_among.ko net/bridge/netfilter/ebt_among.o net/bridge/netfilter/ebt_among.mod.o

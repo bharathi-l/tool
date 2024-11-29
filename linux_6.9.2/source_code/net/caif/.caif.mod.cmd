@@ -1,0 +1,1 @@
+savedcmd_net/caif/caif.mod := printf '%s\n'   caif_dev.o cfcnfg.o cfmuxl.o cfctrl.o cffrml.o cfveil.o cfdbgl.o cfserl.o cfdgml.o cfrfml.o cfvidl.o cfutill.o cfsrvl.o cfpkt_skbuff.o | awk '!x[$$0]++ { print("net/caif/"$$0) }' > net/caif/caif.mod

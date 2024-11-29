@@ -1,0 +1,1 @@
+savedcmd_net/bridge/netfilter/nft_reject_bridge.ko := ld -r -m elf_x86_64 -z noexecstack --build-id=sha1  -T scripts/module.lds -o net/bridge/netfilter/nft_reject_bridge.ko net/bridge/netfilter/nft_reject_bridge.o net/bridge/netfilter/nft_reject_bridge.mod.o

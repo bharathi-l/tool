@@ -1,0 +1,4 @@
+net/dccp/dccp.o
+net/dccp/dccp_ipv4.o
+net/dccp/dccp_ipv6.o
+net/dccp/dccp_diag.o

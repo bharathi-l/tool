@@ -1,0 +1,1 @@
+savedcmd_net/ipv4/netfilter/iptable_raw.ko := ld -r -m elf_x86_64 -z noexecstack --build-id=sha1  -T scripts/module.lds -o net/ipv4/netfilter/iptable_raw.ko net/ipv4/netfilter/iptable_raw.o net/ipv4/netfilter/iptable_raw.mod.o

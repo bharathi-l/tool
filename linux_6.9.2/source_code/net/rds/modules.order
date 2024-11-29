@@ -1,0 +1,3 @@
+net/rds/rds.o
+net/rds/rds_rdma.o
+net/rds/rds_tcp.o

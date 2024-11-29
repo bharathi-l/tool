@@ -1,0 +1,2 @@
+net/rxrpc/rxrpc.o
+net/rxrpc/rxperf.o

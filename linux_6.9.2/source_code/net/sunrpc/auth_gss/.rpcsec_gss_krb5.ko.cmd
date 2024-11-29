@@ -1,0 +1,1 @@
+savedcmd_net/sunrpc/auth_gss/rpcsec_gss_krb5.ko := ld -r -m elf_x86_64 -z noexecstack --build-id=sha1  -T scripts/module.lds -o net/sunrpc/auth_gss/rpcsec_gss_krb5.ko net/sunrpc/auth_gss/rpcsec_gss_krb5.o net/sunrpc/auth_gss/rpcsec_gss_krb5.mod.o

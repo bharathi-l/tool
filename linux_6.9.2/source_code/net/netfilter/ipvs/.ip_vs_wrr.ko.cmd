@@ -1,0 +1,1 @@
+savedcmd_net/netfilter/ipvs/ip_vs_wrr.ko := ld -r -m elf_x86_64 -z noexecstack --build-id=sha1  -T scripts/module.lds -o net/netfilter/ipvs/ip_vs_wrr.ko net/netfilter/ipvs/ip_vs_wrr.o net/netfilter/ipvs/ip_vs_wrr.mod.o
