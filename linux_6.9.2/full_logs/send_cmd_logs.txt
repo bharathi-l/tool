@@ -1,0 +1,219 @@
+[43280.983114] iwl_run_unified_mvm_ucode 683 : iwl_mvm_send_cmd : WIDE_ID(SYSTEM_GROUP,INIT_EXTENDED_CFG_CMD)
+[43280.983119] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43280.988701] iwl_run_unified_mvm_ucode 713 : iwl_mvm_send_cmd : WIDE_ID(REGULATORY_AND_NVM_GROUP,NVM_ACCESS_COMPLETE)
+[43280.988711] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43281.055796] iwl_mvm_update_mcc 446 : iwl_mvm_send_cmd : MCC_UPDATE_CMD
+[43281.056685] iwl_mvm_update_mcc 446 : iwl_mvm_send_cmd : MCC_UPDATE_CMD
+[43288.029033] iwl_run_unified_mvm_ucode 683 : iwl_mvm_send_cmd : WIDE_ID(SYSTEM_GROUP,INIT_EXTENDED_CFG_CMD)
+[43288.029047] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.033538] iwl_run_unified_mvm_ucode 713 : iwl_mvm_send_cmd : WIDE_ID(REGULATORY_AND_NVM_GROUP,NVM_ACCESS_COMPLETE)
+[43288.033550] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.100344] iwl_mvm_sf_config 211 : iwl_mvm_send_cmd : REPLY_SF_CFG_CMD
+[43288.100356] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.100364] iwl_send_tx_ant_cfg 46 : iwl_mvm_send_cmd : TX_ANT_CONFIGURATION_CMD
+[43288.100368] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.102278] iwl_mvm_send_bt_init_conf 174 : iwl_mvm_send_cmd : BT_CONFIG
+[43288.102290] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.105327] iwl_send_rss_cfg_cmd 73 : iwl_mvm_send_cmd : RSS_CONFIG_CMD
+[43288.105339] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.105798] iwl_mvm_send_temp_report_ths_cmd 606 : iwl_mvm_send_cmd : WIDE_ID(PHY_OPS_GROUP,TEMP_REPORTING_THRESHOLDS_CMD)
+[43288.105810] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.106652] iwl_mvm_power_update_device 502 : iwl_mvm_send_cmd : POWER_TABLE_CMD
+[43288.106661] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.107005] iwl_mvm_update_mcc 446 : iwl_mvm_send_cmd : MCC_UPDATE_CMD
+[43288.107525] iwl_mvm_update_mcc 446 : iwl_mvm_send_cmd : MCC_UPDATE_CMD
+[43288.108980] iwl_mvm_config_scan 1270 : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)
+[43288.111257] iwl_mvm_mld_mac_ctxt_send_cmd 85 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)
+[43288.111262] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.113112] iwl_mvm_beacon_filter_send_cmd 64 : iwl_mvm_send_cmd : REPLY_BEACON_FILTERING_CMD
+[43288.113125] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.114070] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.115436] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.116431] iwl_mvm_mld_mac_ctxt_send_cmd 85 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)
+[43288.116441] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.117359] iwl_mvm_mld_mac_ctxt_send_cmd 85 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)
+[43288.117369] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.118364] iwl_mvm_recalc_multicast 1954 : iwl_mvm_send_cmd : ECHO_CMD
+[43288.118368] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.119211] iwl_mvm_recalc_multicast 1954 : iwl_mvm_send_cmd : ECHO_CMD
+[43288.119214] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.170402] iwl_mvm_mld_mac_ctxt_send_cmd 85 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)
+[43288.170405] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.171270] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.172053] iwl_mvm_power_send_cmd 467 : iwl_mvm_send_cmd : MAC_PM_POWER_TABLE
+[43288.172055] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.172800] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.173530] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.174403] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.175298] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43288.222328] iwl_mvm_reg_scan_start 2999 : iwl_mvm_send_cmd : 
+[43291.885957] iwl_mvm_update_mcc 446 : iwl_mvm_send_cmd : MCC_UPDATE_CMD
+[43291.888723] iwl_mvm_get_sar_geo_profile 986 : iwl_mvm_send_cmd : WIDE_ID(PHY_OPS_GROUP, PER_CHAIN_LIMIT_OFFSET_CMD)
+[43291.923743] iwl_mvm_request_statistics 450 : iwl_mvm_send_cmd : STATISTICS_CMD
+[43291.926261] iwl_mvm_phy_ctxt_apply 231 : iwl_mvm_send_cmd : PHY_CONTEXT_CMD
+[43291.926266] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43291.928122] iwl_mvm_phy_send_rlc 187 : iwl_mvm_send_cmd : iwl_cmd_id(RLC_CONFIG_CMD,DATA_PATH_GROUP, 2)
+[43291.928134] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43291.928908] iwl_mvm_phy_ctxt_apply 231 : iwl_mvm_send_cmd : PHY_CONTEXT_CMD
+[43291.928913] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43291.929997] iwl_mvm_phy_send_rlc 187 : iwl_mvm_send_cmd : iwl_cmd_id(RLC_CONFIG_CMD,DATA_PATH_GROUP, 2)
+[43291.930007] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43291.930850] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43291.932187] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43291.934406] iwl_mvm_power_send_cmd 467 : iwl_mvm_send_cmd : MAC_PM_POWER_TABLE
+[43291.934416] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43291.935607] iwl_mvm_mld_mac_ctxt_send_cmd 85 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)
+[43291.935617] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43291.936537] iwl_mvm_set_tx_power 1463 : iwl_mvm_send_cmd : REDUCE_TX_POWER_CMD
+[43291.936547] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43291.937565] iwl_mvm_mld_mac_ctxt_send_cmd 85 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)
+[43291.937575] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43291.938472] iwl_mvm_mld_send_sta_cmd 48 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, STA_CONFIG_CMD)
+[43291.938481] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43291.939341] iwl_mvm_mld_send_sta_cmd 48 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, STA_CONFIG_CMD)
+[43291.939351] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43291.940299] iwl_mvm_rs_fw_rate_init 674 : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, TLC_MNG_CONFIG_CMD)
+[43291.940309] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43291.940406] iwl_mvm_schedule_session_protection 1416 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, SESSION_PROTECTION_CMD)
+[43291.940407] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.007958] iwl_mvm_mld_mac_ctxt_send_cmd 85 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)
+[43292.007965] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.013335] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.014907] iwl_mvm_rs_fw_rate_init 674 : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, TLC_MNG_CONFIG_CMD)
+[43292.014920] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.014934] iwl_mvm_mld_send_sta_cmd 48 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, STA_CONFIG_CMD)
+[43292.014940] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.021503] iwl_mvm_mld_mac_ctxt_send_cmd 85 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)
+[43292.021517] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.028092] iwl_mvm_request_statistics 450 : iwl_mvm_send_cmd : STATISTICS_CMD
+[43292.029752] iwl_mvm_sf_config 211 : iwl_mvm_send_cmd : REPLY_SF_CFG_CMD
+[43292.029766] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.029778] iwl_mvm_sf_config 211 : iwl_mvm_send_cmd : REPLY_SF_CFG_CMD
+[43292.029782] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.029788] iwl_mvm_mc_iface_iterator 1920 : iwl_mvm_send_cmd : MCAST_FILTER_CMD
+[43292.029794] iwl_mvm_recalc_multicast 1954 : iwl_mvm_send_cmd : ECHO_CMD
+[43292.029797] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.030423] iwl_mvm_config_scan 1270 : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)
+[43292.031151] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.032384] iwl_mvm_mld_mac_ctxt_send_cmd 85 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)
+[43292.032395] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.037727] iwl_mvm_cancel_session_protection 713 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, SESSION_PROTECTION_CMD)
+[43292.037738] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.040402] iwl_mvm_sf_config 211 : iwl_mvm_send_cmd : REPLY_SF_CFG_CMD
+[43292.040416] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.040428] iwl_mvm_beacon_filter_send_cmd 64 : iwl_mvm_send_cmd : REPLY_BEACON_FILTERING_CMD
+[43292.040431] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.041162] iwl_mvm_power_send_cmd 467 : iwl_mvm_send_cmd : MAC_PM_POWER_TABLE
+[43292.041176] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.042642] iwl_mvm_beacon_filter_send_cmd 64 : iwl_mvm_send_cmd : REPLY_BEACON_FILTERING_CMD
+[43292.042653] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.122959] iwl_mvm_mld_send_key 226 : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, SEC_KEY_CMD)
+[43292.122965] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.139089] iwl_mvm_mld_send_key 226 : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, SEC_KEY_CMD)
+[43292.139095] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.141905] iwl_mvm_mc_iface_iterator 1920 : iwl_mvm_send_cmd : MCAST_FILTER_CMD
+[43292.141927] iwl_mvm_recalc_multicast 1954 : iwl_mvm_send_cmd : ECHO_CMD
+[43292.141934] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.142660] iwl_mvm_beacon_filter_send_cmd 64 : iwl_mvm_send_cmd : REPLY_BEACON_FILTERING_CMD
+[43292.142666] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.143016] iwl_mvm_mld_mac_ctxt_send_cmd 85 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)
+[43292.143030] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.144692] iwl_mvm_mld_send_sta_cmd 48 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, STA_CONFIG_CMD)
+[43292.144702] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.145119] iwl_mvm_rs_fw_rate_init 674 : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, TLC_MNG_CONFIG_CMD)
+[43292.145130] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.145152] iwl_mvm_mld_mac_ctxt_send_cmd 85 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)
+[43292.145157] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.148171] iwl_mvm_power_send_cmd 467 : iwl_mvm_send_cmd : MAC_PM_POWER_TABLE
+[43292.148188] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43292.148850] iwl_mvm_beacon_filter_send_cmd 64 : iwl_mvm_send_cmd : REPLY_BEACON_FILTERING_CMD
+[43292.148860] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43293.156013] iwl_mvm_request_statistics 450 : iwl_mvm_send_cmd : STATISTICS_CMD
+[43293.157259] iwl_mvm_config_scan 1270 : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)
+[43293.251969] iwl_mvm_mc_iface_iterator 1920 : iwl_mvm_send_cmd : MCAST_FILTER_CMD
+[43293.251988] iwl_mvm_recalc_multicast 1954 : iwl_mvm_send_cmd : ECHO_CMD
+[43293.251995] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43293.386475] iwl_mvm_mc_iface_iterator 1920 : iwl_mvm_send_cmd : MCAST_FILTER_CMD
+[43293.386494] iwl_mvm_recalc_multicast 1954 : iwl_mvm_send_cmd : ECHO_CMD
+[43293.386500] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43293.696497] iwl_mvm_config_scan 1270 : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)
+[43294.353946] iwl_mvm_config_scan 1270 : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)
+[43294.403888] iwl_mvm_mc_iface_iterator 1920 : iwl_mvm_send_cmd : MCAST_FILTER_CMD
+[43294.403907] iwl_mvm_recalc_multicast 1954 : iwl_mvm_send_cmd : ECHO_CMD
+[43294.403913] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43294.884322] iwl_mvm_config_scan 1270 : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)
+[43295.518350] iwl_mvm_config_scan 1270 : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)
+[43296.354590] iwl_mvm_config_scan 1270 : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)
+[43297.112372] iwl_mvm_config_scan 1270 : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)
+[43298.581539] iwl_mvm_request_statistics 450 : iwl_mvm_send_cmd : STATISTICS_CMD
+[43298.581907] iwl_mvm_config_scan 1270 : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)
+[43299.213348] iwl_mvm_config_scan 1270 : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)
+[43300.356050] iwl_mvm_config_scan 1270 : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)
+[43304.454103] iwl_mvm_request_statistics 450 : iwl_mvm_send_cmd : STATISTICS_CMD
+[43304.454690] iwl_mvm_config_scan 1270 : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)
+[43308.360992] iwl_mvm_config_scan 1270 : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)
+[43324.377587] iwl_mvm_request_statistics 450 : iwl_mvm_send_cmd : STATISTICS_CMD
+[43324.378154] iwl_mvm_config_scan 1270 : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)
+[43342.667957] iwl_mvm_power_send_cmd 467 : iwl_mvm_send_cmd : MAC_PM_POWER_TABLE
+[43342.667961] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.670618] iwl_mvm_beacon_filter_send_cmd 64 : iwl_mvm_send_cmd : REPLY_BEACON_FILTERING_CMD
+[43342.670624] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.671428] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.673306] iwl_mvm_mld_mac_ctxt_send_cmd 85 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)
+[43342.673311] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.675787] iwl_mvm_mc_iface_iterator 1920 : iwl_mvm_send_cmd : MCAST_FILTER_CMD
+[43342.675791] iwl_mvm_recalc_multicast 1954 : iwl_mvm_send_cmd : ECHO_CMD
+[43342.675792] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.704036] iwl_mvm_mld_mac_ctxt_send_cmd 85 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)
+[43342.704040] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.706502] iwl_mvm_power_send_cmd 467 : iwl_mvm_send_cmd : MAC_PM_POWER_TABLE
+[43342.706510] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.707570] iwl_mvm_beacon_filter_send_cmd 64 : iwl_mvm_send_cmd : REPLY_BEACON_FILTERING_CMD
+[43342.707579] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.751758] iwl_mvm_flush_sta_tids 2350 : iwl_mvm_send_cmd : TXPATH_FLUSH
+[43342.755071] iwl_mvm_sync_rx_queues_internal 6360 : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, TRIGGER_RX_QUEUES_NOTIF_CMD)
+[43342.755949] iwl_mvm_request_statistics 450 : iwl_mvm_send_cmd : STATISTICS_CMD
+[43342.756479] iwl_mvm_config_scan 1270 : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)
+[43342.787859] iwl_mvm_rs_fw_rate_init 674 : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, TLC_MNG_CONFIG_CMD)
+[43342.787871] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.787884] iwl_mvm_beacon_filter_send_cmd 64 : iwl_mvm_send_cmd : REPLY_BEACON_FILTERING_CMD
+[43342.787888] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.815604] iwl_mvm_flush_sta_tids 2350 : iwl_mvm_send_cmd : TXPATH_FLUSH
+[43342.851801] __iwl_mvm_sec_key_del 182 : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, SEC_KEY_CMD)
+[43342.851806] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.852359] iwl_mvm_flush_sta_tids 2350 : iwl_mvm_send_cmd : TXPATH_FLUSH
+[43342.853030] iwl_mvm_mld_disable_txq 328 : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP,SCD_QUEUE_CONFIG_CMD)
+[43342.853040] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.853359] iwl_mvm_mld_disable_txq 328 : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP,SCD_QUEUE_CONFIG_CMD)
+[43342.853368] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.853739] iwl_mvm_mld_disable_txq 328 : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP,SCD_QUEUE_CONFIG_CMD)
+[43342.853748] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.854293] iwl_mvm_request_statistics 450 : iwl_mvm_send_cmd : STATISTICS_CMD
+[43342.854867] iwl_mvm_mld_mac_ctxt_send_cmd 85 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)
+[43342.854877] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.858551] iwl_mvm_sf_config 211 : iwl_mvm_send_cmd : REPLY_SF_CFG_CMD
+[43342.858563] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.858575] __iwl_mvm_sec_key_del 182 : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, SEC_KEY_CMD)
+[43342.858579] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.858583] iwl_mvm_mld_rm_sta_from_fw 106 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, STA_REMOVE_CMD)
+[43342.858586] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.861369] iwl_mvm_recalc_multicast 1954 : iwl_mvm_send_cmd : ECHO_CMD
+[43342.861382] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.862758] iwl_mvm_config_scan 1270 : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)
+[43342.864040] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.865732] iwl_mvm_mld_mac_ctxt_send_cmd 85 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)
+[43342.865745] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.867727] iwl_mvm_power_send_cmd 467 : iwl_mvm_send_cmd : MAC_PM_POWER_TABLE
+[43342.867738] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.869060] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.870485] iwl_mvm_power_send_cmd 467 : iwl_mvm_send_cmd : MAC_PM_POWER_TABLE
+[43342.870497] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.871673] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.873135] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.874573] iwl_mvm_phy_ctxt_apply 231 : iwl_mvm_send_cmd : PHY_CONTEXT_CMD
+[43342.874578] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.952403] iwl_mvm_recalc_multicast 1954 : iwl_mvm_send_cmd : ECHO_CMD
+[43342.952407] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.968119] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
+[43342.969282] iwl_mvm_mld_mac_ctxt_send_cmd 85 : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)
+[43342.969295] iwl_mvm_send_cmd_pdu 67 : iwl_mvm_send_cmd : 
