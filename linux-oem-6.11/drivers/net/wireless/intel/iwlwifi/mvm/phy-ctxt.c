@@ -5,6 +5,7 @@
  * Copyright (C) 2017 Intel Deutschland GmbH
  */
 #include <net/mac80211.h>
+#include <linux/drv_dbg.h>
 #include "fw-api.h"
 #include "mvm.h"
 
@@ -184,6 +185,8 @@ int iwl_mvm_phy_send_rlc(struct iwl_mvm *mvm, struct iwl_mvm_phy_ctxt *ctxt,
 	IWL_DEBUG_FW(mvm, "Send RLC command: phy=%d, rx_chain_info=0x%x\n",
 		     ctxt->id, cmd.rlc.rx_chain_info);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : iwl_cmd_id(RLC_CONFIG_CMD,DATA_PATH_GROUP, 2)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm, iwl_cmd_id(RLC_CONFIG_CMD,
 						    DATA_PATH_GROUP, 2),
 				    0, sizeof(cmd), &cmd);
@@ -227,6 +230,8 @@ static int iwl_mvm_phy_ctxt_apply(struct iwl_mvm *mvm,
 		if (ver == 6)
 			cmd.puncture_mask = cpu_to_le16(chandef->punctured);
 
+		printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : PHY_CONTEXT_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+		
 		ret = iwl_mvm_send_cmd_pdu(mvm, PHY_CONTEXT_CMD,
 					   0, sizeof(cmd), &cmd);
 	} else if (ver < 3) {
@@ -242,6 +247,8 @@ static int iwl_mvm_phy_ctxt_apply(struct iwl_mvm *mvm,
 		iwl_mvm_phy_ctxt_cmd_data_v1(mvm, ctxt, &cmd, chandef,
 					     chains_static,
 					     chains_dynamic);
+		printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : PHY_CONTEXT_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+		
 		ret = iwl_mvm_send_cmd_pdu(mvm, PHY_CONTEXT_CMD,
 					   0, len, &cmd);
 	} else {

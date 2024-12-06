@@ -7,6 +7,7 @@
 #include <linux/etherdevice.h>
 #include <net/mac80211.h>
 #include <linux/crc32.h>
+#include <linux/drv_dbg.h>
 
 #include "mvm.h"
 #include "fw/api/scan.h"
@@ -594,6 +595,7 @@ iwl_mvm_config_sched_scan_profiles(struct iwl_mvm *mvm,
 
 	IWL_DEBUG_SCAN(mvm, "Sending scheduled scan profile config\n");
 
+	printk("%s %d : iwl_mvm_send_cmd : SCAN_OFFLOAD_UPDATE_PROFILES_CMD\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd(mvm, &cmd);
 	kfree(profile_cfg_v1);
 free_blocklist:
@@ -627,6 +629,7 @@ static int iwl_mvm_lmac_scan_abort(struct iwl_mvm *mvm)
 	};
 	u32 status = CAN_ABORT_STATUS;
 
+	printk("%s %d : iwl_mvm_send_cmd : SCAN_OFFLOAD_ABORT_CMD\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd_status(mvm, &cmd, &status);
 	if (ret)
 		return ret;
@@ -1234,6 +1237,7 @@ static int iwl_mvm_legacy_config_scan(struct iwl_mvm *mvm)
 
 	IWL_DEBUG_SCAN(mvm, "Sending UMAC scan config\n");
 
+	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd(mvm, &cmd);
 	if (!ret) {
 		mvm->scan_type = type;
@@ -1274,6 +1278,7 @@ int iwl_mvm_config_scan(struct iwl_mvm *mvm)
 
 	IWL_DEBUG_SCAN(mvm, "Sending UMAC scan config\n");
 
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_CFG_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return iwl_mvm_send_cmd(mvm, &cmd);
 }
 
@@ -3042,6 +3047,7 @@ static int _iwl_mvm_single_scan_start(struct iwl_mvm *mvm,
 
 	iwl_mvm_pause_tcm(mvm, false);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : ] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	ret = iwl_mvm_send_cmd(mvm, &hcmd);
 	if (ret) {
 		/* If the scan failed, it usually means that the FW was unable
@@ -3189,7 +3195,7 @@ int iwl_mvm_sched_scan_start(struct iwl_mvm *mvm,
 		ret = uid;
 		goto out;
 	}
-
+	printk("%s %d : iwl_mvm_send_cmd : \n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd(mvm, &hcmd);
 	if (!ret) {
 		IWL_DEBUG_SCAN(mvm,
@@ -3331,7 +3337,7 @@ static int iwl_mvm_umac_scan_abort(struct iwl_mvm *mvm, int type)
 	cmd.uid = cpu_to_le32(uid);
 
 	IWL_DEBUG_SCAN(mvm, "Sending scan abort, uid %u\n", uid);
-
+	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_ABORT_UMAC)\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd_pdu(mvm,
 				   WIDE_ID(IWL_ALWAYS_LONG_GROUP, SCAN_ABORT_UMAC),
 				   CMD_SEND_IN_RFKILL, sizeof(cmd), &cmd);

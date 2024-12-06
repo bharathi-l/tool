@@ -5,6 +5,7 @@
  * Copyright (C) 2015-2016 Intel Deutschland GmbH
  */
 #include <linux/sort.h>
+#include <linux/drv_dbg.h>
 
 #include "mvm.h"
 
@@ -211,6 +212,7 @@ static int iwl_mvm_send_temp_cmd(struct iwl_mvm *mvm, bool response, s32 *temp)
 	IWL_DEBUG_TEMP(mvm,
 		       "Sending temperature measurement command - %s response\n",
 		       response ? "with" : "without");
+	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(PHY_OPS_GROUP, CMD_DTS_MEASUREMENT_TRIGGER_WIDE)\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd(mvm, &cmd);
 
 	if (ret) {
@@ -371,6 +373,7 @@ void iwl_mvm_tt_tx_backoff(struct iwl_mvm *mvm, u32 backoff)
 
 	backoff = max(backoff, mvm->thermal_throttle.min_backoff);
 
+	printk("%s %d : iwl_mvm_send_cmd : REPLY_THERMAL_MNG_BACKOFF\n", __func__, __LINE__);
 	if (iwl_mvm_send_cmd(mvm, &cmd) == 0) {
 		IWL_DEBUG_TEMP(mvm, "Set Thermal Tx backoff to: %u\n",
 			       backoff);
@@ -517,6 +520,7 @@ int iwl_mvm_ctdp_command(struct iwl_mvm *mvm, u32 op, u32 state)
 	lockdep_assert_held(&mvm->mutex);
 
 	status = 0;
+	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(PHY_OPS_GROUP,CTDP_CONFIG_CMD)\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd_pdu_status(mvm, WIDE_ID(PHY_OPS_GROUP,
 						       CTDP_CONFIG_CMD),
 					  sizeof(cmd), &cmd, &status);
@@ -600,6 +604,7 @@ int iwl_mvm_send_temp_report_ths_cmd(struct iwl_mvm *mvm)
 
 send:
 #endif
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(PHY_OPS_GROUP,TEMP_REPORTING_THRESHOLDS_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	ret = iwl_mvm_send_cmd_pdu(mvm, WIDE_ID(PHY_OPS_GROUP,
 						TEMP_REPORTING_THRESHOLDS_CMD),
 				   0, sizeof(cmd), &cmd);

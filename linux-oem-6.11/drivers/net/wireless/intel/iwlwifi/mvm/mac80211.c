@@ -15,6 +15,7 @@
 #include <net/mac80211.h>
 #include <net/ieee80211_radiotap.h>
 #include <net/tcp.h>
+#include <linux/drv_dbg.h>
 
 #include "iwl-drv.h"
 #include "iwl-op-mode.h"
@@ -304,8 +305,10 @@ static const struct wiphy_iftype_ext_capab add_iftypes_ext_capa[] = {
 int iwl_mvm_op_get_antenna(struct ieee80211_hw *hw, u32 *tx_ant, u32 *rx_ant)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	*tx_ant = iwl_mvm_get_valid_tx_ant(mvm);
 	*rx_ant = iwl_mvm_get_valid_rx_ant(mvm);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return 0;
 }
 
@@ -313,13 +316,19 @@ int iwl_mvm_op_set_antenna(struct ieee80211_hw *hw, u32 tx_ant, u32 rx_ant)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	/* This has been tested on those devices only */
 	if (mvm->trans->trans_cfg->device_family != IWL_DEVICE_FAMILY_9000 &&
-	    mvm->trans->trans_cfg->device_family != IWL_DEVICE_FAMILY_22000)
+	    mvm->trans->trans_cfg->device_family != IWL_DEVICE_FAMILY_22000) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EOPNOTSUPP;
+	}
 
-	if (!mvm->nvm_data)
+	if (!mvm->nvm_data) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EBUSY;
+	}
 
 	/* mac80211 ensures the device is not started,
 	 * so the firmware cannot be running
@@ -329,7 +338,7 @@ int iwl_mvm_op_set_antenna(struct ieee80211_hw *hw, u32 tx_ant, u32 rx_ant)
 	mvm->set_rx_ant = rx_ant;
 
 	iwl_reinit_cab(mvm->trans, mvm->nvm_data, tx_ant, rx_ant, mvm->fw);
-
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return 0;
 }
 
@@ -821,6 +830,8 @@ void iwl_mvm_mac_tx(struct ieee80211_hw *hw,
 				   IEEE80211_TX_CTRL_MLO_LINK);
 	struct ieee80211_sta *tmp_sta = sta;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	if (iwl_mvm_is_radio_killed(mvm)) {
 		IWL_DEBUG_DROP(mvm, "Dropping - RF/CT KILL\n");
 		goto drop;
@@ -873,6 +884,7 @@ void iwl_mvm_mac_tx(struct ieee80211_hw *hw,
 	}
 
 	iwl_mvm_tx_skb(mvm, skb, sta);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return;
  drop:
 	ieee80211_free_txskb(hw, skb);
@@ -938,9 +950,12 @@ void iwl_mvm_mac_wake_tx_queue(struct ieee80211_hw *hw,
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 	struct iwl_mvm_txq *mvmtxq = iwl_mvm_txq_from_mac80211(txq);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
 	if (likely(test_bit(IWL_MVM_TXQ_STATE_READY, &mvmtxq->state)) ||
 	    !txq->sta) {
 		iwl_mvm_mac_itxq_xmit(hw, txq);
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return;
 	}
 
@@ -957,6 +972,8 @@ void iwl_mvm_mac_wake_tx_queue(struct ieee80211_hw *hw,
 		schedule_work(&mvm->add_stream_wk);
 	}
 	spin_unlock_bh(&mvm->add_stream_lock);
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
 
 #define CHECK_BA_TRIGGER(_mvm, _trig, _tid_bm, _tid, _fmt...)		\
@@ -1025,11 +1042,15 @@ int iwl_mvm_mac_ampdu_action(struct ieee80211_hw *hw,
 	bool amsdu = params->amsdu;
 	u16 timeout = params->timeout;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
+
 	IWL_DEBUG_HT(mvm, "A-MPDU action on addr %pM tid %d: action %d\n",
 		     sta->addr, tid, action);
 
-	if (!(mvm->nvm_data->sku_cap_11n_enable))
+	if (!(mvm->nvm_data->sku_cap_11n_enable)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EACCES;
+	}
 
 	mutex_lock(&mvm->mutex);
 
@@ -1091,6 +1112,7 @@ int iwl_mvm_mac_ampdu_action(struct ieee80211_hw *hw,
 	}
 	mutex_unlock(&mvm->mutex);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 	return ret;
 }
 
@@ -1304,6 +1326,8 @@ int iwl_mvm_mac_start(struct ieee80211_hw *hw)
 	int ret;
 	int retry, max_retry = 0;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
 	mutex_lock(&mvm->mutex);
 
 	/* we are starting the mac not in error flow, and restart is enabled */
@@ -1330,6 +1354,7 @@ int iwl_mvm_mac_start(struct ieee80211_hw *hw)
 
 	iwl_mvm_mei_set_sw_rfkill_state(mvm);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return ret;
 }
 
@@ -1359,6 +1384,8 @@ void iwl_mvm_mac_reconfig_complete(struct ieee80211_hw *hw,
 				   enum ieee80211_reconfig_type reconfig_type)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	switch (reconfig_type) {
 	case IEEE80211_RECONFIG_TYPE_RESTART:
@@ -1467,6 +1494,8 @@ void iwl_mvm_mac_stop(struct ieee80211_hw *hw, bool suspend)
 	 */
 	cancel_work_sync(&mvm->async_handlers_wk);
 	wiphy_work_cancel(hw->wiphy, &mvm->async_handlers_wiphy_wk);
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
 
 struct iwl_mvm_phy_ctxt *iwl_mvm_get_free_phy_ctxt(struct iwl_mvm *mvm)
@@ -1518,6 +1547,8 @@ int iwl_mvm_set_tx_power(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 	/* all structs have the same common part, add it */
 	len += sizeof(cmd.common);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : REDUCE_TX_POWER_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm, cmd_id, 0, len, &cmd);
 }
 
@@ -1542,6 +1573,8 @@ int iwl_mvm_post_channel_switch(struct ieee80211_hw *hw,
 	struct iwl_mvm_vif *mvmvif = iwl_mvm_vif_from_mac80211(vif);
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 	int ret;
+
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	mutex_lock(&mvm->mutex);
 
@@ -1591,11 +1624,13 @@ int iwl_mvm_post_channel_switch(struct ieee80211_hw *hw,
 
 	ret = iwl_mvm_power_update_ps(mvm);
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 out_unlock:
 	if (mvmvif->csa_failed)
 		ret = -EIO;
 	mutex_unlock(&mvm->mutex);
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return ret;
 }
 
@@ -1611,14 +1646,17 @@ void iwl_mvm_abort_channel_switch(struct ieee80211_hw *hw,
 		.action = cpu_to_le32(FW_CTXT_ACTION_REMOVE),
 	};
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	/*
 	 * In the new flow since FW is in charge of the timing,
 	 * if driver has canceled the channel switch he will receive the
 	 * CHANNEL_SWITCH_START_NOTIF notification from FW and then cancel it
 	 */
 	if (iwl_fw_lookup_notif_ver(mvm->fw, MAC_CONF_GROUP,
-				    CHANNEL_SWITCH_ERROR_NOTIF, 0))
+				    CHANNEL_SWITCH_ERROR_NOTIF, 0)) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return;
+	}
 
 	IWL_DEBUG_MAC80211(mvm, "Abort CSA on mac %d\n", mvmvif->id);
 
@@ -1626,16 +1664,19 @@ void iwl_mvm_abort_channel_switch(struct ieee80211_hw *hw,
 	if (!fw_has_capa(&mvm->fw->ucode_capa,
 			 IWL_UCODE_TLV_CAPA_CHANNEL_SWITCH_CMD))
 		iwl_mvm_remove_csa_period(mvm, vif);
-	else
+	else {
+		printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP,CHANNEL_SWITCH_TIME_EVENT_CMD)\n", __func__, __LINE__);
 		WARN_ON(iwl_mvm_send_cmd_pdu(mvm,
 					     WIDE_ID(MAC_CONF_GROUP,
 						     CHANNEL_SWITCH_TIME_EVENT_CMD),
 					     0, sizeof(cmd), &cmd));
+	}
 	mvmvif->csa_failed = true;
 	mutex_unlock(&mvm->mutex);
 
 	/* If we're here, we can't support MLD */
 	iwl_mvm_post_channel_switch(hw, vif, &vif->bss_conf);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 void iwl_mvm_channel_switch_disconnect_wk(struct work_struct *wk)
@@ -1758,6 +1799,7 @@ static int iwl_mvm_mac_add_interface(struct ieee80211_hw *hw,
 	int ret;
 	int i;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	mutex_lock(&mvm->mutex);
 
 	iwl_mvm_mac_init_mvmvif(mvm, mvmvif);
@@ -1874,6 +1916,7 @@ out:
  out_unlock:
 	mutex_unlock(&mvm->mutex);
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return ret;
 }
 
@@ -1909,6 +1952,7 @@ static void iwl_mvm_mac_remove_interface(struct ieee80211_hw *hw,
 	struct iwl_mvm_vif *mvmvif = iwl_mvm_vif_from_mac80211(vif);
 	struct iwl_probe_resp_data *probe_data;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	iwl_mvm_prepare_mac_removal(mvm, vif);
 
 	if (!(vif->type == NL80211_IFTYPE_AP ||
@@ -1985,6 +2029,8 @@ out:
 	}
 
 	mutex_unlock(&mvm->mutex);
+		
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 struct iwl_mvm_mc_iter_data {
@@ -2020,6 +2066,7 @@ static void iwl_mvm_mc_iface_iterator(void *_data, u8 *mac,
 	hcmd.len[0] = len;
 	hcmd.data[0] = cmd;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : MCAST_FILTER_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	ret = iwl_mvm_send_cmd(mvm, &hcmd);
 	if (ret)
 		IWL_ERR(mvm, "mcast filter cmd error. ret=%d\n", ret);
@@ -2053,6 +2100,8 @@ static void iwl_mvm_recalc_multicast(struct iwl_mvm *mvm)
 	 * not schedule the work in mac80211 as frequently if it's
 	 * still running when rescheduled (possibly multiple times).
 	 */
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : ECHO_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, ECHO_CMD, 0, 0, NULL);
 	if (ret)
 		IWL_ERR(mvm, "Failed to synchronize multicast groups update\n");
@@ -2068,6 +2117,8 @@ u64 iwl_mvm_prepare_multicast(struct ieee80211_hw *hw,
 	bool pass_all;
 	int len;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
 	addr_count = netdev_hw_addr_list_count(mc_list);
 	pass_all = addr_count > MAX_MCAST_FILTERING_ADDRESSES ||
 		   IWL_MVM_FW_MCAST_FILTER_PASS_ALL;
@@ -2076,11 +2127,14 @@ u64 iwl_mvm_prepare_multicast(struct ieee80211_hw *hw,
 
 	len = roundup(sizeof(*cmd) + addr_count * ETH_ALEN, 4);
 	cmd = kzalloc(len, GFP_ATOMIC);
-	if (!cmd)
+	if (!cmd) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return 0;
+	}
 
 	if (pass_all) {
 		cmd->pass_all = 1;
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return (u64)(unsigned long)cmd;
 	}
 
@@ -2092,6 +2146,7 @@ u64 iwl_mvm_prepare_multicast(struct ieee80211_hw *hw,
 		cmd->count++;
 	}
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return (u64)(unsigned long)cmd;
 }
 
@@ -2102,6 +2157,7 @@ void iwl_mvm_configure_filter(struct ieee80211_hw *hw,
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 	struct iwl_mcast_filter_cmd *cmd = (void *)(unsigned long)multicast;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	guard(mvm)(mvm);
 
 	/* replace previous configuration */
@@ -2118,6 +2174,8 @@ void iwl_mvm_configure_filter(struct ieee80211_hw *hw,
 		cmd->count = 0;
 
 	iwl_mvm_recalc_multicast(mvm);
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 out:
 	*total_flags = 0;
 }
@@ -2128,6 +2186,8 @@ static void iwl_mvm_config_iface_filter(struct ieee80211_hw *hw,
 					unsigned int changed_flags)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	/* We support only filter for probe requests */
 	if (!(changed_flags & FIF_PROBE_REQ))
@@ -2140,6 +2200,7 @@ static void iwl_mvm_config_iface_filter(struct ieee80211_hw *hw,
 
 	guard(mvm)(mvm);
 	iwl_mvm_mac_ctxt_changed(mvm, vif, false, NULL);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 int iwl_mvm_update_mu_groups(struct iwl_mvm *mvm, struct ieee80211_vif *vif)
@@ -2151,6 +2212,8 @@ int iwl_mvm_update_mu_groups(struct iwl_mvm *mvm, struct ieee80211_vif *vif)
 	memcpy(cmd.user_position, vif->bss_conf.mu_group.position,
 	       WLAN_USER_POSITION_LEN);
 
+	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP,UPDATE_MU_GROUPS_CMD)\n", __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm,
 				    WIDE_ID(DATA_PATH_GROUP,
 					    UPDATE_MU_GROUPS_CMD),
@@ -2684,6 +2747,8 @@ static void iwl_mvm_cfg_he_sta(struct iwl_mvm *mvm,
 		sta_ctxt_cmd_v2.reserved3 = 0;
 	}
 
+	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, STA_HE_CTXT_CMD)\n", __func__, __LINE__);
+	
 	if (iwl_mvm_send_cmd_pdu(mvm, cmd_id, 0, size, cmd))
 		IWL_ERR(mvm, "Failed to config FW to work HE!\n");
 }
@@ -3143,12 +3208,16 @@ static int iwl_mvm_start_ap(struct ieee80211_hw *hw,
 			    struct ieee80211_vif *vif,
 			    struct ieee80211_bss_conf *link_conf)
 {
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return iwl_mvm_start_ap_ibss(hw, vif, link_conf);
 }
 
 static int iwl_mvm_start_ibss(struct ieee80211_hw *hw,
 			      struct ieee80211_vif *vif)
 {
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return iwl_mvm_start_ap_ibss(hw, vif, &vif->bss_conf);
 }
 
@@ -3229,13 +3298,17 @@ static void iwl_mvm_stop_ap(struct ieee80211_hw *hw,
 			    struct ieee80211_vif *vif,
 			    struct ieee80211_bss_conf *link_conf)
 {
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	iwl_mvm_stop_ap_ibss(hw, vif, link_conf);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 static void iwl_mvm_stop_ibss(struct ieee80211_hw *hw,
 			      struct ieee80211_vif *vif)
 {
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	iwl_mvm_stop_ap_ibss(hw, vif, &vif->bss_conf);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 static void
@@ -3277,6 +3350,8 @@ static void iwl_mvm_bss_info_changed(struct ieee80211_hw *hw,
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	guard(mvm)(mvm);
 
 	if (changes & BSS_CHANGED_IDLE && !vif->cfg.idle)
@@ -3304,6 +3379,8 @@ static void iwl_mvm_bss_info_changed(struct ieee80211_hw *hw,
 				bss_conf->txpower);
 		iwl_mvm_set_tx_power(mvm, vif, bss_conf->txpower);
 	}
+
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 int iwl_mvm_mac_hw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
@@ -3311,11 +3388,15 @@ int iwl_mvm_mac_hw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	if (hw_req->req.n_channels == 0 ||
-	    hw_req->req.n_channels > mvm->fw->ucode_capa.n_scan_channels)
+	    hw_req->req.n_channels > mvm->fw->ucode_capa.n_scan_channels) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EINVAL;
+	}
 
 	guard(mvm)(mvm);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return iwl_mvm_reg_scan_start(mvm, vif, &hw_req->req, &hw_req->ies);
 }
 
@@ -3323,6 +3404,7 @@ void iwl_mvm_mac_cancel_hw_scan(struct ieee80211_hw *hw,
 				struct ieee80211_vif *vif)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	guard(mvm)(mvm);
 
@@ -3335,6 +3417,8 @@ void iwl_mvm_mac_cancel_hw_scan(struct ieee80211_hw *hw,
 	*/
 	if (mvm->scan_status & IWL_MVM_SCAN_REGULAR)
 		iwl_mvm_scan_stop(mvm, IWL_MVM_SCAN_REGULAR, true);
+
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 void
@@ -3346,10 +3430,12 @@ iwl_mvm_mac_allow_buffered_frames(struct ieee80211_hw *hw,
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	/* Called when we need to transmit (a) frame(s) from mac80211 */
 
 	iwl_mvm_sta_modify_sleep_tx_count(mvm, sta, reason, num_frames,
 					  tids, more_data, false);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 void
@@ -3361,10 +3447,12 @@ iwl_mvm_mac_release_buffered_frames(struct ieee80211_hw *hw,
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	/* Called when we need to transmit (a) frame(s) from agg or dqa queue */
 
 	iwl_mvm_sta_modify_sleep_tx_count(mvm, sta, reason, num_frames,
 					  tids, more_data, true);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 static void __iwl_mvm_mac_sta_notify(struct ieee80211_hw *hw,
@@ -3429,7 +3517,9 @@ static void __iwl_mvm_mac_sta_notify(struct ieee80211_hw *hw,
 void iwl_mvm_mac_sta_notify(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 			    enum sta_notify_cmd cmd, struct ieee80211_sta *sta)
 {
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	__iwl_mvm_mac_sta_notify(hw, cmd, sta);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 void iwl_mvm_sta_pm_notif(struct iwl_mvm *mvm, struct iwl_rx_cmd_buffer *rxb)
@@ -3493,6 +3583,8 @@ void iwl_mvm_sta_pre_rcu_remove(struct ieee80211_hw *hw,
 	struct iwl_mvm_sta *mvm_sta = iwl_mvm_sta_from_mac80211(sta);
 	unsigned int link_id;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	/*
 	 * This is called before mac80211 does RCU synchronisation,
 	 * so here we already invalidate our internal RCU-protected
@@ -3520,6 +3612,7 @@ void iwl_mvm_sta_pre_rcu_remove(struct ieee80211_hw *hw,
 			RCU_INIT_POINTER(mvm->fw_id_to_link_sta[sta_id], NULL);
 		}
 	}
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 static void iwl_mvm_check_uapsd(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
@@ -3765,6 +3858,9 @@ static int iwl_mvm_mac_sta_state(struct ieee80211_hw *hw,
 		.mac_ctxt_changed = iwl_mvm_mac_ctxt_changed_wrapper,
 	};
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+	
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return iwl_mvm_mac_sta_state_common(hw, vif, sta, old_state, new_state,
 					    &callbacks);
 }
@@ -4228,9 +4324,12 @@ int iwl_mvm_mac_sta_state_common(struct ieee80211_hw *hw,
 int iwl_mvm_mac_set_rts_threshold(struct ieee80211_hw *hw, u32 value)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+	
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	mvm->rts_threshold = value;
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return 0;
 }
 
@@ -4238,6 +4337,8 @@ void iwl_mvm_sta_rc_update(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 			   struct ieee80211_sta *sta, u32 changed)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	if (changed & (IEEE80211_RC_BW_CHANGED |
 		       IEEE80211_RC_SUPP_RATES_CHANGED |
@@ -4247,6 +4348,8 @@ void iwl_mvm_sta_rc_update(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 	if (vif->type == NL80211_IFTYPE_STATION &&
 	    changed & IEEE80211_RC_NSS_CHANGED)
 		iwl_mvm_sf_update(mvm, vif, false);
+	
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 static int iwl_mvm_mac_conf_tx(struct ieee80211_hw *hw,
@@ -4256,6 +4359,8 @@ static int iwl_mvm_mac_conf_tx(struct ieee80211_hw *hw,
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 	struct iwl_mvm_vif *mvmvif = iwl_mvm_vif_from_mac80211(vif);
+
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	mvmvif->deflink.queue_params[ac] = *params;
 
@@ -4267,6 +4372,7 @@ static int iwl_mvm_mac_conf_tx(struct ieee80211_hw *hw,
 		guard(mvm)(mvm);
 		return iwl_mvm_mac_ctxt_changed(mvm, vif, false, NULL);
 	}
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return 0;
 }
 
@@ -4276,12 +4382,16 @@ void iwl_mvm_mac_mgd_prepare_tx(struct ieee80211_hw *hw,
 {
 	struct iwl_mvm_vif *mvmvif = iwl_mvm_vif_from_mac80211(vif);
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
-	if (info->was_assoc && !mvmvif->session_prot_connection_loss)
+	if (info->was_assoc && !mvmvif->session_prot_connection_loss) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return;
+	}
 
 	guard(mvm)(mvm);
 	iwl_mvm_protect_assoc(mvm, vif, info->duration, info->link_id);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
 
 void iwl_mvm_mac_mgd_complete_tx(struct ieee80211_hw *hw,
@@ -4290,12 +4400,17 @@ void iwl_mvm_mac_mgd_complete_tx(struct ieee80211_hw *hw,
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
 	/* for successful cases (auth/assoc), don't cancel session protection */
-	if (info->success)
+	if (info->success) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return;
+	}
 
 	guard(mvm)(mvm);
 	iwl_mvm_stop_session_protection(mvm, vif);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
 
 int iwl_mvm_mac_sched_scan_start(struct ieee80211_hw *hw,
@@ -4304,12 +4419,15 @@ int iwl_mvm_mac_sched_scan_start(struct ieee80211_hw *hw,
 				 struct ieee80211_scan_ies *ies)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	guard(mvm)(mvm);
 
-	if (!vif->cfg.idle)
+	if (!vif->cfg.idle) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EBUSY;
-
+	}
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return iwl_mvm_sched_scan_start(mvm, vif, req, ies, IWL_MVM_SCAN_SCHED);
 }
 
@@ -4318,6 +4436,8 @@ int iwl_mvm_mac_sched_scan_stop(struct ieee80211_hw *hw,
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 	int ret;
+
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	mutex_lock(&mvm->mutex);
 
@@ -4331,6 +4451,7 @@ int iwl_mvm_mac_sched_scan_stop(struct ieee80211_hw *hw,
 	*/
 	if (!(mvm->scan_status & IWL_MVM_SCAN_SCHED)) {
 		mutex_unlock(&mvm->mutex);
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return 0;
 	}
 
@@ -4338,6 +4459,7 @@ int iwl_mvm_mac_sched_scan_stop(struct ieee80211_hw *hw,
 	mutex_unlock(&mvm->mutex);
 	iwl_mvm_wait_for_async_handlers(mvm);
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return ret;
 }
 
@@ -4588,8 +4710,10 @@ int iwl_mvm_mac_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 			struct ieee80211_key_conf *key)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	guard(mvm)(mvm);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return __iwl_mvm_mac_set_key(hw, cmd, vif, sta, key);
 }
 
@@ -4600,10 +4724,13 @@ void iwl_mvm_mac_update_tkip_key(struct ieee80211_hw *hw,
 				 u32 iv32, u16 *phase1key)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
-	if (keyconf->hw_key_idx == STA_KEY_IDX_INVALID)
+	if (keyconf->hw_key_idx == STA_KEY_IDX_INVALID) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return;
-
+	}
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	iwl_mvm_update_tkip_key(mvm, vif, keyconf, sta, iv32, phase1key);
 }
 
@@ -4715,6 +4842,8 @@ static int iwl_mvm_send_aux_roc_cmd(struct iwl_mvm *mvm,
 				   ARRAY_SIZE(time_event_response),
 				   iwl_mvm_rx_aux_roc, te_data);
 
+	printk("%s %d : iwl_mvm_send_cmd : HOT_SPOT_CMD\n", __func__, __LINE__);
+	
 	res = iwl_mvm_send_cmd_pdu(mvm, HOT_SPOT_CMD, 0, len,
 				   &aux_roc_req);
 
@@ -4785,7 +4914,10 @@ static int iwl_mvm_roc(struct ieee80211_hw *hw,
 		.add_aux_sta_for_hs20 = iwl_mvm_add_aux_sta_for_hs20,
 		.link = iwl_mvm_roc_link,
 	};
+	
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return iwl_mvm_roc_common(hw, vif, channel, duration, type, &ops);
 }
 
@@ -4956,11 +5088,14 @@ int iwl_mvm_cancel_roc(struct ieee80211_hw *hw,
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	IWL_DEBUG_MAC80211(mvm, "enter\n");
 
 	iwl_mvm_stop_roc(mvm, vif);
 
 	IWL_DEBUG_MAC80211(mvm, "leave\n");
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return 0;
 }
 
@@ -5029,8 +5164,10 @@ int iwl_mvm_add_chanctx(struct ieee80211_hw *hw,
 			struct ieee80211_chanctx_conf *ctx)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	guard(mvm)(mvm);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return __iwl_mvm_add_chanctx(mvm, ctx);
 }
 
@@ -5049,9 +5186,10 @@ void iwl_mvm_remove_chanctx(struct ieee80211_hw *hw,
 			    struct ieee80211_chanctx_conf *ctx)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
-
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	guard(mvm)(mvm);
 	__iwl_mvm_remove_chanctx(mvm, ctx);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
 
 void iwl_mvm_change_chanctx(struct ieee80211_hw *hw,
@@ -5062,32 +5200,42 @@ void iwl_mvm_change_chanctx(struct ieee80211_hw *hw,
 	struct iwl_mvm_phy_ctxt *phy_ctxt = &mvm->phy_ctxts[*phy_ctxt_id];
 	struct cfg80211_chan_def *def = iwl_mvm_chanctx_def(mvm, ctx);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
 	if (WARN_ONCE((phy_ctxt->ref > 1) &&
 		      (changed & ~(IEEE80211_CHANCTX_CHANGE_WIDTH |
 				   IEEE80211_CHANCTX_CHANGE_RX_CHAINS |
 				   IEEE80211_CHANCTX_CHANGE_RADAR |
 				   IEEE80211_CHANCTX_CHANGE_MIN_WIDTH)),
 		      "Cannot change PHY. Ref=%d, changed=0x%X\n",
-		      phy_ctxt->ref, changed))
+		      phy_ctxt->ref, changed)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return;
+	}
 
 	guard(mvm)(mvm);
 
 	/* we are only changing the min_width, may be a noop */
 	if (changed == IEEE80211_CHANCTX_CHANGE_MIN_WIDTH) {
-		if (phy_ctxt->width == def->width)
+		if (phy_ctxt->width == def->width) {
+			printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 			return;
+	}
 
 		/* we are just toggling between 20_NOHT and 20 */
 		if (phy_ctxt->width <= NL80211_CHAN_WIDTH_20 &&
-		    def->width <= NL80211_CHAN_WIDTH_20)
+		    def->width <= NL80211_CHAN_WIDTH_20) {
+			printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 			return;
+		}
 	}
 
 	iwl_mvm_bt_coex_vif_change(mvm);
 	iwl_mvm_phy_ctxt_changed(mvm, phy_ctxt, def, &ctx->ap,
 				 ctx->rx_chains_static,
 				 ctx->rx_chains_dynamic);
+
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
 
 /*
@@ -5230,8 +5378,10 @@ static int iwl_mvm_assign_vif_chanctx(struct ieee80211_hw *hw,
 				      struct ieee80211_chanctx_conf *ctx)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	guard(mvm)(mvm);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return __iwl_mvm_assign_vif_chanctx(mvm, vif, link_conf, ctx, false);
 }
 
@@ -5319,9 +5469,10 @@ static void iwl_mvm_unassign_vif_chanctx(struct ieee80211_hw *hw,
 					 struct ieee80211_chanctx_conf *ctx)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
-
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	guard(mvm)(mvm);
 	__iwl_mvm_unassign_vif_chanctx(mvm, vif, link_conf, ctx, false);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 static int
@@ -5455,6 +5606,8 @@ static int iwl_mvm_switch_vif_chanctx(struct ieee80211_hw *hw,
 		.__unassign_vif_chanctx = __iwl_mvm_unassign_vif_chanctx,
 	};
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return iwl_mvm_switch_vif_chanctx_common(hw, vifs, n_vifs, mode, &ops);
 }
 
@@ -5462,6 +5615,8 @@ int iwl_mvm_tx_last_beacon(struct ieee80211_hw *hw)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return mvm->ibss_manager;
 }
 
@@ -5471,11 +5626,15 @@ static int iwl_mvm_set_tim(struct ieee80211_hw *hw, struct ieee80211_sta *sta,
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 	struct iwl_mvm_sta *mvm_sta = iwl_mvm_sta_from_mac80211(sta);
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	if (!mvm_sta || !mvm_sta->vif) {
 		IWL_ERR(mvm, "Station is not associated to a vif\n");
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EINVAL;
 	}
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return iwl_mvm_mac_ctxt_beacon_changed(mvm, mvm_sta->vif,
 					       &mvm_sta->vif->bss_conf);
 }
@@ -5539,7 +5698,9 @@ int iwl_mvm_mac_testmode_cmd(struct ieee80211_hw *hw,
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	guard(mvm)(mvm);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return __iwl_mvm_mac_testmode_cmd(mvm, vif, data, len);
 }
 #endif
@@ -5553,8 +5714,10 @@ void iwl_mvm_channel_switch(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 	 * (which is when the absence time event starts).
 	 */
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	IWL_DEBUG_MAC80211(IWL_MAC80211_GET_MVM(hw),
 			   "dummy channel switch op\n");
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 static int iwl_mvm_schedule_client_csa(struct iwl_mvm *mvm,
@@ -5577,6 +5740,8 @@ static int iwl_mvm_schedule_client_csa(struct iwl_mvm *mvm,
 		cmd.cs_delayed_bcn_count =
 			DIV_ROUND_UP(chsw->delay, vif->bss_conf.beacon_int);
 
+	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP,CHANNEL_SWITCH_TIME_EVENT_CMD)\n", __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm,
 				    WIDE_ID(MAC_CONF_GROUP,
 					    CHANNEL_SWITCH_TIME_EVENT_CMD),
@@ -5641,6 +5806,8 @@ int iwl_mvm_pre_channel_switch(struct iwl_mvm *mvm,
 	struct iwl_mvm_txq *mvmtxq;
 	int ret;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	lockdep_assert_held(&mvm->mutex);
 
 	mvmvif->csa_failed = false;
@@ -5659,19 +5826,25 @@ int iwl_mvm_pre_channel_switch(struct iwl_mvm *mvm,
 			rcu_dereference_protected(mvm->csa_vif,
 						  lockdep_is_held(&mvm->mutex));
 		if (WARN_ONCE(csa_vif && csa_vif->bss_conf.csa_active,
-			      "Another CSA is already in progress"))
+			      "Another CSA is already in progress")) {
+			printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 			return -EBUSY;
+		}
 
 		/* we still didn't unblock tx. prevent new CS meanwhile */
 		if (rcu_dereference_protected(mvm->csa_tx_blocked_vif,
-					      lockdep_is_held(&mvm->mutex)))
+					      lockdep_is_held(&mvm->mutex))) {
+			printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 			return -EBUSY;
+		|
 
 		rcu_assign_pointer(mvm->csa_vif, vif);
 
 		if (WARN_ONCE(mvmvif->csa_countdown,
-			      "Previous CSA countdown didn't complete"))
+			      "Previous CSA countdown didn't complete")) {
+			printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 			return -EBUSY;
+		}
 
 		mvmvif->csa_target_freq = chsw->chandef.chan->center_freq;
 
@@ -5705,8 +5878,10 @@ int iwl_mvm_pre_channel_switch(struct iwl_mvm *mvm,
 		 * we don't know the dtim period. In this case, the firmware can't
 		 * track the beacons.
 		 */
-		if (!vif->cfg.assoc || !vif->bss_conf.dtim_period)
+		if (!vif->cfg.assoc || !vif->bss_conf.dtim_period) {
+			printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 			return -EBUSY;
+		}
 
 		if (chsw->delay > IWL_MAX_CSA_BLOCK_TX &&
 		    hweight16(vif->valid_links) <= 1)
@@ -5727,8 +5902,10 @@ int iwl_mvm_pre_channel_switch(struct iwl_mvm *mvm,
 		if (!fw_has_capa(&mvm->fw->ucode_capa,
 				 IWL_UCODE_TLV_CAPA_CHANNEL_SWITCH_CMD)) {
 			ret = iwl_mvm_old_pre_chan_sw_sta(mvm, vif, chsw);
-			if (ret)
+			if (ret) {
+				printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 				return ret;
+			}
 		} else {
 			iwl_mvm_schedule_client_csa(mvm, vif, chsw);
 		}
@@ -5743,12 +5920,14 @@ int iwl_mvm_pre_channel_switch(struct iwl_mvm *mvm,
 	mvmvif->ps_disabled = true;
 
 	ret = iwl_mvm_power_update_ps(mvm);
-	if (ret)
+	if (ret) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return ret;
+	}
 
 	/* we won't be on this channel any longer */
 	iwl_mvm_teardown_tdls_peers(mvm);
-
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return ret;
 }
 
@@ -5777,16 +5956,22 @@ void iwl_mvm_channel_switch_rx_beacon(struct ieee80211_hw *hw,
 		.cs_mode = chsw->block_tx,
 	};
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	/*
 	 * In the new flow FW is in charge of timing the switch so there is no
 	 * need for all of this
 	 */
 	if (iwl_fw_lookup_notif_ver(mvm->fw, MAC_CONF_GROUP,
-				    CHANNEL_SWITCH_ERROR_NOTIF, 0))
+				    CHANNEL_SWITCH_ERROR_NOTIF, 0)) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return;
+	}
 
-	if (!fw_has_capa(&mvm->fw->ucode_capa, IWL_UCODE_TLV_CAPA_CS_MODIFY))
+	if (!fw_has_capa(&mvm->fw->ucode_capa, IWL_UCODE_TLV_CAPA_CS_MODIFY)) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return;
+	}
 
 	IWL_DEBUG_MAC80211(mvm, "Modify CSA on mac %d count = %d (old %d) mode = %d\n",
 			   mvmvif->id, chsw->count, mvmvif->csa_count, chsw->block_tx);
@@ -5799,12 +5984,15 @@ void iwl_mvm_channel_switch_rx_beacon(struct ieee80211_hw *hw,
 
 			link_conf = wiphy_dereference(hw->wiphy,
 						      vif->link_conf[chsw->link_id]);
-			if (WARN_ON(!link_conf))
+			if (WARN_ON(!link_conf)) {
+				printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 				return;
+			}
 
 			iwl_mvm_abort_channel_switch(hw, vif, link_conf);
 			ieee80211_chswitch_done(vif, false, 0);
 			mvmvif->csa_misbehave = false;
+			printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 			return;
 		}
 		mvmvif->csa_misbehave = true;
@@ -5815,10 +6003,13 @@ void iwl_mvm_channel_switch_rx_beacon(struct ieee80211_hw *hw,
 	if (mvmvif->csa_failed)
 		return;
 
+	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP,CHANNEL_SWITCH_TIME_EVENT_CMD)\n", __func__, __LINE__);
+	
 	WARN_ON(iwl_mvm_send_cmd_pdu(mvm,
 				     WIDE_ID(MAC_CONF_GROUP,
 					     CHANNEL_SWITCH_TIME_EVENT_CMD),
 				     0, sizeof(cmd), &cmd));
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 static void iwl_mvm_flush_no_vif(struct iwl_mvm *mvm, u32 queues, bool drop)
@@ -5868,8 +6059,11 @@ void iwl_mvm_mac_flush(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 	int i;
 	u32 msk = 0;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
+
 	if (!vif) {
 		iwl_mvm_flush_no_vif(mvm, queues, drop);
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 		return;
 	}
 
@@ -5929,6 +6123,8 @@ void iwl_mvm_mac_flush(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 	    !test_bit(IWL_MVM_STATUS_HW_RESTART_REQUESTED,
 		      &mvm->status))
 		iwl_trans_wait_tx_queues_empty(mvm->trans, msk);
+		
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 }
 
 void iwl_mvm_mac_flush_sta(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
@@ -6008,7 +6204,7 @@ static int iwl_mvm_mac_get_acs_survey(struct iwl_mvm *mvm, int idx,
 
 out:
 	mutex_unlock(&mvm->mutex);
-
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return ret;
 }
 
@@ -6021,11 +6217,15 @@ int iwl_mvm_mac_get_survey(struct ieee80211_hw *hw, int idx,
 						   SYSTEM_STATISTICS_CMD),
 					   IWL_FW_CMD_VER_UNKNOWN);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
+
 	memset(survey, 0, sizeof(*survey));
 
 	if (!fw_has_capa(&mvm->fw->ucode_capa,
-			 IWL_UCODE_TLV_CAPA_RADIO_BEACON_STATS))
+			 IWL_UCODE_TLV_CAPA_RADIO_BEACON_STATS)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -ENOENT;
+	}
 
 	/*
 	 * Return the beacon stats at index zero and pass on following indices
@@ -6068,7 +6268,7 @@ int iwl_mvm_mac_get_survey(struct ieee80211_hw *hw, int idx,
 	survey->time_scan = mvm->accu_radio_stats.on_time_scan +
 			    mvm->radio_stats.on_time_scan;
 	do_div(survey->time_scan, USEC_PER_MSEC);
-
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return 0;
 }
 
@@ -6217,6 +6417,8 @@ void iwl_mvm_mac_sta_statistics(struct ieee80211_hw *hw,
 	struct iwl_mvm_sta *mvmsta = iwl_mvm_sta_from_mac80211(sta);
 	int i;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
+
 	if (mvmsta->deflink.avg_energy) {
 		sinfo->signal_avg = -(s8)mvmsta->deflink.avg_energy;
 		sinfo->filled |= BIT_ULL(NL80211_STA_INFO_SIGNAL_AVG);
@@ -6230,19 +6432,27 @@ void iwl_mvm_mac_sta_statistics(struct ieee80211_hw *hw,
 	}
 
 	/* if beacon filtering isn't on mac80211 does it anyway */
-	if (!(vif->driver_flags & IEEE80211_VIF_BEACON_FILTER))
+	if (!(vif->driver_flags & IEEE80211_VIF_BEACON_FILTER)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return;
+	}
 
-	if (!vif->cfg.assoc)
+	if (!vif->cfg.assoc) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return;
+	}
 
 	guard(mvm)(mvm);
 
-	if (mvmvif->deflink.ap_sta_id != mvmsta->deflink.sta_id)
+	if (mvmvif->deflink.ap_sta_id != mvmsta->deflink.sta_id) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return;
+	}
 
-	if (iwl_mvm_request_statistics(mvm, false))
+	if (iwl_mvm_request_statistics(mvm, false)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return;
+	}
 
 	sinfo->rx_beacon = 0;
 	for_each_mvm_vif_valid_link(mvmvif, i)
@@ -6256,6 +6466,7 @@ void iwl_mvm_mac_sta_statistics(struct ieee80211_hw *hw,
 			mvmvif->deflink.beacon_stats.avg_signal;
 		sinfo->filled |= BIT_ULL(NL80211_STA_INFO_BEACON_SIGNAL_AVG);
 	}
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
 
 static void iwl_mvm_event_mlme_callback_ini(struct iwl_mvm *mvm,
@@ -6359,6 +6570,7 @@ void iwl_mvm_mac_event_callback(struct ieee80211_hw *hw,
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 	switch (event->type) {
 	case MLME_EVENT:
 		iwl_mvm_event_mlme_callback(mvm, vif, event);
@@ -6373,6 +6585,7 @@ void iwl_mvm_mac_event_callback(struct ieee80211_hw *hw,
 	default:
 		break;
 	}
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 }
 
 #define SYNC_RX_QUEUE_TIMEOUT (HZ)
@@ -6414,6 +6627,7 @@ void iwl_mvm_sync_rx_queues_internal(struct iwl_mvm *mvm,
 		mvm->queue_sync_state = (1 << mvm->trans->num_rx_queues) - 1;
 	}
 
+	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, TRIGGER_RX_QUEUES_NOTIF_CMD)\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd(mvm, &hcmd);
 	if (ret) {
 		IWL_ERR(mvm, "Failed to trigger RX queues sync (%d)\n", ret);
@@ -6440,9 +6654,10 @@ out:
 void iwl_mvm_sync_rx_queues(struct ieee80211_hw *hw)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
-
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	guard(mvm)(mvm);
 	iwl_mvm_sync_rx_queues_internal(mvm, IWL_MVM_RXQ_EMPTY, true, NULL, 0);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
 
 int
@@ -6453,9 +6668,13 @@ iwl_mvm_mac_get_ftm_responder_stats(struct ieee80211_hw *hw,
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 	struct iwl_mvm_vif *mvmvif = iwl_mvm_vif_from_mac80211(vif);
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	if (vif->p2p || vif->type != NL80211_IFTYPE_AP ||
-	    !mvmvif->ap_ibss_active || !vif->bss_conf.ftm_responder)
+	    !mvmvif->ap_ibss_active || !vif->bss_conf.ftm_responder) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EINVAL;
+	}
 
 	mutex_lock(&mvm->mutex);
 	*stats = mvm->ftm_resp_stats;
@@ -6471,6 +6690,7 @@ iwl_mvm_mac_get_ftm_responder_stats(struct ieee80211_hw *hw,
 			BIT(NL80211_FTM_STATS_RESCHEDULE_REQUESTS_NUM) |
 			BIT(NL80211_FTM_STATS_OUT_OF_WINDOW_TRIGGERS_NUM);
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return 0;
 }
 
@@ -6478,8 +6698,9 @@ int iwl_mvm_start_pmsr(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 		       struct cfg80211_pmsr_request *request)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
-
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	guard(mvm)(mvm);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return iwl_mvm_ftm_start(mvm, vif, request);
 }
 
@@ -6487,9 +6708,10 @@ void iwl_mvm_abort_pmsr(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 			struct cfg80211_pmsr_request *request)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
-
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	guard(mvm)(mvm);
 	iwl_mvm_ftm_abort(mvm, request);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 static bool iwl_mvm_can_hw_csum(struct sk_buff *skb)
@@ -6508,13 +6730,18 @@ static bool iwl_mvm_mac_can_aggregate(struct ieee80211_hw *hw,
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	/* For now don't aggregate IPv6 in AMSDU */
-	if (skb->protocol != htons(ETH_P_IP))
+	if (skb->protocol != htons(ETH_P_IP)) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return false;
+	}
 
-	if (!iwl_mvm_is_csum_supported(mvm))
+	if (!iwl_mvm_is_csum_supported(mvm)) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return true;
-
+	}
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return iwl_mvm_can_hw_csum(skb) == iwl_mvm_can_hw_csum(head);
 }
 
@@ -6525,15 +6752,20 @@ int iwl_mvm_set_hw_timestamp(struct ieee80211_hw *hw,
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 	u32 protocols = 0;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	/* HW timestamping is only supported for a specific station */
-	if (!hwts->macaddr)
+	if (!hwts->macaddr) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EOPNOTSUPP;
+	}
 
 	if (hwts->enable)
 		protocols =
 			IWL_TIME_SYNC_PROTOCOL_TM | IWL_TIME_SYNC_PROTOCOL_FTM;
 
 	guard(mvm)(mvm);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return iwl_mvm_time_sync_config(mvm, hwts->macaddr, protocols);
 }
 

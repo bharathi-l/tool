@@ -7,6 +7,7 @@
 #include <net/mac80211.h>
 #include <linux/netdevice.h>
 #include <linux/dmi.h>
+#include <linux/drv_dbg.h>
 
 #include "iwl-trans.h"
 #include "iwl-op-mode.h"
@@ -40,6 +41,9 @@ static int iwl_send_tx_ant_cfg(struct iwl_mvm *mvm, u8 valid_tx_ant)
 	};
 
 	IWL_DEBUG_FW(mvm, "select valid tx ant: %u\n", valid_tx_ant);
+
+	pr_info("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : TX_ANT_CONFIGURATION_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm, TX_ANT_CONFIGURATION_CMD, 0,
 				    sizeof(tx_ant_cmd), &tx_ant_cmd);
 }
@@ -66,6 +70,8 @@ static int iwl_send_rss_cfg_cmd(struct iwl_mvm *mvm)
 			1 + (i % (mvm->trans->num_rx_queues - 1));
 	netdev_rss_key_fill(cmd.secret_key, sizeof(cmd.secret_key));
 
+	pr_info("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : RSS_CONFIG_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm, RSS_CONFIG_CMD, 0, sizeof(cmd), &cmd);
 }
 
@@ -77,6 +83,8 @@ static int iwl_mvm_send_dqa_cmd(struct iwl_mvm *mvm)
 	u32 cmd_id = WIDE_ID(DATA_PATH_GROUP, DQA_ENABLE_CMD);
 	int ret;
 
+	pr_info("%s %d : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, DQA_ENABLE_CMD)\n", __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, cmd_id, 0, sizeof(dqa_cmd), &dqa_cmd);
 	if (ret)
 		IWL_ERR(mvm, "Failed to send DQA enabling command: %d\n", ret);
@@ -510,6 +518,7 @@ static void iwl_mvm_uats_init(struct iwl_mvm *mvm)
 		return;
 	}
 
+	pr_info("%s %d : iwl_mvm_send_cmd : WIDE_ID(REGULATORY_AND_NVM_GROUP,UATS_TABLE_CMD)\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd(mvm, &cmd);
 	if (ret < 0)
 		IWL_ERR(mvm, "failed to send MCC_ALLOWED_AP_TYPE_CMD (%d)\n",
@@ -545,6 +554,7 @@ static int iwl_mvm_sgom_init(struct iwl_mvm *mvm)
 		return 0;
 	}
 
+	pr_info("%s %d : iwl_mvm_send_cmd : WIDE_ID(REGULATORY_AND_NVM_GROUP,SAR_OFFSET_MAPPING_TABLE_CMD)\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd(mvm, &cmd);
 	if (ret < 0)
 		IWL_ERR(mvm, "failed to send SAR_OFFSET_MAPPING_CMD (%d)\n", ret);
@@ -594,6 +604,8 @@ static int iwl_send_phy_cfg_cmd(struct iwl_mvm *mvm)
 		       phy_cfg_cmd.phy_cfg);
 	cmd_size = (cmd_ver == 3) ? sizeof(struct iwl_phy_cfg_cmd_v3) :
 				    sizeof(struct iwl_phy_cfg_cmd_v1);
+	pr_info("%s %d : iwl_mvm_send_cmd : PHY_CONFIGURATION_CMD\n", __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm, cmd_id, 0, cmd_size, &phy_cfg_cmd);
 }
 
@@ -658,6 +670,8 @@ static int iwl_run_unified_mvm_ucode(struct iwl_mvm *mvm)
 	/* Send init config command to mark that we are sending NVM access
 	 * commands
 	 */
+	pr_info("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(SYSTEM_GROUP,INIT_EXTENDED_CFG_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, WIDE_ID(SYSTEM_GROUP,
 						INIT_EXTENDED_CFG_CMD),
 				   CMD_SEND_IN_RFKILL,
@@ -679,6 +693,7 @@ static int iwl_run_unified_mvm_ucode(struct iwl_mvm *mvm)
 			goto error;
 	}
 
+	pr_info("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(REGULATORY_AND_NVM_GROUP,NVM_ACCESS_COMPLETE)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	ret = iwl_mvm_send_cmd_pdu(mvm, WIDE_ID(REGULATORY_AND_NVM_GROUP,
 						NVM_ACCESS_COMPLETE),
 				   CMD_SEND_IN_RFKILL,
@@ -856,6 +871,8 @@ static int iwl_mvm_config_ltr(struct iwl_mvm *mvm)
 	if (!mvm->trans->ltr_enabled)
 		return 0;
 
+	pr_info("%s %d : iwl_mvm_send_cmd : LTR_CONFIG\n", __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm, LTR_CONFIG, 0,
 				    sizeof(cmd), &cmd);
 }
@@ -913,6 +930,8 @@ int iwl_mvm_sar_select_profile(struct iwl_mvm *mvm, int prof_a, int prof_b)
 	iwl_mei_set_power_limit(per_chain);
 
 	IWL_DEBUG_RADIO(mvm, "Sending REDUCE_TX_POWER_CMD per chain\n");
+	pr_info("%s %d : iwl_mvm_send_cmd : REDUCE_TX_POWER_CMD\n", __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm, cmd_id, 0, len, &cmd);
 }
 
@@ -951,6 +970,7 @@ int iwl_mvm_get_sar_geo_profile(struct iwl_mvm *mvm)
 
 	cmd.len[0] = len;
 
+	pr_info("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : PER_CHAIN_LIMIT_OFFSET_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	ret = iwl_mvm_send_cmd(mvm, &cmd);
 	if (ret) {
 		IWL_ERR(mvm, "Failed to get geographic profile info %d\n", ret);
@@ -1041,6 +1061,8 @@ static int iwl_mvm_sar_geo_init(struct iwl_mvm *mvm)
 	if (ret)
 		return 0;
 
+	pr_info("%s %d : iwl_mvm_send_cmd : WIDE_ID(PHY_OPS_GROUP, PER_CHAIN_LIMIT_OFFSET_CMD)\n", __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm, cmd_id, 0, len, &cmd);
 }
 
@@ -1055,6 +1077,8 @@ int iwl_mvm_ppag_send_cmd(struct iwl_mvm *mvm)
 		return 0;
 
 	IWL_DEBUG_RADIO(mvm, "Sending PER_PLATFORM_ANT_GAIN_CMD\n");
+	pr_info("%s %d : iwl_mvm_send_cmd : WIDE_ID(PHY_OPS_GROUP,PER_PLATFORM_ANT_GAIN_CMD)\n", __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, WIDE_ID(PHY_OPS_GROUP,
 						PER_PLATFORM_ANT_GAIN_CMD),
 				   0, cmd_size, &cmd);
@@ -1162,6 +1186,8 @@ static void iwl_mvm_tas_init(struct iwl_mvm *mvm)
 		/* v4 is the same size as v3 */
 		cmd_size += sizeof(struct iwl_tas_config_cmd_v3);
 
+	pr_info("%s %d : iwl_mvm_send_cmd : WIDE_ID(REGULATORY_AND_NVM_GROUP, TAS_CONFIG)\n", __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, cmd_id, 0, cmd_size, &cmd);
 	if (ret < 0)
 		IWL_DEBUG_RADIO(mvm, "failed to send TAS_CONFIG (%d)\n", ret);
@@ -1317,6 +1343,7 @@ void iwl_mvm_send_recovery_cmd(struct iwl_mvm *mvm, u32 flags)
 		recovery_cmd.buf_size = cpu_to_le32(error_log_size);
 	}
 
+	pr_info("%s %d : iwl_mvm_send_cmd : WIDE_ID(SYSTEM_GROUP, FW_ERROR_RECOVERY_CMD)\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd(mvm, &host_cmd);
 	kfree(mvm->error_recovery_buf);
 	mvm->error_recovery_buf = NULL;
@@ -1466,6 +1493,8 @@ int iwl_mvm_up(struct iwl_mvm *mvm)
 
 	for (i = 0; i < IWL_MVM_FW_MAX_LINK_ID + 1; i++)
 		RCU_INIT_POINTER(mvm->link_id_to_link_conf[i], NULL);
+
+	memset(&mvm->fw_link_ids_map, 0, sizeof(mvm->fw_link_ids_map));
 
 	mvm->tdls_cs.peer.sta_id = IWL_MVM_INVALID_STA;
 

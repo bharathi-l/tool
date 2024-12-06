@@ -2,6 +2,7 @@
 /*
  * Copyright (C) 2022 - 2024 Intel Corporation
  */
+#include <linux/drv_dbg.h>
 #include "mvm.h"
 
 static void iwl_mvm_mld_set_he_support(struct iwl_mvm *mvm,
@@ -82,6 +83,8 @@ static void iwl_mvm_mld_mac_ctxt_cmd_common(struct iwl_mvm *mvm,
 static int iwl_mvm_mld_mac_ctxt_send_cmd(struct iwl_mvm *mvm,
 					 struct iwl_mac_config_cmd *cmd)
 {
+	pr_info("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	
 	int ret = iwl_mvm_send_cmd_pdu(mvm,
 				       WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD),
 				       0, sizeof(*cmd), cmd);

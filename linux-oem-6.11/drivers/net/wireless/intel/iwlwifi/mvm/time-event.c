@@ -6,6 +6,7 @@
  */
 #include <linux/jiffies.h>
 #include <net/mac80211.h>
+#include <linux/drv_dbg.h>
 
 #include "fw/notif-wait.h"
 #include "iwl-trans.h"
@@ -626,6 +627,8 @@ static int iwl_mvm_time_event_send_add(struct iwl_mvm *mvm,
 				   ARRAY_SIZE(time_event_response),
 				   iwl_mvm_time_event_response, te_data);
 
+	printk("%s %d : iwl_mvm_send_cmd : TIME_EVENT_CMD\n", __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, TIME_EVENT_CMD, 0,
 					    sizeof(*te_cmd), te_cmd);
 	if (ret) {
@@ -763,6 +766,8 @@ static void iwl_mvm_cancel_session_protection(struct iwl_mvm *mvm,
 	if (mac_link_id < 0)
 		return;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, SESSION_PROTECTION_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm,
 				   WIDE_ID(MAC_CONF_GROUP, SESSION_PROTECTION_CMD),
 				   0, sizeof(cmd), &cmd);
@@ -886,6 +891,8 @@ static void iwl_mvm_remove_aux_roc_te(struct iwl_mvm *mvm,
 		cpu_to_le32(FW_CMD_ID_AND_COLOR(mvmvif->id, mvmvif->color));
 	IWL_DEBUG_TE(mvm, "Removing BSS AUX ROC TE 0x%x\n",
 		     le32_to_cpu(aux_cmd.event_unique_id));
+	printk("%s %d : iwl_mvm_send_cmd : HOT_SPOT_CMD\n", __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, HOT_SPOT_CMD, 0,
 				   len, &aux_cmd);
 
@@ -916,6 +923,8 @@ void iwl_mvm_remove_time_event(struct iwl_mvm *mvm,
 		cpu_to_le32(FW_CMD_ID_AND_COLOR(mvmvif->id, mvmvif->color));
 
 	IWL_DEBUG_TE(mvm, "Removing TE 0x%x\n", le32_to_cpu(time_cmd.id));
+	printk("%s %d : iwl_mvm_send_cmd : TIME_EVENT_CMD\n", __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, TIME_EVENT_CMD, 0,
 				   sizeof(time_cmd), &time_cmd);
 	if (ret)
@@ -1135,6 +1144,8 @@ int iwl_mvm_roc_add_cmd(struct iwl_mvm *mvm,
 	/* Set the node address */
 	memcpy(roc_req.node_addr, vif->addr, ETH_ALEN);
 
+	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, ROC_CMD)\n", __func__, __LINE__);
+	
 	res = iwl_mvm_send_cmd_pdu(mvm, WIDE_ID(MAC_CONF_GROUP, ROC_CMD),
 				   0, sizeof(roc_req), &roc_req);
 	if (!res)
@@ -1180,6 +1191,8 @@ iwl_mvm_start_p2p_roc_session_protection(struct iwl_mvm *mvm,
 	}
 
 	cmd.conf_id = cpu_to_le32(mvmvif->time_event_data.id);
+	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, SESSION_PROTECTION_CMD)\n", __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm,
 				    WIDE_ID(MAC_CONF_GROUP, SESSION_PROTECTION_CMD),
 				    0, sizeof(cmd), &cmd);
@@ -1488,6 +1501,7 @@ void iwl_mvm_schedule_session_protection(struct iwl_mvm *mvm,
 		     le32_to_cpu(cmd.duration_tu));
 
 	if (!wait_for_notif) {
+		printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, SESSION_PROTECTION_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		if (iwl_mvm_send_cmd_pdu(mvm,
 					 WIDE_ID(MAC_CONF_GROUP, SESSION_PROTECTION_CMD),
 					 0, sizeof(cmd), &cmd)) {
@@ -1501,6 +1515,7 @@ void iwl_mvm_schedule_session_protection(struct iwl_mvm *mvm,
 				   notif, ARRAY_SIZE(notif),
 				   iwl_mvm_session_prot_notif, NULL);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, SESSION_PROTECTION_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	if (iwl_mvm_send_cmd_pdu(mvm,
 				 WIDE_ID(MAC_CONF_GROUP, SESSION_PROTECTION_CMD),
 				 0, sizeof(cmd), &cmd)) {
