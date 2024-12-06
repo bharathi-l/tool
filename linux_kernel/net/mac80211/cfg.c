@@ -22,6 +22,7 @@
 #include "rate.h"
 #include "mesh.h"
 #include "wme.h"
+#include <linux/drv_dbg.h>
 
 static struct ieee80211_link_data *
 ieee80211_link_or_deflink(struct ieee80211_sub_if_data *sdata, int link_id,

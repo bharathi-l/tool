@@ -24,6 +24,7 @@
 #include "ieee80211_i.h"
 #include "driver-ops.h"
 #include "mesh.h"
+#include <linux/drv_dbg.h>
 
 #define IEEE80211_PROBE_DELAY (HZ / 33)
 #define IEEE80211_CHANNEL_TIME (HZ / 33)
