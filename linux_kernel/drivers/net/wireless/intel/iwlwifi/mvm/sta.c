@@ -5,7 +5,6 @@
  * Copyright (C) 2016-2017 Intel Deutschland GmbH
  */
 #include <net/mac80211.h>
-#include <linux/drv_dbg.h>
 
 #include "mvm.h"
 #include "sta.h"
@@ -232,6 +231,7 @@ int iwl_mvm_sta_send_to_fw(struct iwl_mvm *mvm, struct ieee80211_sta *sta,
 	}
 
 	status = ADD_STA_SUCCESS;
+	pr_info("%s %d : iwl_mvm_send_cmd : ADD_STA\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd_pdu_status(mvm, ADD_STA,
 					  iwl_mvm_add_sta_cmd_size(mvm),
 					  &add_sta_cmd, &status);
@@ -344,6 +344,7 @@ static int iwl_mvm_invalidate_sta_queue(struct iwl_mvm *mvm, int queue,
 
 	/* Notify FW of queue removal from the STA queues */
 	status = ADD_STA_SUCCESS;
+	pr_info("%s %d : iwl_mvm_send_cmd : ADD_STA\n", __func__, __LINE__);
 	return iwl_mvm_send_cmd_pdu_status(mvm, ADD_STA,
 					   iwl_mvm_add_sta_cmd_size(mvm),
 					   &cmd, &status);
@@ -375,6 +376,8 @@ static int iwl_mvm_disable_txq(struct iwl_mvm *mvm, struct ieee80211_sta *sta,
 
 			remove_cmd.u.remove.tid = cpu_to_le32(tid);
 
+			pr_info("%s %d : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP,SCD_QUEUE_CONFIG_CMD)\n", __func__, __LINE__);
+			
 			ret = iwl_mvm_send_cmd_pdu(mvm, cmd_id, 0,
 						   sizeof(remove_cmd),
 						   &remove_cmd);
@@ -433,6 +436,8 @@ static int iwl_mvm_disable_txq(struct iwl_mvm *mvm, struct ieee80211_sta *sta,
 	mvm->queue_info[queue].reserved = false;
 
 	iwl_trans_txq_disable(mvm->trans, queue, false);
+	pr_info("%s %d : iwl_mvm_send_cmd : SCD_QUEUE_CFG\n", __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, SCD_QUEUE_CFG, 0,
 				   sizeof(struct iwl_scd_txq_cfg_cmd), &cmd);
 
@@ -686,6 +691,8 @@ static int iwl_mvm_reconfig_scd(struct iwl_mvm *mvm, int queue, int fifo,
 
 	IWL_DEBUG_TX_QUEUES(mvm, "Reconfig SCD for TXQ #%d\n", queue);
 
+	pr_info("%s %d : iwl_mvm_send_cmd : SCD_QUEUE_CFG\n", __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, SCD_QUEUE_CFG, 0, sizeof(cmd), &cmd);
 	WARN_ONCE(ret, "Failed to re-configure queue %d on FIFO %d, ret=%d\n",
 		  queue, fifo, ret);
@@ -749,6 +756,8 @@ static int iwl_mvm_redirect_queue(struct iwl_mvm *mvm, int queue, int tid,
 
 	/* Before redirecting the queue we need to de-activate it */
 	iwl_trans_txq_disable(mvm->trans, queue, false);
+	pr_info("%s %d : iwl_mvm_send_cmd : SCD_QUEUE_CFG\n", __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, SCD_QUEUE_CFG, 0, sizeof(cmd), &cmd);
 	if (ret)
 		IWL_ERR(mvm, "Failed SCD disable TXQ %d (ret=%d)\n", queue,
@@ -1015,6 +1024,8 @@ static bool iwl_mvm_enable_txq(struct iwl_mvm *mvm, struct ieee80211_sta *sta,
 	if (inc_ssn)
 		le16_add_cpu(&cmd.ssn, 1);
 
+	pr_info("%s %d : iwl_mvm_send_cmd : SCD_QUEUE_CFG\n", __func__, __LINE__);
+	
 	WARN(iwl_mvm_send_cmd_pdu(mvm, SCD_QUEUE_CFG, 0, sizeof(cmd), &cmd),
 	     "Failed to configure queue %d on FIFO %d\n", queue, cfg->fifo);
 
@@ -1046,6 +1057,8 @@ static void iwl_mvm_change_queue_tid(struct iwl_mvm *mvm, int queue)
 	cmd.tid = tid;
 	cmd.tx_fifo = iwl_mvm_ac_to_tx_fifo[tid_to_mac80211_ac[tid]];
 
+	pr_info("%s %d : iwl_mvm_send_cmd : SCD_QUEUE_CFG\n", __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, SCD_QUEUE_CFG, 0, sizeof(cmd), &cmd);
 	if (ret) {
 		IWL_ERR(mvm, "Failed to update owner of TXQ %d (ret=%d)\n",
@@ -1122,6 +1135,8 @@ static void iwl_mvm_unshare_queue(struct iwl_mvm *mvm, int queue)
 		cmd.tfd_queue_msk = cpu_to_le32(mvmsta->tfd_queue_msk);
 		cmd.tid_disable_tx = cpu_to_le16(mvmsta->tid_disable_agg);
 
+		pr_info("%s %d : iwl_mvm_send_cmd : ADD_STA\n", __func__, __LINE__);
+		
 		ret = iwl_mvm_send_cmd_pdu(mvm, ADD_STA, CMD_ASYNC,
 					   iwl_mvm_add_sta_cmd_size(mvm), &cmd);
 		if (!ret) {
@@ -1734,6 +1749,7 @@ static int iwl_mvm_add_int_sta_common(struct iwl_mvm *mvm,
 	if (addr)
 		memcpy(cmd.addr, addr, ETH_ALEN);
 
+	pr_info("%s %d : iwl_mvm_send_cmd : ADD_STA\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd_pdu_status(mvm, ADD_STA,
 					  iwl_mvm_add_sta_cmd_size(mvm),
 					  &cmd, &status);
@@ -1938,6 +1954,7 @@ int iwl_mvm_drain_sta(struct iwl_mvm *mvm, struct iwl_mvm_sta *mvmsta,
 	cmd.station_flags_msk = cpu_to_le32(STA_FLG_DRAIN_FLOW);
 
 	status = ADD_STA_SUCCESS;
+	pr_info("%s %d : iwl_mvm_send_cmd : ADD_STA\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd_pdu_status(mvm, ADD_STA,
 					  iwl_mvm_add_sta_cmd_size(mvm),
 					  &cmd, &status);
@@ -1981,6 +1998,8 @@ static int iwl_mvm_rm_sta_common(struct iwl_mvm *mvm, u8 sta_id)
 		return -EINVAL;
 	}
 
+	pr_info("%s %d : iwl_mvm_send_cmd : REMOVE_STA\n", __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, REMOVE_STA, 0,
 				   sizeof(rm_sta_cmd), &rm_sta_cmd);
 	if (ret) {
@@ -2670,6 +2689,7 @@ static int __iwl_mvm_remove_sta_key(struct iwl_mvm *mvm, u8 sta_id,
 	size = new_api ? sizeof(u.cmd) : sizeof(u.cmd_v1);
 
 	status = ADD_STA_SUCCESS;
+	pr_info("%s %d : iwl_mvm_send_cmd : ADD_STA_KEY\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd_pdu_status(mvm, ADD_STA_KEY, size, &u.cmd,
 					  &status);
 
@@ -2804,6 +2824,7 @@ static int iwl_mvm_fw_baid_op_sta(struct iwl_mvm *mvm,
 	}
 
 	status = ADD_STA_SUCCESS;
+	pr_info("%s %d : iwl_mvm_send_cmd : ADD_STA\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd_pdu_status(mvm, ADD_STA,
 					  iwl_mvm_add_sta_cmd_size(mvm),
 					  &cmd, &status);
@@ -2858,6 +2879,7 @@ static int iwl_mvm_fw_baid_op_cmd(struct iwl_mvm *mvm,
 		cmd.remove.tid = cpu_to_le32(tid);
 	}
 
+	pr_info("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, RX_BAID_ALLOCATION_CONFIG_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	ret = iwl_mvm_send_cmd_pdu_status(mvm, cmd_id, sizeof(cmd),
 					  &cmd, &baid);
 	if (ret)
@@ -3054,6 +3076,7 @@ int iwl_mvm_sta_tx_agg(struct iwl_mvm *mvm, struct ieee80211_sta *sta,
 	cmd.tid_disable_tx = cpu_to_le16(mvm_sta->tid_disable_agg);
 
 	status = ADD_STA_SUCCESS;
+	pr_info("%s %d : iwl_mvm_send_cmd : ADD_STA\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd_pdu_status(mvm, ADD_STA,
 					  iwl_mvm_add_sta_cmd_size(mvm),
 					  &cmd, &status);
@@ -3685,12 +3708,16 @@ static int iwl_mvm_send_sta_key(struct iwl_mvm *mvm,
 	}
 
 	status = ADD_STA_SUCCESS;
-	if (cmd_flags & CMD_ASYNC)
+	if (cmd_flags & CMD_ASYNC) {
+		pr_info("%s %d : iwl_mvm_send_cmd : ADD_STA_KEY\n", __func__, __LINE__);
+		
 		ret = iwl_mvm_send_cmd_pdu(mvm, ADD_STA_KEY, CMD_ASYNC, size,
 					   &u.cmd);
-	else
+	} else {
+		pr_info("%s %d : iwl_mvm_send_cmd : ADD_STA_KEY\n", __func__, __LINE__);
 		ret = iwl_mvm_send_cmd_pdu_status(mvm, ADD_STA_KEY, size,
 						  &u.cmd, &status);
+	}
 
 	switch (status) {
 	case ADD_STA_SUCCESS:
@@ -3778,9 +3805,13 @@ static int iwl_mvm_send_sta_igtk(struct iwl_mvm *mvm,
 
 		memcpy(igtk_cmd_v1.igtk, igtk_cmd.igtk,
 		       ARRAY_SIZE(igtk_cmd_v1.igtk));
+		pr_info("%s %d : iwl_mvm_send_cmd : MGMT_MCAST_KEY\n", __func__, __LINE__);
+		
 		return iwl_mvm_send_cmd_pdu(mvm, MGMT_MCAST_KEY, 0,
 					    sizeof(igtk_cmd_v1), &igtk_cmd_v1);
 	}
+	pr_info("%s %d : iwl_mvm_send_cmd : MGMT_MCAST_KEY\n", __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm, MGMT_MCAST_KEY, 0,
 				    sizeof(igtk_cmd), &igtk_cmd);
 }
@@ -4053,6 +4084,8 @@ void iwl_mvm_sta_modify_ps_wake(struct iwl_mvm *mvm,
 	};
 	int ret;
 
+	pr_info("%s %d : iwl_mvm_send_cmd : ADD_STA\n", __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, ADD_STA, CMD_ASYNC,
 				   iwl_mvm_add_sta_cmd_size(mvm), &cmd);
 	if (ret)
@@ -4133,6 +4166,8 @@ void iwl_mvm_sta_modify_sleep_tx_count(struct iwl_mvm *mvm,
 	}
 
 	/* block the Tx queues until the FW updated the sleep Tx count */
+	pr_info("%s %d : iwl_mvm_send_cmd : ADD_STA\n", __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, ADD_STA,
 				   CMD_ASYNC | CMD_BLOCK_TXQS,
 				   iwl_mvm_add_sta_cmd_size(mvm), &cmd);
@@ -4177,6 +4212,8 @@ void iwl_mvm_sta_modify_disable_tx(struct iwl_mvm *mvm,
 		return;
 	}
 
+	pr_info("%s %d : iwl_mvm_send_cmd : ADD_STA\n", __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, ADD_STA, CMD_ASYNC,
 				   iwl_mvm_add_sta_cmd_size(mvm), &cmd);
 	if (ret)
@@ -4231,6 +4268,8 @@ static void iwl_mvm_int_sta_modify_disable_tx(struct iwl_mvm *mvm,
 	};
 	int ret;
 
+	pr_info("%s %d : iwl_mvm_send_cmd : ADD_STA\n", __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, ADD_STA, CMD_ASYNC,
 				   iwl_mvm_add_sta_cmd_size(mvm), &cmd);
 	if (ret)
@@ -4385,6 +4424,8 @@ void iwl_mvm_cancel_channel_switch(struct iwl_mvm *mvm,
 	};
 	int ret;
 
+	pr_info("%s %d : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, CANCEL_CHANNEL_SWITCH_CMD)\n", __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm,
 				   WIDE_ID(MAC_CONF_GROUP, CANCEL_CHANNEL_SWITCH_CMD),
 				   CMD_ASYNC,

@@ -2645,6 +2645,8 @@ void iwl_mvm_mac_reconfig_complete(struct ieee80211_hw *hw,
 void iwl_mvm_mac_stop(struct ieee80211_hw *hw);
 static inline int iwl_mvm_mac_config(struct ieee80211_hw *hw, u32 changed)
 {
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return 0;
 }
 

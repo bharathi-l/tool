@@ -3,7 +3,6 @@
  * Copyright (C) 2013-2014, 2018-2019, 2022-2024 Intel Corporation
  * Copyright (C) 2013-2014 Intel Mobile Communications GmbH
  */
-#include <linux/drv_dbg.h>
 #include "mvm.h"
 
 /* For counting bound interfaces */
@@ -209,6 +208,8 @@ static int iwl_mvm_sf_config(struct iwl_mvm *mvm, struct ieee80211_sta *sta,
 		return -EINVAL;
 	}
 
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : REPLY_SF_CFG_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, REPLY_SF_CFG_CMD, CMD_ASYNC,
 				   sizeof(sf_cmd), &sf_cmd);
 	if (!ret)

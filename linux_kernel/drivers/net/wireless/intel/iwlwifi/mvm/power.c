@@ -10,7 +10,6 @@
 #include <linux/etherdevice.h>
 
 #include <net/mac80211.h>
-#include <linux/drv_dbg.h>
 
 #include "iwl-debug.h"
 #include "mvm.h"
@@ -62,6 +61,8 @@ int iwl_mvm_beacon_filter_send_cmd(struct iwl_mvm *mvm,
 		len = offsetof(struct iwl_beacon_filter_cmd,
 			       bf_threshold_absolute_low);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : REPLY_BEACON_FILTERING_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm, REPLY_BEACON_FILTERING_CMD, 0,
 				    len, cmd);
 }
@@ -464,6 +465,8 @@ static int iwl_mvm_power_send_cmd(struct iwl_mvm *mvm,
 	memcpy(&iwl_mvm_vif_from_mac80211(vif)->mac_pwr_cmd, &cmd, sizeof(cmd));
 #endif
 
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : MAC_PM_POWER_TABLE] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm, MAC_PM_POWER_TABLE, 0,
 				    sizeof(cmd), &cmd);
 }
@@ -498,6 +501,8 @@ int iwl_mvm_power_update_device(struct iwl_mvm *mvm)
 			"Sending device power command with flags = 0x%X\n",
 			cmd.flags);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : POWER_TABLE_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm, POWER_TABLE_CMD, 0, sizeof(cmd),
 				    &cmd);
 }

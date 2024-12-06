@@ -3,7 +3,6 @@
  * Copyright (C) 2017 Intel Deutschland GmbH
  * Copyright (C) 2018-2024 Intel Corporation
  */
-#include <linux/drv_dbg.h>
 #include "rs.h"
 #include "fw-api.h"
 #include "sta.h"
@@ -672,6 +671,7 @@ void iwl_mvm_rs_fw_rate_init(struct iwl_mvm *mvm,
 	IWL_DEBUG_RATE(mvm, "TLC CONFIG CMD, ht_rate[0][2]=0x%X, ht_rate[1][2]=0x%X\n",
 		       cfg_cmd.ht_rates[0][2], cfg_cmd.ht_rates[1][2]);
 	if (cmd_ver == 4) {
+		printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, TLC_MNG_CONFIG_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		ret = iwl_mvm_send_cmd_pdu(mvm, cmd_id, CMD_ASYNC,
 					   sizeof(cfg_cmd), &cfg_cmd);
 	} else if (cmd_ver < 4) {
@@ -699,6 +699,8 @@ void iwl_mvm_rs_fw_rate_init(struct iwl_mvm *mvm,
 						  TLC_MNG_CONFIG_CMD), 0) < 3)
 			cmd_size -= 4;
 
+		printk("[MODULE -> %s], [THREAD -> %s] [WIDE_ID(DATA_PATH_GROUP, TLC_MNG_CONFIG_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+		
 		ret = iwl_mvm_send_cmd_pdu(mvm, cmd_id, CMD_ASYNC, cmd_size,
 					   &cfg_cmd_v3);
 	} else {

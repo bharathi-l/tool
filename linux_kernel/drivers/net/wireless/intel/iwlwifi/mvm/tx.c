@@ -10,7 +10,6 @@
 #include <net/gso.h>
 #include <net/ip.h>
 #include <net/ipv6.h>
-#include <linux/drv_dbg.h>
 
 #include "iwl-trans.h"
 #include "iwl-eeprom-parse.h"
@@ -2317,6 +2316,8 @@ int iwl_mvm_flush_tx_path(struct iwl_mvm *mvm, u32 tfd_msk)
 	};
 
 	WARN_ON(iwl_mvm_has_new_tx_api(mvm));
+	pr_info("%s %d : iwl_mvm_send_cmd : TXPATH_FLUSH\n", __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, TXPATH_FLUSH, 0,
 				   sizeof(flush_cmd), &flush_cmd);
 	if (ret)
@@ -2347,6 +2348,7 @@ int iwl_mvm_flush_sta_tids(struct iwl_mvm *mvm, u32 sta_id, u16 tids)
 	IWL_DEBUG_TX_QUEUES(mvm, "flush for sta id %d tid mask 0x%x\n",
 			    sta_id, tids);
 
+	pr_info("[MODULE -> %s], [THREAD -> %s] [TXPATH_FLUSH] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	ret = iwl_mvm_send_cmd(mvm, &cmd);
 
 	if (ret) {

@@ -2,7 +2,6 @@
 /*
  * Copyright (C) 2022 - 2024 Intel Corporation
  */
-#include <linux/drv_dbg.h>
 #include "mvm.h"
 #include "time-event.h"
 
@@ -38,6 +37,8 @@ static int iwl_mvm_link_cmd_send(struct iwl_mvm *mvm,
 	int ret;
 
 	cmd->action = cpu_to_le32(action);
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, LINK_CONFIG_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm,
 				   WIDE_ID(MAC_CONF_GROUP, LINK_CONFIG_CMD), 0,
 				   sizeof(*cmd), cmd);

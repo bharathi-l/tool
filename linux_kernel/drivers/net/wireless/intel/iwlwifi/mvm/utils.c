@@ -5,7 +5,6 @@
  * Copyright (C) 2015-2017 Intel Deutschland GmbH
  */
 #include <net/mac80211.h>
-#include <linux/drv_dbg.h>
 
 #include "iwl-debug.h"
 #include "iwl-io.h"
@@ -64,6 +63,24 @@ int iwl_mvm_send_cmd_pdu(struct iwl_mvm *mvm, u32 id,
 		.data = { data, },
 		.flags = flags,
 	};
+	 
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(SYSTEM_GROUP,INIT_EXTENDED_CFG_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : REPLY_SF_CFG_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : TX_ANT_CONFIGURATION_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : BT_CONFIG] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(PHY_OPS_GROUP,TEMP_REPORTING_THRESHOLDS_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : POWER_TABLE_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, MAC_CONFIG_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : REPLY_BEACON_FILTERING_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, LINK_CONFIG_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : ECHO_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : MAC_PM_POWER_TABLE] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : PHY_CONTEXT_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : iwl_cmd_id(RLC_CONFIG_CMD,DATA_PATH_GROUP, 2)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, TLC_MNG_CONFIG_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, SESSION_PROTECTION_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, STA_CONFIG_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, SEC_KEY_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	return iwl_mvm_send_cmd(mvm, &cmd);
 }
@@ -133,6 +150,7 @@ int iwl_mvm_send_cmd_pdu_status(struct iwl_mvm *mvm, u32 id, u16 len,
 		.data = { data, },
 	};
 
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : ] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return iwl_mvm_send_cmd_status(mvm, &cmd, status);
 }
 
@@ -266,6 +284,7 @@ int iwl_mvm_send_lq_cmd(struct iwl_mvm *mvm, struct iwl_lq_cmd *lq)
 		    iwl_mvm_has_tlc_offload(mvm)))
 		return -EINVAL;
 
+	printk("%s %d : iwl_mvm_send_cmd : LQ_CMD\n", __func__, __LINE__);
 	return iwl_mvm_send_cmd(mvm, &cmd);
 }
 
@@ -379,6 +398,7 @@ static int iwl_mvm_request_system_statistics(struct iwl_mvm *mvm, bool clear,
 				   NULL, NULL);
 
 	mvm->statistics_clear = clear;
+	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(SYSTEM_GROUP, SYSTEM_STATISTICS_CMD)\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd(mvm, &cmd);
 	if (ret) {
 		iwl_remove_notification(&mvm->notif_wait, &stats_wait);
@@ -427,6 +447,7 @@ int iwl_mvm_request_statistics(struct iwl_mvm *mvm, bool clear)
 				    STATISTICS_NOTIFICATION, 0) < 15) {
 		cmd.flags = CMD_WANT_SKB;
 
+		printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : STATISTICS_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		ret = iwl_mvm_send_cmd(mvm, &cmd);
 		if (ret)
 			return ret;
@@ -443,6 +464,7 @@ int iwl_mvm_request_statistics(struct iwl_mvm *mvm, bool clear)
 					   stats_complete, ARRAY_SIZE(stats_complete),
 					   iwl_wait_stats_complete, NULL);
 
+		printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : STATISTICS_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		ret = iwl_mvm_send_cmd(mvm, &cmd);
 		if (ret) {
 			iwl_remove_notification(&mvm->notif_wait, &stats_wait);
@@ -542,6 +564,8 @@ void iwl_mvm_send_low_latency_cmd(struct iwl_mvm *mvm,
 		cmd.low_latency_tx = 1;
 	}
 
+	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, LOW_LATENCY_CMD)\n", __func__, __LINE__);
+	
 	if (iwl_mvm_send_cmd_pdu(mvm, WIDE_ID(MAC_CONF_GROUP, LOW_LATENCY_CMD),
 				 0, sizeof(cmd), &cmd))
 		IWL_ERR(mvm, "Failed to send low latency command\n");

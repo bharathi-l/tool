@@ -6,7 +6,6 @@
 #include <linux/ieee80211.h>
 #include <linux/etherdevice.h>
 #include <net/mac80211.h>
-#include <linux/drv_dbg.h>
 
 #include "fw/api/coex.h"
 #include "iwl-modparams.h"
@@ -172,6 +171,8 @@ send_cmd:
 	memset(&mvm->last_bt_notif, 0, sizeof(mvm->last_bt_notif));
 	memset(&mvm->last_bt_ci_cmd, 0, sizeof(mvm->last_bt_ci_cmd));
 
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : BT_CONFIG] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm, BT_CONFIG, 0, sizeof(bt_cmd), &bt_cmd);
 }
 
@@ -204,6 +205,8 @@ static int iwl_mvm_bt_coex_reduced_txp(struct iwl_mvm *mvm, u8 sta_id,
 	cmd.reduced_txp = cpu_to_le32(value);
 	mvmsta->bt_reduced_txpower = enable;
 
+	printk("%s %d : iwl_mvm_send_cmd : BT_COEX_UPDATE_REDUCED_TXP\n", __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm, BT_COEX_UPDATE_REDUCED_TXP,
 				    CMD_ASYNC, sizeof(cmd), &cmd);
 }
@@ -639,6 +642,8 @@ static void iwl_mvm_bt_coex_notif_handle(struct iwl_mvm *mvm)
 
 	/* Don't spam the fw with the same command over and over */
 	if (memcmp(&cmd, &mvm->last_bt_ci_cmd, sizeof(cmd))) {
+		printk("%s %d : iwl_mvm_send_cmd : BT_COEX_CI\n", __func__, __LINE__);
+		
 		if (iwl_mvm_send_cmd_pdu(mvm, BT_COEX_CI, 0,
 					 sizeof(cmd), &cmd))
 			IWL_ERR(mvm, "Failed to send BT_CI cmd\n");

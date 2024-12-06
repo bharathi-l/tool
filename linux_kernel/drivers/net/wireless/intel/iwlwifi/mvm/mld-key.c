@@ -4,7 +4,6 @@
  */
 #include <linux/kernel.h>
 #include <net/mac80211.h>
-#include <linux/drv_dbg.h>
 #include "mvm.h"
 #include "fw/api/context.h"
 #include "fw/api/datapath.h"
@@ -145,6 +144,8 @@ static void iwl_mvm_mld_update_sta_key(struct ieee80211_hw *hw,
 	if (sta != data->sta || key->link_id >= 0)
 		return;
 
+	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, SEC_KEY_CMD)\n", __func__, __LINE__);
+	
 	err = iwl_mvm_send_cmd_pdu(mvm, cmd_id, CMD_ASYNC, sizeof(cmd), &cmd);
 
 	if (err)
@@ -179,6 +180,8 @@ static int __iwl_mvm_sec_key_del(struct iwl_mvm *mvm, u32 sta_mask,
 		.u.remove.key_flags = cpu_to_le32(key_flags),
 	};
 
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, SEC_KEY_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	
 	return iwl_mvm_send_cmd_pdu(mvm, cmd_id, flags, sizeof(cmd), &cmd);
 }
 
@@ -222,6 +225,8 @@ int iwl_mvm_mld_send_key(struct iwl_mvm *mvm, u32 sta_mask, u32 key_flags,
 		       8);
 	}
 
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, SEC_KEY_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	
 	ret = iwl_mvm_send_cmd_pdu(mvm, cmd_id, 0, sizeof(cmd), &cmd);
 	if (ret)
 		return ret;
@@ -233,6 +238,8 @@ int iwl_mvm_mld_send_key(struct iwl_mvm *mvm, u32 sta_mask, u32 key_flags,
 	if (keyconf->cipher == WLAN_CIPHER_SUITE_WEP40 ||
 	    keyconf->cipher == WLAN_CIPHER_SUITE_WEP104) {
 		cmd.u.add.key_flags ^= cpu_to_le32(IWL_SEC_KEY_FLAG_MCAST_KEY);
+		printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, SEC_KEY_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+		
 		ret = iwl_mvm_send_cmd_pdu(mvm, cmd_id, 0, sizeof(cmd), &cmd);
 		if (ret)
 			__iwl_mvm_sec_key_del(mvm, sta_mask, key_flags,
