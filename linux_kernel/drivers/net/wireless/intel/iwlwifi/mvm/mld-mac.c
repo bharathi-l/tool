@@ -2,6 +2,7 @@
 /*
  * Copyright (C) 2022 - 2024 Intel Corporation
  */
+#include <linux/drv_dbg.h>
 #include "mvm.h"
 
 static void iwl_mvm_mld_set_he_support(struct iwl_mvm *mvm,

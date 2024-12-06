@@ -6,6 +6,7 @@
 #include <linux/ieee80211.h>
 #include <linux/etherdevice.h>
 #include <net/mac80211.h>
+#include <linux/drv_dbg.h>
 
 #include "fw/api/coex.h"
 #include "iwl-modparams.h"

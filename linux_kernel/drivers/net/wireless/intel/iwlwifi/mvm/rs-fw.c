@@ -3,6 +3,7 @@
  * Copyright (C) 2017 Intel Deutschland GmbH
  * Copyright (C) 2018-2024 Intel Corporation
  */
+#include <linux/drv_dbg.h>
 #include "rs.h"
 #include "fw-api.h"
 #include "sta.h"

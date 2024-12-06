@@ -11,6 +11,7 @@
 #include <net/ipv6.h>
 #include <net/tcp.h>
 #include <net/addrconf.h>
+#include <linux/drv_dbg.h>
 #include "iwl-modparams.h"
 #include "fw-api.h"
 #include "mvm.h"

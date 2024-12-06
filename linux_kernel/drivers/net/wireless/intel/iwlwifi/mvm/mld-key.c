@@ -4,6 +4,7 @@
  */
 #include <linux/kernel.h>
 #include <net/mac80211.h>
+#include <linux/drv_dbg.h>
 #include "mvm.h"
 #include "fw/api/context.h"
 #include "fw/api/datapath.h"

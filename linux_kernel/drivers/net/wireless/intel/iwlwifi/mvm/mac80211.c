@@ -15,6 +15,7 @@
 #include <net/mac80211.h>
 #include <net/ieee80211_radiotap.h>
 #include <net/tcp.h>
+#include <linux/drv_dbg.h>
 
 #include "iwl-drv.h"
 #include "iwl-op-mode.h"

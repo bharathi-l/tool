@@ -6,6 +6,7 @@
  */
 #include <linux/jiffies.h>
 #include <net/mac80211.h>
+#include <linux/drv_dbg.h>
 
 #include "fw/notif-wait.h"
 #include "iwl-trans.h"

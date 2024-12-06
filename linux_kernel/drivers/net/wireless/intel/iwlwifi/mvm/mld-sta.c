@@ -2,6 +2,7 @@
 /*
  * Copyright (C) 2022-2023 Intel Corporation
  */
+#include <linux/drv_dbg.h>
 #include "mvm.h"
 #include "time-sync.h"
 #include "sta.h"

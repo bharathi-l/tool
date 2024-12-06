@@ -10,6 +10,7 @@
 #include <net/gso.h>
 #include <net/ip.h>
 #include <net/ipv6.h>
+#include <linux/drv_dbg.h>
 
 #include "iwl-trans.h"
 #include "iwl-eeprom-parse.h"

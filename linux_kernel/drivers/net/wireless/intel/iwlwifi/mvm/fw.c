@@ -7,6 +7,7 @@
 #include <net/mac80211.h>
 #include <linux/netdevice.h>
 #include <linux/dmi.h>
+#include <linux/drv_dbg.h>
 
 #include "iwl-trans.h"
 #include "iwl-op-mode.h"

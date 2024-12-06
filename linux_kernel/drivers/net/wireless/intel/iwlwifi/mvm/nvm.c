@@ -6,6 +6,7 @@
  */
 #include <linux/firmware.h>
 #include <linux/rtnetlink.h>
+#include <linux/drv_dbg.h>
 #include "iwl-trans.h"
 #include "iwl-csr.h"
 #include "mvm.h"

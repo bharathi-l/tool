@@ -5,6 +5,7 @@
  * Copyright (C) 2016-2017 Intel Deutschland GmbH
  */
 #include <net/mac80211.h>
+#include <linux/drv_dbg.h>
 
 #include "mvm.h"
 #include "sta.h"
