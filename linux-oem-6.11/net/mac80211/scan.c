@@ -24,6 +24,7 @@
 #include "ieee80211_i.h"
 #include "driver-ops.h"
 #include "mesh.h"
+#include <linux/drv_dbg.h>
 
 #define IEEE80211_PROBE_DELAY (HZ / 33)
 #define IEEE80211_CHANNEL_TIME (HZ / 33)
@@ -72,13 +73,18 @@ void ieee80211_inform_bss(struct wiphy *wiphy,
 	struct ieee802_11_elems *elems;
 	int clen, srlen;
 
+    	pr_info("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	/* This happens while joining an IBSS */
-	if (!update_data)
+	if (!update_data) {
+    		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return;
+	}
 
 	elems = ieee802_11_parse_elems(ies->data, ies->len, false, NULL);
-	if (!elems)
+	if (!elems) {
+    		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return;
+	}
 
 	rx_status = update_data->rx_status;
 
@@ -158,6 +164,8 @@ void ieee80211_inform_bss(struct wiphy *wiphy,
 		bss->vht_cap_info = 0;
 
 	kfree(elems);
+    		
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
 
 struct ieee80211_bss *

@@ -6147,6 +6147,7 @@ int ieee80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
 	u32 flags = 0;
 	int err;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	/* mutex lock is only needed for incrementing the cookie counter */
 	lockdep_assert_wiphy(local->hw.wiphy);
 
@@ -6154,8 +6155,10 @@ int ieee80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
 	 * or Pre-Authentication
 	 */
 	if (proto != sdata->control_port_protocol &&
-	    proto != cpu_to_be16(ETH_P_PREAUTH))
+	    proto != cpu_to_be16(ETH_P_PREAUTH)) {
+		 printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EINVAL;
+	}
 
 	if (proto == sdata->control_port_protocol)
 		ctrl_flags |= IEEE80211_TX_CTRL_PORT_CTRL_PROTO |
@@ -6171,8 +6174,10 @@ int ieee80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
 
 	skb = dev_alloc_skb(local->hw.extra_tx_headroom +
 			    sizeof(struct ethhdr) + len);
-	if (!skb)
+	if (!skb) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -ENOMEM;
+	}
 
 	skb_reserve(skb, local->hw.extra_tx_headroom + sizeof(struct ethhdr));
 
@@ -6197,6 +6202,7 @@ int ieee80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
 		if (!link_conf) {
 			dev_kfree_skb(skb);
 			rcu_read_unlock();
+			 printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 			return -ENOLINK;
 		}
 		memcpy(ehdr->h_source, link_conf->addr, ETH_ALEN);
@@ -6222,6 +6228,7 @@ int ieee80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
 	if (err) {
 		dev_kfree_skb(skb);
 		rcu_read_unlock();
+		 printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return err;
 	}
 
@@ -6239,11 +6246,13 @@ int ieee80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
 	}
 	rcu_read_unlock();
 
+	 printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
 start_xmit:
 	local_bh_disable();
 	__ieee80211_subif_start_xmit(skb, skb->dev, flags, ctrl_flags, cookie);
 	local_bh_enable();
-
+	 printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return 0;
 }
 
