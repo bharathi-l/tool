@@ -27,6 +27,7 @@
 #include <asm/unaligned.h>
 #include <net/fq_impl.h>
 #include <net/gso.h>
+#include <linux/drv_dbg.h>
 
 #include "ieee80211_i.h"
 #include "driver-ops.h"
