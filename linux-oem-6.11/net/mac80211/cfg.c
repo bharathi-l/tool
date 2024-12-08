@@ -3056,7 +3056,7 @@ static int ieee80211_scan(struct wiphy *wiphy,
 			  struct cfg80211_scan_request *req)
 {
 	struct ieee80211_sub_if_data *sdata;
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+    	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	sdata = IEEE80211_WDEV_TO_SUB_IF(req->wdev);
 
@@ -4491,7 +4491,7 @@ static int ieee80211_set_rekey_data(struct wiphy *wiphy,
 {
 	struct ieee80211_local *local = wiphy_priv(wiphy);
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
-	printk("[%s] [%d] : ENTRY : MODULE NAME : [%s], Thread Name: [%s]\n", __func__, __LINE__, THIS_MODULE->name, get_thread_name());
+    	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	if (!local->ops->set_rekey_data) {
     		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
@@ -4608,7 +4608,7 @@ static int ieee80211_cfg_get_channel(struct wiphy *wiphy,
 	struct ieee80211_chanctx_conf *chanctx_conf;
 	struct ieee80211_link_data *link;
 	int ret = -ENODATA;
-	printk("[%s] [%d] : ENTRY : MODULE NAME : [%s], Thread Name: [%s]\n", __func__, __LINE__, THIS_MODULE->name, get_thread_name());
+    	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	rcu_read_lock();
 	link = rcu_dereference(sdata->link[link_id]);
