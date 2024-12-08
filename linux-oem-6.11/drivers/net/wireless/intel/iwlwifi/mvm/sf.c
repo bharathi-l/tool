@@ -3,8 +3,8 @@
  * Copyright (C) 2013-2014, 2018-2019, 2022-2024 Intel Corporation
  * Copyright (C) 2013-2014 Intel Mobile Communications GmbH
  */
-include <linux/drv_dbg.h>
 #include "mvm.h"
+#include <linux/drv_dbg.h>
 
 /* For counting bound interfaces */
 struct iwl_mvm_active_iface_iterator_data {

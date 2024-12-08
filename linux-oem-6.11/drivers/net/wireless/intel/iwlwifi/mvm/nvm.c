@@ -6,6 +6,7 @@
  */
 #include <linux/firmware.h>
 #include <linux/rtnetlink.h>
+#include <linux/drv_dbg.h>
 #include "iwl-trans.h"
 #include "iwl-csr.h"
 #include "mvm.h"
@@ -51,6 +52,7 @@ static int iwl_nvm_write_chunk(struct iwl_mvm *mvm, u16 section,
 	struct iwl_nvm_access_resp *nvm_resp;
 	int ret;
 
+       	printk("%s %d : iwl_mvm_send_cmd : NVM_ACCESS_CMD\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd(mvm, &cmd);
 	if (ret)
 		return ret;
@@ -89,7 +91,8 @@ static int iwl_nvm_read_chunk(struct iwl_mvm *mvm, u16 section,
 	u8 *resp_data;
 
 	cmd.len[0] = sizeof(struct iwl_nvm_access_cmd);
-
+	
+	printk("%s %d : iwl_mvm_send_cmd : NVM_ACCESS_CMD\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd(mvm, &cmd);
 	if (ret)
 		return ret;
@@ -439,6 +442,8 @@ iwl_mvm_update_mcc(struct iwl_mvm *mvm, const char *alpha2,
 
 	IWL_DEBUG_LAR(mvm, "send MCC update to FW with '%c%c' src = %d\n",
 		      alpha2[0], alpha2[1], src_id);
+
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WMCC_UPDATE_CMD] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	ret = iwl_mvm_send_cmd(mvm, &cmd);
 	if (ret)

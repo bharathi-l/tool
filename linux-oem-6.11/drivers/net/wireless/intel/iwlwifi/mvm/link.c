@@ -2,9 +2,9 @@
 /*
  * Copyright (C) 2022 - 2024 Intel Corporation
  */
-#include <linux/drv_dbg.h>
 #include "mvm.h"
 #include "time-event.h"
+#include <linux/drv_dbg.h>
 
 #define HANDLE_ESR_REASONS(HOW)		\
 	HOW(BLOCKED_PREVENTION)		\

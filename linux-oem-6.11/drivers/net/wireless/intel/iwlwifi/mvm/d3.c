@@ -3630,7 +3630,7 @@ void iwl_mvm_set_wakeup(struct ieee80211_hw *hw, bool enabled)
 
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	device_set_wakeup_enable(mvm->trans->dev, enabled);
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 }
 
 void iwl_mvm_fast_suspend(struct iwl_mvm *mvm)

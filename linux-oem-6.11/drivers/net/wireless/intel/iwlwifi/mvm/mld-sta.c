@@ -5,6 +5,7 @@
 #include "mvm.h"
 #include "time-sync.h"
 #include "sta.h"
+#include <linux/drv_dbg.h>
 
 u32 iwl_mvm_sta_fw_id_mask(struct iwl_mvm *mvm, struct ieee80211_sta *sta,
 			   int filter_link_id)
@@ -48,6 +49,8 @@ u32 iwl_mvm_sta_fw_id_mask(struct iwl_mvm *mvm, struct ieee80211_sta *sta,
 static int iwl_mvm_mld_send_sta_cmd(struct iwl_mvm *mvm,
 				    struct iwl_mvm_sta_cfg_cmd *cmd)
 {
+	printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, STA_CONFIG_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
 	int ret = iwl_mvm_send_cmd_pdu(mvm,
 				       WIDE_ID(MAC_CONF_GROUP, STA_CONFIG_CMD),
 				       0, sizeof(*cmd), cmd);
@@ -104,7 +107,8 @@ static int iwl_mvm_mld_rm_sta_from_fw(struct iwl_mvm *mvm, u32 sta_id)
 		IWL_ERR(mvm, "Invalid station id %d\n", sta_id);
 		return -EINVAL;
 	}
-
+	
+       	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, STA_REMOVE_CMD)\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd_pdu(mvm, WIDE_ID(MAC_CONF_GROUP, STA_REMOVE_CMD),
 				   0, sizeof(rm_sta_cmd), &rm_sta_cmd);
 	if (ret) {
@@ -125,6 +129,8 @@ static int iwl_mvm_add_aux_sta_to_fw(struct iwl_mvm *mvm,
 		.sta_id = cpu_to_le32(sta->sta_id),
 		.lmac_id = cpu_to_le32(lmac_id),
 	};
+	
+	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, AUX_STA_CMD)\n", __func__, __LINE__);
 
 	ret = iwl_mvm_send_cmd_pdu(mvm, WIDE_ID(MAC_CONF_GROUP, AUX_STA_CMD),
 				   0, sizeof(cmd), &cmd);
@@ -324,7 +330,8 @@ static int iwl_mvm_mld_disable_txq(struct iwl_mvm *mvm, u32 sta_mask,
 			.u.remove.tid = cpu_to_le32(tid),
 			.u.remove.sta_mask = cpu_to_le32(sta_mask),
 		};
-
+		
+		printk("[MODULE -> %s], [THREAD -> %s] [WIDE_ID(DATA_PATH_GROUP,SCD_QUEUE_CONFIG_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		ret = iwl_mvm_send_cmd_pdu(mvm, cmd_id, 0,
 					   sizeof(remove_cmd),
 					   &remove_cmd);
@@ -882,7 +889,8 @@ void iwl_mvm_mld_sta_modify_disable_tx(struct iwl_mvm *mvm,
 
 	if (WARN_ON(iwl_mvm_has_no_host_disable_tx(mvm)))
 		return;
-
+	
+	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, STA_DISABLE_TX_CMD)\n", __func__, __LINE__);
 	ret = iwl_mvm_send_cmd_pdu(mvm,
 				   WIDE_ID(MAC_CONF_GROUP, STA_DISABLE_TX_CMD),
 				   CMD_ASYNC, sizeof(cmd), &cmd);
@@ -969,7 +977,8 @@ static int iwl_mvm_mld_update_sta_queues(struct iwl_mvm *mvm,
 			cmd.u.modify.tid = cpu_to_le32(IWL_MGMT_TID);
 		else
 			cmd.u.modify.tid = cpu_to_le32(tid);
-
+		
+	       	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, SCD_QUEUE_CONFIG_CMD)\n", __func__, __LINE__);
 		ret = iwl_mvm_send_cmd(mvm, &hcmd);
 		if (ret)
 			return ret;
@@ -1014,6 +1023,7 @@ static int iwl_mvm_mld_update_sta_baids(struct iwl_mvm *mvm,
 
 		cmd.modify.tid = cpu_to_le32(data->tid);
 
+		printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, RX_BAID_ALLOCATION_CONFIG_CMD)\n", __func__, __LINE__);
 		ret = iwl_mvm_send_cmd_pdu(mvm, cmd_id, CMD_SEND_IN_RFKILL,
 					   sizeof(cmd), &cmd);
 		data->sta_mask = new_sta_mask;

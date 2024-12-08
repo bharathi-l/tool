@@ -3,12 +3,12 @@
  * Copyright (C) 2017 Intel Deutschland GmbH
  * Copyright (C) 2018-2024 Intel Corporation
  */
-#include <linux/drv_dbg.h>
 #include "rs.h"
 #include "fw-api.h"
 #include "sta.h"
 #include "iwl-op-mode.h"
 #include "mvm.h"
+#include <linux/drv_dbg.h>
 
 static u8 rs_fw_bw_from_sta_bw(const struct ieee80211_link_sta *link_sta)
 {

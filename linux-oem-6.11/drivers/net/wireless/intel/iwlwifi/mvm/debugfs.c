@@ -9,6 +9,7 @@
 #include <linux/ieee80211.h>
 #include <linux/netdevice.h>
 #include <linux/dmi.h>
+#include <linux/drv_dbg.h>
 
 #include "mvm.h"
 #include "sta.h"
@@ -2140,11 +2141,13 @@ void iwl_mvm_link_sta_add_debugfs(struct ieee80211_hw *hw,
 				  struct dentry *dir)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+	pr_info("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	if (iwl_mvm_has_tlc_offload(mvm)) {
 		MVM_DEBUGFS_ADD_LINK_STA_FILE(rs_data, dir, 0400);
 	}
-
+	
+	pr_info("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	MVM_DEBUGFS_ADD_LINK_STA_FILE(amsdu_len, dir, 0600);
 }
 

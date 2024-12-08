@@ -5,9 +5,8 @@
  * Copyright (C) 2015-2016 Intel Deutschland GmbH
  */
 #include <linux/sort.h>
-#include <linux/drv_dbg.h>
-
 #include "mvm.h"
+#include <linux/drv_dbg.h>
 
 #define IWL_MVM_TEMP_NOTIF_WAIT_TIMEOUT	HZ
 

@@ -5836,7 +5836,7 @@ int iwl_mvm_pre_channel_switch(struct iwl_mvm *mvm,
 					      lockdep_is_held(&mvm->mutex))) {
 			printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 			return -EBUSY;
-		|
+		}
 
 		rcu_assign_pointer(mvm->csa_vif, vif);
 
