@@ -8045,7 +8045,7 @@ static int nl80211_del_station(struct sk_buff *skb, struct genl_info *info)
 	case NL80211_IFTYPE_ADHOC:
 		/* conditionally accept */
 		if (wiphy_ext_feature_isset(&rdev->wiphy,
-					    NL80211_EXT_FEATURE_DEL_IBSS_STA)) [
+					    NL80211_EXT_FEATURE_DEL_IBSS_STA)) {
 			break;
 		}
 		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
@@ -8604,8 +8604,9 @@ static int nl80211_req_set_reg(struct sk_buff *skb, struct genl_info *info)
 			is_indoor = true;
 		}
 
+		regulatory_hint_indoor(is_indoor, owner_nlportid);
 		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
-		return regulatory_hint_indoor(is_indoor, owner_nlportid);
+		return 0;
 	default:
 		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EINVAL;
@@ -16607,7 +16608,7 @@ static int nl80211_add_tx_ts(struct sk_buff *skb, struct genl_info *info)
 	switch (wdev->iftype) {
 	case NL80211_IFTYPE_STATION:
 	case NL80211_IFTYPE_P2P_CLIENT:
-		if (wdev->connected)
+		if (wdev->connected) {
 			break;
 		}
 		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
