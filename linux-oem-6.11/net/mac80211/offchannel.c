@@ -708,8 +708,11 @@ int ieee80211_remain_on_channel(struct wiphy *wiphy, struct wireless_dev *wdev,
 	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
 	struct ieee80211_local *local = sdata->local;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	lockdep_assert_wiphy(local->hw.wiphy);
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return ieee80211_start_roc_work(local, sdata, chan,
 					duration, cookie, NULL,
 					IEEE80211_ROC_TYPE_NORMAL);
@@ -804,6 +807,9 @@ int ieee80211_cancel_remain_on_channel(struct wiphy *wiphy,
 	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
 	struct ieee80211_local *local = sdata->local;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+	
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return ieee80211_cancel_roc(local, cookie, false);
 }
 
@@ -821,6 +827,8 @@ int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 	u32 flags;
 	int ret;
 	u8 *data;
+
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	lockdep_assert_wiphy(local->hw.wiphy);
 
@@ -867,11 +875,13 @@ int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 
 		if (!sta) {
 			rcu_read_unlock();
+			printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 			return -ENOLINK;
 		}
 		if (params->link_id >= 0 &&
 		    !(sta->sta.valid_links & BIT(params->link_id))) {
 			rcu_read_unlock();
+			printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 			return -ENOLINK;
 		}
 		link_id = params->link_id;
@@ -895,14 +905,17 @@ int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 		break;
 	case NL80211_IFTYPE_NAN:
 	default:
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EOPNOTSUPP;
 	}
 
 	/* configurations requiring offchan cannot work if no channel has been
 	 * specified
 	 */
-	if (need_offchan && !params->chan)
+	if (need_offchan && !params->chan) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EINVAL;
+	}
 
 	/* Check if the operating channel is the requested channel */
 	if (!params->chan && mlo_sta) {
@@ -1036,7 +1049,11 @@ int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 				       IEEE80211_ROC_TYPE_MGMT_TX);
 	if (ret)
 		ieee80211_free_txskb(&local->hw, skb);
+	
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+
  out_unlock:
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return ret;
 }
 
@@ -1044,7 +1061,9 @@ int ieee80211_mgmt_tx_cancel_wait(struct wiphy *wiphy,
 				  struct wireless_dev *wdev, u64 cookie)
 {
 	struct ieee80211_local *local = wiphy_priv(wiphy);
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return ieee80211_cancel_roc(local, cookie, true);
 }
 

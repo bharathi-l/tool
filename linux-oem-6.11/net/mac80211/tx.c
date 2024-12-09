@@ -4506,11 +4506,14 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	const struct ethhdr *eth = (void *)skb->data;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
+
 	if (likely(!is_multicast_ether_addr(eth->h_dest)))
 		goto normal;
 
 	if (unlikely(!ieee80211_sdata_running(sdata))) {
 		kfree_skb(skb);
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 		return NETDEV_TX_OK;
 	}
 
@@ -4534,10 +4537,9 @@ normal:
 					     NULL);
 	}
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 	return NETDEV_TX_OK;
 }
-
-
 
 static bool __ieee80211_tx_8023(struct ieee80211_sub_if_data *sdata,
 				struct sk_buff *skb, struct sta_info *sta,
@@ -6264,11 +6266,15 @@ int ieee80211_probe_mesh_link(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_local *local = sdata->local;
 	struct sk_buff *skb;
 
+    	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
 	skb = dev_alloc_skb(local->hw.extra_tx_headroom + len +
 			    30 + /* header size */
 			    18); /* 11s header size */
-	if (!skb)
+	if (!skb) {
+    		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -ENOMEM;
+	}
 
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 	skb_put_data(skb, buf, len);
@@ -6284,5 +6290,6 @@ int ieee80211_probe_mesh_link(struct wiphy *wiphy, struct net_device *dev,
 				     NULL);
 	local_bh_enable();
 
+    	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return 0;
 }

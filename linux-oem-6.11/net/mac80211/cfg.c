@@ -306,6 +306,7 @@ static int ieee80211_start_nan(struct wiphy *wiphy,
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
 	int ret;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	lockdep_assert_wiphy(sdata->local->hw.wiphy);
@@ -352,6 +353,8 @@ static int ieee80211_nan_change_conf(struct wiphy *wiphy,
 	struct cfg80211_nan_conf new_conf;
 	int ret = 0;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	if (sdata->vif.type != NL80211_IFTYPE_NAN) {
 		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EOPNOTSUPP;
@@ -384,6 +387,7 @@ static int ieee80211_add_nan_func(struct wiphy *wiphy,
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
 	int ret;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	if (sdata->vif.type != NL80211_IFTYPE_NAN) {
@@ -447,6 +451,7 @@ static void ieee80211_del_nan_func(struct wiphy *wiphy,
 	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
 	struct cfg80211_nan_func *func;
 	u8 instance_id = 0;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	if (sdata->vif.type != NL80211_IFTYPE_NAN ||
@@ -733,7 +738,8 @@ static int ieee80211_get_key(struct wiphy *wiphy, struct net_device *dev,
 	u16 iv16;
 	int err = -ENOENT;
 	struct ieee80211_key_seq kseq = {};
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+    	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 
@@ -818,7 +824,7 @@ static int ieee80211_get_key(struct wiphy *wiphy, struct net_device *dev,
 
  out:
 	rcu_read_unlock();
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return err;
 }
 
@@ -830,7 +836,9 @@ static int ieee80211_config_default_key(struct wiphy *wiphy,
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct ieee80211_link_data *link =
 		ieee80211_link_or_deflink(sdata, link_id, false);
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	if (IS_ERR(link)) {
 		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return PTR_ERR(link);
@@ -849,7 +857,9 @@ static int ieee80211_config_default_mgmt_key(struct wiphy *wiphy,
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct ieee80211_link_data *link =
 		ieee80211_link_or_deflink(sdata, link_id, true);
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	if (IS_ERR(link)) {
 		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return PTR_ERR(link);
@@ -868,7 +878,9 @@ static int ieee80211_config_default_beacon_key(struct wiphy *wiphy,
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct ieee80211_link_data *link =
 		ieee80211_link_or_deflink(sdata, link_id, true);
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	if (IS_ERR(link)) {
 		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return PTR_ERR(link);
@@ -919,6 +931,7 @@ static int ieee80211_dump_station(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_local *local = sdata->local;
 	struct sta_info *sta;
 	int ret = -ENOENT;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	lockdep_assert_wiphy(local->hw.wiphy);
 
@@ -950,6 +963,7 @@ static int ieee80211_get_station(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_local *local = sdata->local;
 	struct sta_info *sta;
 	int ret = -ENOENT;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	lockdep_assert_wiphy(local->hw.wiphy);
 
@@ -970,6 +984,7 @@ static int ieee80211_set_monitor_channel(struct wiphy *wiphy,
 	struct ieee80211_sub_if_data *sdata;
 	struct ieee80211_chan_req chanreq = { .oper = *chandef };
 	int ret;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	lockdep_assert_wiphy(local->hw.wiphy);
@@ -1374,6 +1389,7 @@ static int ieee80211_start_ap(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_link_data *link;
 	struct ieee80211_bss_conf *link_conf;
 	struct ieee80211_chan_req chanreq = { .oper = params->chandef };
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	lockdep_assert_wiphy(local->hw.wiphy);
 
@@ -2280,8 +2296,9 @@ static int ieee80211_del_station(struct wiphy *wiphy, struct net_device *dev,
 				 struct station_del_parameters *params)
 {
 	struct ieee80211_sub_if_data *sdata;
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+	
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	if (params->mac) {
 		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
@@ -2303,12 +2320,15 @@ static int ieee80211_change_station(struct wiphy *wiphy,
 	struct ieee80211_sub_if_data *vlansdata;
 	enum cfg80211_station_type statype;
 	int err;
+
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	lockdep_assert_wiphy(local->hw.wiphy);
 
 	sta = sta_info_get_bss(sdata, mac);
-	if (!sta)
+	if (!sta) {
+    		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -ENOENT;
+	}
 
 	switch (sdata->vif.type) {
 	case NL80211_IFTYPE_MESH_POINT:
@@ -2433,6 +2453,7 @@ static int ieee80211_del_mpath(struct wiphy *wiphy, struct net_device *dev,
 			       const u8 *dst)
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	if (dst) {
@@ -2451,8 +2472,9 @@ static int ieee80211_change_mpath(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_sub_if_data *sdata;
 	struct mesh_path *mpath;
 	struct sta_info *sta;
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+	
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	rcu_read_lock();
 
@@ -2554,8 +2576,9 @@ static int ieee80211_dump_mpath(struct wiphy *wiphy, struct net_device *dev,
 {
 	struct ieee80211_sub_if_data *sdata;
 	struct mesh_path *mpath;
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+	
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	rcu_read_lock();
 	mpath = mesh_path_lookup_by_idx(sdata, idx);
@@ -2586,8 +2609,9 @@ static int ieee80211_get_mpp(struct wiphy *wiphy, struct net_device *dev,
 {
 	struct ieee80211_sub_if_data *sdata;
 	struct mesh_path *mpath;
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+	
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	rcu_read_lock();
 	mpath = mpp_path_lookup(sdata, dst);
@@ -2609,8 +2633,9 @@ static int ieee80211_dump_mpp(struct wiphy *wiphy, struct net_device *dev,
 {
 	struct ieee80211_sub_if_data *sdata;
 	struct mesh_path *mpath;
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+	
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	rcu_read_lock();
 	mpath = mpp_path_lookup_by_idx(sdata, idx);
@@ -2632,6 +2657,7 @@ static int ieee80211_get_mesh_config(struct wiphy *wiphy,
 {
 	struct ieee80211_sub_if_data *sdata;
 	sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+	
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	memcpy(conf, &(sdata->u.mesh.mshcfg), sizeof(struct mesh_config));
@@ -2708,9 +2734,10 @@ static int ieee80211_update_mesh_config(struct wiphy *wiphy,
 	struct mesh_config *conf;
 	struct ieee80211_sub_if_data *sdata;
 	struct ieee80211_if_mesh *ifmsh;
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	ifmsh = &sdata->u.mesh;
+	
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	/* Set the config options which we are interested in setting */
 	conf = &(sdata->u.mesh.mshcfg);
@@ -2834,6 +2861,7 @@ static int ieee80211_join_mesh(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_chan_req chanreq = { .oper = setup->chandef };
 	struct ieee80211_if_mesh *ifmsh = &sdata->u.mesh;
 	int err;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	lockdep_assert_wiphy(sdata->local->hw.wiphy);
@@ -2865,6 +2893,7 @@ static int ieee80211_join_mesh(struct wiphy *wiphy, struct net_device *dev,
 static int ieee80211_leave_mesh(struct wiphy *wiphy, struct net_device *dev)
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	lockdep_assert_wiphy(sdata->local->hw.wiphy);
@@ -2886,6 +2915,7 @@ static int ieee80211_change_bss(struct wiphy *wiphy,
 	struct ieee80211_link_data *link;
 	struct ieee80211_supported_band *sband;
 	u64 changed = 0;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	link = ieee80211_link_or_deflink(sdata, params->link_id, true);
@@ -2985,6 +3015,7 @@ static int ieee80211_set_txq_params(struct wiphy *wiphy,
 	struct ieee80211_link_data *link =
 		ieee80211_link_or_deflink(sdata, params->link_id, true);
 	struct ieee80211_tx_queue_params p;
+	
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	if (!local->ops->conf_tx) {
@@ -3056,7 +3087,8 @@ static int ieee80211_scan(struct wiphy *wiphy,
 			  struct cfg80211_scan_request *req)
 {
 	struct ieee80211_sub_if_data *sdata;
-    	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	sdata = IEEE80211_WDEV_TO_SUB_IF(req->wdev);
 
@@ -3104,8 +3136,8 @@ static int ieee80211_scan(struct wiphy *wiphy,
 static void ieee80211_abort_scan(struct wiphy *wiphy, struct wireless_dev *wdev)
 {
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	ieee80211_scan_cancel(wiphy_priv(wiphy));
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 static int
@@ -3114,6 +3146,7 @@ ieee80211_sched_scan_start(struct wiphy *wiphy,
 			   struct cfg80211_sched_scan_request *req)
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	if (!sdata->local->ops->sched_scan_start) {
@@ -3130,6 +3163,7 @@ ieee80211_sched_scan_stop(struct wiphy *wiphy, struct net_device *dev,
 			  u64 reqid)
 {
 	struct ieee80211_local *local = wiphy_priv(wiphy);
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	if (!local->ops->sched_scan_stop) {
@@ -3207,6 +3241,7 @@ static int ieee80211_set_mcast_rate(struct wiphy *wiphy, struct net_device *dev,
 				    int rate[NUM_NL80211_BANDS])
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	memcpy(sdata->vif.bss_conf.mcast_rate, rate,
@@ -3224,6 +3259,7 @@ static int ieee80211_set_wiphy_params(struct wiphy *wiphy, u32 changed)
 {
 	struct ieee80211_local *local = wiphy_priv(wiphy);
 	int err;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	if (changed & WIPHY_PARAM_FRAG_THRESHOLD) {
@@ -3297,6 +3333,7 @@ static int ieee80211_set_tx_power(struct wiphy *wiphy,
 	enum nl80211_tx_power_setting txp_type = type;
 	bool update_txp_type = false;
 	bool has_monitor = false;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	lockdep_assert_wiphy(local->hw.wiphy);
@@ -3305,8 +3342,10 @@ static int ieee80211_set_tx_power(struct wiphy *wiphy,
 		sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
 
 		if (sdata->vif.type == NL80211_IFTYPE_MONITOR) {
-			if (!ieee80211_hw_check(&local->hw, WANT_MONITOR_VIF))
+			if (!ieee80211_hw_check(&local->hw, WANT_MONITOR_VIF)) {
+				printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 				return -EOPNOTSUPP;
+			}
 
 			sdata = wiphy_dereference(local->hw.wiphy,
 						  local->monitor_sdata);
@@ -3397,6 +3436,7 @@ static int ieee80211_get_tx_power(struct wiphy *wiphy,
 {
 	struct ieee80211_local *local = wiphy_priv(wiphy);
 	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
+
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	if (local->ops->get_txpower) {
@@ -3422,6 +3462,7 @@ static int ieee80211_get_tx_power(struct wiphy *wiphy,
 static void ieee80211_rfkill_poll(struct wiphy *wiphy)
 {
 	struct ieee80211_local *local = wiphy_priv(wiphy);
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	drv_rfkill_poll(local);
@@ -3436,6 +3477,7 @@ static int ieee80211_testmode_cmd(struct wiphy *wiphy,
 {
 	struct ieee80211_local *local = wiphy_priv(wiphy);
 	struct ieee80211_vif *vif = NULL;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	if (!local->ops->testmode_cmd) {
@@ -3463,6 +3505,7 @@ static int ieee80211_testmode_dump(struct wiphy *wiphy,
 	struct ieee80211_local *local = wiphy_priv(wiphy);
 
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	if (!local->ops->testmode_dump) {
 		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EOPNOTSUPP;
@@ -3552,6 +3595,7 @@ static int ieee80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct ieee80211_local *local = wdev_priv(dev->ieee80211_ptr);
 	unsigned int link_id;
+
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	if (sdata->vif.type != NL80211_IFTYPE_STATION) {
@@ -3634,6 +3678,7 @@ static int ieee80211_set_cqm_rssi_config(struct wiphy *wiphy,
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct ieee80211_vif *vif = &sdata->vif;
 	int link_id;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	if (vif->driver_flags & IEEE80211_VIF_BEACON_FILTER &&
@@ -3662,6 +3707,7 @@ static int ieee80211_set_cqm_rssi_range_config(struct wiphy *wiphy,
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct ieee80211_vif *vif = &sdata->vif;
 	int link_id;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	if (vif->driver_flags & IEEE80211_VIF_BEACON_FILTER) {
@@ -3691,6 +3737,7 @@ static int ieee80211_set_bitrate_mask(struct wiphy *wiphy,
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct ieee80211_local *local = wdev_priv(dev->ieee80211_ptr);
 	int i, ret;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	if (!ieee80211_sdata_running(sdata)) {
@@ -3790,6 +3837,8 @@ static int ieee80211_start_radar_detection(struct wiphy *wiphy,
 	wiphy_delayed_work_queue(wiphy, &sdata->dfs_cac_timer_work,
 				 msecs_to_jiffies(cac_time_ms));
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+
  out_unlock:
 	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return err;
@@ -3800,6 +3849,7 @@ static void ieee80211_end_cac(struct wiphy *wiphy,
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct ieee80211_local *local = sdata->local;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	lockdep_assert_wiphy(local->hw.wiphy);
@@ -4359,6 +4409,7 @@ int ieee80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct ieee80211_local *local = sdata->local;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	lockdep_assert_wiphy(local->hw.wiphy);
@@ -4420,8 +4471,8 @@ ieee80211_update_mgmt_frame_registrations(struct wiphy *wiphy,
 	u32 preq_mask = BIT(IEEE80211_STYPE_PROBE_REQ >> 4);
 	u32 action_mask = BIT(IEEE80211_STYPE_ACTION >> 4);
 	bool global_change, intf_change;
-	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	global_change =
 		(local->probe_req_reg != !!(upd->global_stypes & preq_mask)) ||
@@ -4460,6 +4511,8 @@ static int ieee80211_set_antenna(struct wiphy *wiphy, u32 tx_ant, u32 rx_ant)
 	struct ieee80211_local *local = wiphy_priv(wiphy);
 	int ret;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	if (local->started) {
 		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EOPNOTSUPP;
@@ -4491,7 +4544,8 @@ static int ieee80211_set_rekey_data(struct wiphy *wiphy,
 {
 	struct ieee80211_local *local = wiphy_priv(wiphy);
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
-    	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	if (!local->ops->set_rekey_data) {
     		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
@@ -4591,6 +4645,9 @@ static int ieee80211_probe_client(struct wiphy *wiphy, struct net_device *dev,
 	local_bh_enable();
 
 	ret = 0;
+
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+
 unlock:
 	rcu_read_unlock();
 
@@ -4608,7 +4665,8 @@ static int ieee80211_cfg_get_channel(struct wiphy *wiphy,
 	struct ieee80211_chanctx_conf *chanctx_conf;
 	struct ieee80211_link_data *link;
 	int ret = -ENODATA;
-    	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	rcu_read_lock();
 	link = rcu_dereference(sdata->link[link_id]);
@@ -4627,6 +4685,8 @@ static int ieee80211_cfg_get_channel(struct wiphy *wiphy,
 		*chandef = local->monitor_chanreq.oper;
 		ret = 0;
 	}
+    	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 out:
 	rcu_read_unlock();
 
@@ -4649,12 +4709,13 @@ static int ieee80211_set_qos_map(struct wiphy *wiphy,
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct mac80211_qos_map *new_qos_map, *old_qos_map;
-	printk("[%s] [%d] : ENTRY : MODULE NAME : [%s], Thread Name: [%s]\n", __func__, __LINE__, THIS_MODULE->name, get_thread_name());
+
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	if (qos_map) {
 		new_qos_map = kzalloc(sizeof(*new_qos_map), GFP_KERNEL);
 		if (!new_qos_map) {
-			printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    			printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 			return -ENOMEM;
 		}
 		memcpy(&new_qos_map->qos_map, qos_map, sizeof(*qos_map));
@@ -4668,7 +4729,7 @@ static int ieee80211_set_qos_map(struct wiphy *wiphy,
 	if (old_qos_map)
 		kfree_rcu(old_qos_map, rcu_head);
 
-	printk("[%s] [%d] : EXIT : MODULE NAME : [%s], Thread Name: [%s]\n", __func__, __LINE__, THIS_MODULE->name, get_thread_name());
+    	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return 0;
 }
 
@@ -4682,6 +4743,7 @@ static int ieee80211_set_ap_chanwidth(struct wiphy *wiphy,
 	struct ieee80211_chan_req chanreq = { .oper = *chandef };
 	int ret;
 	u64 changed = 0;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	link = sdata_dereference(sdata->link[link_id], sdata);
@@ -4701,6 +4763,7 @@ static int ieee80211_add_tx_ts(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct ieee80211_if_managed *ifmgd = &sdata->u.mgd;
 	int ac = ieee802_1d_to_ac[up];
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	if (sdata->vif.type != NL80211_IFTYPE_STATION) {
@@ -4735,6 +4798,7 @@ static int ieee80211_del_tx_ts(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_if_managed *ifmgd = &sdata->u.mgd;
 	struct ieee80211_local *local = wiphy_priv(wiphy);
 	int ac;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
@@ -4837,6 +4901,7 @@ static int ieee80211_set_multicast_to_unicast(struct wiphy *wiphy,
 					      const bool enabled)
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	sdata->u.ap.multicast_to_unicast = enabled;
@@ -4930,6 +4995,7 @@ static int ieee80211_get_txq_stats(struct wiphy *wiphy,
 		txqstats->max_flows = local->fq.flows_cnt;
 	}
 
+    	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 out:
 	rcu_read_unlock();
 	spin_unlock_bh(&local->fq.lock);
@@ -4983,6 +5049,7 @@ static int ieee80211_set_tid_config(struct wiphy *wiphy,
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct sta_info *sta;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	lockdep_assert_wiphy(sdata->local->hw.wiphy);
@@ -5013,6 +5080,7 @@ static int ieee80211_reset_tid_config(struct wiphy *wiphy,
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct sta_info *sta;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	lockdep_assert_wiphy(sdata->local->hw.wiphy);
@@ -5041,6 +5109,7 @@ static int ieee80211_set_sar_specs(struct wiphy *wiphy,
 				   struct cfg80211_sar_specs *sar)
 {
 	struct ieee80211_local *local = wiphy_priv(wiphy);
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	if (!local->ops->set_sar_specs) {
@@ -5331,6 +5400,7 @@ ieee80211_color_change(struct wiphy *wiphy, struct net_device *dev,
 		/* if the beacon didn't change, we can finalize immediately */
 		ieee80211_color_change_finalize(link);
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 out:
 	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return err;
@@ -5341,6 +5411,7 @@ ieee80211_set_radar_background(struct wiphy *wiphy,
 			       struct cfg80211_chan_def *chandef)
 {
 	struct ieee80211_local *local = wiphy_priv(wiphy);
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	if (!local->ops->set_radar_background) {
@@ -5395,29 +5466,41 @@ ieee80211_add_link_station(struct wiphy *wiphy, struct net_device *dev,
 	struct sta_info *sta;
 	int ret;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	lockdep_assert_wiphy(local->hw.wiphy);
 
 	sta = sta_info_get_bss(sdata, params->mld_mac);
-	if (!sta)
+	if (!sta) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -ENOENT;
+	}
 
-	if (!sta->sta.valid_links)
+	if (!sta->sta.valid_links) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EINVAL;
+	}
 
-	if (sta->sta.valid_links & BIT(params->link_id))
+	if (sta->sta.valid_links & BIT(params->link_id)) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EALREADY;
+	}
 
 	ret = ieee80211_sta_allocate_link(sta, params->link_id);
-	if (ret)
+	if (ret) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return ret;
+	}
 
 	ret = sta_link_apply_parameters(local, sta, STA_LINK_MODE_NEW, params);
 	if (ret) {
 		ieee80211_sta_free_link(sta, params->link_id);
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return ret;
 	}
 
 	/* ieee80211_sta_activate_link frees the link upon failure */
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return ieee80211_sta_activate_link(sta, params->link_id);
 }
 
@@ -5429,15 +5512,22 @@ ieee80211_mod_link_station(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_local *local = wiphy_priv(wiphy);
 	struct sta_info *sta;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	lockdep_assert_wiphy(local->hw.wiphy);
 
 	sta = sta_info_get_bss(sdata, params->mld_mac);
-	if (!sta)
+	if (!sta) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -ENOENT;
+	}
 
-	if (!(sta->sta.valid_links & BIT(params->link_id)))
+	if (!(sta->sta.valid_links & BIT(params->link_id))) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EINVAL;
+	}
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return sta_link_apply_parameters(local, sta, STA_LINK_MODE_LINK_MODIFY,
 					 params);
 }
@@ -5481,6 +5571,7 @@ static int ieee80211_set_hw_timestamp(struct wiphy *wiphy,
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct ieee80211_local *local = sdata->local;
+
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	if (!local->ops->set_hw_timestamp) {

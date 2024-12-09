@@ -1261,13 +1261,19 @@ int ieee80211_tdls_mgmt(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	int ret;
 
-	if (!(wiphy->flags & WIPHY_FLAG_SUPPORTS_TDLS))
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
+	if (!(wiphy->flags & WIPHY_FLAG_SUPPORTS_TDLS)) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EOPNOTSUPP;
+	}
 
 	/* make sure we are in managed mode, and associated */
 	if (sdata->vif.type != NL80211_IFTYPE_STATION ||
-	    !sdata->u.mgd.associated)
+	    !sdata->u.mgd.associated) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EINVAL;
+	}
 
 	switch (action_code) {
 	case WLAN_TDLS_SETUP_REQUEST:
@@ -1311,6 +1317,8 @@ int ieee80211_tdls_mgmt(struct wiphy *wiphy, struct net_device *dev,
 
 	tdls_dbg(sdata, "TDLS mgmt action %d peer %pM link_id %d status %d\n",
 		 action_code, peer, link_id, ret);
+	
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return ret;
 }
 
@@ -1416,13 +1424,19 @@ int ieee80211_tdls_oper(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_local *local = sdata->local;
 	int ret;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	lockdep_assert_wiphy(local->hw.wiphy);
 
-	if (!(wiphy->flags & WIPHY_FLAG_SUPPORTS_TDLS))
+	if (!(wiphy->flags & WIPHY_FLAG_SUPPORTS_TDLS)) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EOPNOTSUPP;
+	}
 
-	if (sdata->vif.type != NL80211_IFTYPE_STATION)
+	if (sdata->vif.type != NL80211_IFTYPE_STATION) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EINVAL;
+	}
 
 	switch (oper) {
 	case NL80211_TDLS_ENABLE_LINK:
@@ -1432,6 +1446,7 @@ int ieee80211_tdls_oper(struct wiphy *wiphy, struct net_device *dev,
 	case NL80211_TDLS_SETUP:
 	case NL80211_TDLS_DISCOVERY_REQ:
 		/* We don't support in-driver setup/teardown/discovery */
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EOPNOTSUPP;
 	}
 
@@ -1444,12 +1459,15 @@ int ieee80211_tdls_oper(struct wiphy *wiphy, struct net_device *dev,
 	case NL80211_TDLS_ENABLE_LINK:
 		if (sdata->vif.bss_conf.csa_active) {
 			tdls_dbg(sdata, "TDLS: disallow link during CSA\n");
+			printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 			return -EBUSY;
 		}
 
 		sta = sta_info_get(sdata, peer);
-		if (!sta)
+		if (!sta) {
+			printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 			return -ENOLINK;
+		}
 
 		iee80211_tdls_recalc_chanctx(sdata, sta);
 		iee80211_tdls_recalc_ht_protection(sdata, sta);
@@ -1479,10 +1497,13 @@ int ieee80211_tdls_oper(struct wiphy *wiphy, struct net_device *dev,
 		iee80211_tdls_recalc_ht_protection(sdata, NULL);
 
 		iee80211_tdls_recalc_chanctx(sdata, NULL);
-		if (ret)
+		if (ret) {
+			printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 			return ret;
+		}
 		break;
 	default:
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EOPNOTSUPP;
 	}
 
@@ -1495,6 +1516,7 @@ int ieee80211_tdls_oper(struct wiphy *wiphy, struct net_device *dev,
 	wiphy_work_queue(sdata->local->hw.wiphy,
 			 &sdata->deflink.u.mgd.request_smps_work);
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return 0;
 }
 
@@ -1628,11 +1650,15 @@ ieee80211_tdls_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 	u32 ch_sw_tm_ie;
 	int ret;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	lockdep_assert_wiphy(local->hw.wiphy);
 
-	if (chandef->chan->freq_offset)
+	if (chandef->chan->freq_offset) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		/* this may work, but is untested */
 		return -EOPNOTSUPP;
+	}
 
 	sta = sta_info_get(sdata, addr);
 	if (!sta) {
@@ -1662,8 +1688,10 @@ ieee80211_tdls_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 	if (!ret)
 		set_sta_flag(sta, WLAN_STA_TDLS_OFF_CHANNEL);
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 out:
 	dev_kfree_skb_any(skb);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return ret;
 }
 
@@ -1676,6 +1704,8 @@ ieee80211_tdls_cancel_channel_switch(struct wiphy *wiphy,
 	struct ieee80211_local *local = sdata->local;
 	struct sta_info *sta;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	lockdep_assert_wiphy(local->hw.wiphy);
 
 	sta = sta_info_get(sdata, addr);
@@ -1683,17 +1713,20 @@ ieee80211_tdls_cancel_channel_switch(struct wiphy *wiphy,
 		tdls_dbg(sdata,
 			 "Invalid TDLS peer %pM for channel switch cancel\n",
 			 addr);
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return;
 	}
 
 	if (!test_sta_flag(sta, WLAN_STA_TDLS_OFF_CHANNEL)) {
 		tdls_dbg(sdata, "TDLS channel switch not initiated by %pM\n",
 			 addr);
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return;
 	}
 
 	drv_tdls_cancel_channel_switch(local, sdata, &sta->sta);
 	clear_sta_flag(sta, WLAN_STA_TDLS_OFF_CHANNEL);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 static struct sk_buff *

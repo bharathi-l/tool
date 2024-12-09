@@ -3954,7 +3954,10 @@ __ieee80211_get_radio_mask(struct ieee80211_sub_if_data *sdata)
 u32 ieee80211_get_radio_mask(struct wiphy *wiphy, struct net_device *dev)
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+	
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return __ieee80211_get_radio_mask(sdata);
 }
 
