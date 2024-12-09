@@ -4523,10 +4523,10 @@ static int nl80211_del_interface(struct sk_buff *skb, struct genl_info *info)
 	struct cfg80211_registered_device *rdev = info->user_ptr[0];
 	struct wireless_dev *wdev = info->user_ptr[1];
 
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DEL_INTERFACE] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	if (!rdev->ops->del_virtual_intf) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DEL_INTERFACE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EOPNOTSUPP;
 	}
 
@@ -4555,7 +4555,7 @@ static int nl80211_del_interface(struct sk_buff *skb, struct genl_info *info)
 
 	mutex_lock(&rdev->wiphy.mtx);
 
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DEL_INTERFACE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return cfg80211_remove_virtual_intf(rdev, wdev);
 }
 
@@ -6577,6 +6577,7 @@ static int nl80211_set_beacon(struct sk_buff *skb, struct genl_info *info)
 
 	err = rdev_change_beacon(rdev, dev, params);
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 out:
 	kfree(params->beacon.mbssid_ies);
 	kfree(params->beacon.rnr_ies);
@@ -10510,6 +10511,7 @@ static int nl80211_start_radar_detection(struct sk_buff *skb,
 		break;
 	default:
 		/* caution - see cfg80211_beaconing_iface_active() below */
+		printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 		return -EINVAL;
 	}
 
@@ -10570,6 +10572,7 @@ static int nl80211_start_radar_detection(struct sk_buff *skb,
 		wdev->cac_start_time = jiffies;
 		wdev->cac_time_ms = cac_time_ms;
 	}
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 unlock:
 	wiphy_unlock(wiphy);
 
@@ -10838,6 +10841,7 @@ skip_beacons:
 	params.link_id = link_id;
 	err = rdev_channel_switch(rdev, dev, &params);
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 free:
 	kfree(params.beacon_after.mbssid_ies);
 	kfree(params.beacon_csa.mbssid_ies);
@@ -11211,6 +11215,7 @@ static int nl80211_dump_survey(struct sk_buff *skb, struct netlink_callback *cb)
 		survey_idx++;
 	}
 
+    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_GET_SURVEY] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
  out:
 	cb->args[2] = survey_idx;
 	res = skb->len;
@@ -11919,6 +11924,7 @@ static int nl80211_associate(struct sk_buff *skb, struct genl_info *info)
 		}
 	}
 
+    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_ASSOCIATE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 free:
 	for (link_id = 0; link_id < ARRAY_SIZE(req.links); link_id++)
 		cfg80211_put_bss(&rdev->wiphy, req.links[link_id].bss);
@@ -11938,32 +11944,32 @@ static int nl80211_deauthenticate(struct sk_buff *skb, struct genl_info *info)
 	u16 reason_code;
 	bool local_state_change;
 
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DEAUTHENTICATE] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	if (dev->ieee80211_ptr->conn_owner_nlportid &&
 	    dev->ieee80211_ptr->conn_owner_nlportid != info->snd_portid) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DEAUTHENTICATE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EPERM;
 	}
 
 	if (!info->attrs[NL80211_ATTR_MAC]) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DEAUTHENTICATE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EINVAL;
 	}
 
 	if (!info->attrs[NL80211_ATTR_REASON_CODE]) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DEAUTHENTICATE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EINVAL;
 	}
 
 	if (!rdev->ops->deauth) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DEAUTHENTICATE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EOPNOTSUPP;
 	}
 
 	if (dev->ieee80211_ptr->iftype != NL80211_IFTYPE_STATION &&
 	    dev->ieee80211_ptr->iftype != NL80211_IFTYPE_P2P_CLIENT) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DEAUTHENTICATE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EOPNOTSUPP;
 	}
 
@@ -11972,7 +11978,7 @@ static int nl80211_deauthenticate(struct sk_buff *skb, struct genl_info *info)
 	reason_code = nla_get_u16(info->attrs[NL80211_ATTR_REASON_CODE]);
 	if (reason_code == 0) {
 		/* Reason Code 0 is reserved */
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DEAUTHENTICATE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EINVAL;
 	}
 
@@ -11983,7 +11989,7 @@ static int nl80211_deauthenticate(struct sk_buff *skb, struct genl_info *info)
 
 	local_state_change = !!info->attrs[NL80211_ATTR_LOCAL_STATE_CHANGE];
 
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DEAUTHENTICATE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return cfg80211_mlme_deauth(rdev, dev, bssid, ie, ie_len, reason_code,
 				    local_state_change);
 }
@@ -11997,32 +12003,32 @@ static int nl80211_disassociate(struct sk_buff *skb, struct genl_info *info)
 	u16 reason_code;
 	bool local_state_change;
 
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DISASSOCIATE] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	if (dev->ieee80211_ptr->conn_owner_nlportid &&
 	    dev->ieee80211_ptr->conn_owner_nlportid != info->snd_portid) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DISASSOCIATE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EPERM;
 	}
 
 	if (!info->attrs[NL80211_ATTR_MAC]) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DISASSOCIATE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EINVAL;
 	}
 
 	if (!info->attrs[NL80211_ATTR_REASON_CODE]) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DISASSOCIATE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EINVAL;
 	}
 
 	if (!rdev->ops->disassoc) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DISASSOCIATE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EOPNOTSUPP;
 	}
 
 	if (dev->ieee80211_ptr->iftype != NL80211_IFTYPE_STATION &&
 	    dev->ieee80211_ptr->iftype != NL80211_IFTYPE_P2P_CLIENT) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DISASSOCIATE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EOPNOTSUPP;
 	}
 
@@ -12031,7 +12037,7 @@ static int nl80211_disassociate(struct sk_buff *skb, struct genl_info *info)
 	reason_code = nla_get_u16(info->attrs[NL80211_ATTR_REASON_CODE]);
 	if (reason_code == 0) {
 		/* Reason Code 0 is reserved */
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DISASSOCIATE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EINVAL;
 	}
 
@@ -12042,7 +12048,7 @@ static int nl80211_disassociate(struct sk_buff *skb, struct genl_info *info)
 
 	local_state_change = !!info->attrs[NL80211_ATTR_LOCAL_STATE_CHANGE];
 
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DISASSOCIATE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return cfg80211_mlme_disassoc(rdev, dev, bssid, ie, ie_len, reason_code,
 				      local_state_change);
 }
@@ -14359,10 +14365,10 @@ static int nl80211_get_wowlan(struct sk_buff *skb, struct genl_info *info)
 	void *hdr;
 	u32 size = NLMSG_DEFAULT_SIZE;
 
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_GET_WOWLAN] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	if (!rdev->wiphy.wowlan) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_GET_WOWLAN] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EOPNOTSUPP;
 	}
 
@@ -14376,7 +14382,7 @@ static int nl80211_get_wowlan(struct sk_buff *skb, struct genl_info *info)
 
 	msg = nlmsg_new(size, GFP_KERNEL);
 	if (!msg) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_GET_WOWLAN] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -ENOMEM;
 	}
 
@@ -14425,12 +14431,12 @@ static int nl80211_get_wowlan(struct sk_buff *skb, struct genl_info *info)
 	}
 
 	genlmsg_end(msg, hdr);
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_GET_WOWLAN] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return genlmsg_reply(msg, info);
 
 nla_put_failure:
 	nlmsg_free(msg);
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_GET_WOWLAN] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return -ENOBUFS;
 }
 
@@ -14827,6 +14833,7 @@ static int nl80211_set_wowlan(struct sk_buff *skb, struct genl_info *info)
 	cfg80211_rdev_free_wowlan(rdev);
 	rdev->wiphy.wowlan_config = ntrig;
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
  set_wakeup:
 	if (rdev->ops->set_wakeup &&
 	    prev_enabled != !!rdev->wiphy.wowlan_config)
@@ -15108,6 +15115,7 @@ static int nl80211_set_coalesce(struct sk_buff *skb, struct genl_info *info)
 	cfg80211_free_coalesce(rdev->coalesce);
 	rdev->coalesce = new_coalesce;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 	return 0;
 error:
 	cfg80211_free_coalesce(new_coalesce);
@@ -15359,21 +15367,21 @@ static int nl80211_stop_p2p_device(struct sk_buff *skb, struct genl_info *info)
 	struct cfg80211_registered_device *rdev = info->user_ptr[0];
 	struct wireless_dev *wdev = info->user_ptr[1];
 
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_STOP_P2P_DEVICE] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	if (wdev->iftype != NL80211_IFTYPE_P2P_DEVICE) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_STOP_P2P_DEVICE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EOPNOTSUPP;
 	}
 
 	if (!rdev->ops->stop_p2p_device) {
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_STOP_P2P_DEVICE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EOPNOTSUPP;
 	}
 
 	cfg80211_stop_p2p_device(rdev, wdev);
 
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_STOP_P2P_DEVICE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return 0;
 }
 
@@ -15743,6 +15751,7 @@ out:
 	if (err < 0) {
 		cfg80211_free_nan_func(func);
 		nlmsg_free(msg);
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return err;
 	}
 
@@ -17335,8 +17344,10 @@ static int nl80211_set_tid_config(struct sk_buff *skb,
 
 	ret = rdev_set_tid_config(rdev, dev, tid_config);
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 bad_tid_conf:
 	kfree(tid_config);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return ret;
 }
 
@@ -17450,6 +17461,7 @@ static int nl80211_color_change(struct sk_buff *skb, struct genl_info *info)
 	params.link_id = nl80211_link_id(info->attrs);
 	err = rdev_color_change(rdev, dev, &params);
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 out:
 	kfree(params.beacon_next.mbssid_ies);
 	kfree(params.beacon_color_change.mbssid_ies);
@@ -18103,6 +18115,7 @@ static int nl80211_set_sar_specs(struct sk_buff *skb, struct genl_info *info)
 	rdev->cur_cmd_info = info;
 	err = rdev_set_sar_specs(rdev, sar_spec);
 	rdev->cur_cmd_info = NULL;
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 error:
 	kfree(sar_spec);
 	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
@@ -19393,7 +19406,7 @@ void nl80211_send_rx_assoc(struct cfg80211_registered_device *rdev,
 		.req_ies_len = data->req_ies_len,
 	};
 
-    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_ASSOCIATE] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_ASSOCIATE] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	nl80211_send_mlme_event(rdev, netdev, &event, GFP_KERNEL);
     	
