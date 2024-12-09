@@ -1353,32 +1353,46 @@ int iwl_mvm_tx_skb_sta(struct iwl_mvm *mvm, struct sk_buff *skb,
 	struct sk_buff *orig_skb = skb;
 	const u8 *addr3;
 
-	if (WARN_ON_ONCE(!mvmsta))
-		return -1;
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 
-	if (WARN_ON_ONCE(mvmsta->deflink.sta_id == IWL_MVM_INVALID_STA))
+	if (WARN_ON_ONCE(!mvmsta)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 		return -1;
+	}
+
+	if (WARN_ON_ONCE(mvmsta->deflink.sta_id == IWL_MVM_INVALID_STA)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
+		return -1;
+	}
 
 	memcpy(&info, skb->cb, sizeof(info));
 
-	if (!skb_is_gso(skb))
+	if (!skb_is_gso(skb)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 		return iwl_mvm_tx_mpdu(mvm, skb, &info, sta, NULL);
+	}
 
 	payload_len = skb_tail_pointer(skb) - skb_transport_header(skb) -
 		tcp_hdrlen(skb) + skb->data_len;
 
-	if (payload_len <= skb_shinfo(skb)->gso_size)
+	if (payload_len <= skb_shinfo(skb)->gso_size) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 		return iwl_mvm_tx_mpdu(mvm, skb, &info, sta, NULL);
+	}
 
 	__skb_queue_head_init(&mpdus_skbs);
 
 	vif = info.control.vif;
-	if (!vif)
+	if (!vif) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 		return -1;
+	}
 
 	ret = iwl_mvm_tx_tso(mvm, skb, &info, sta, &mpdus_skbs);
-	if (ret)
+	if (ret) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 		return ret;
+	}
 
 	WARN_ON(skb_queue_empty(&mpdus_skbs));
 
@@ -1426,10 +1440,12 @@ int iwl_mvm_tx_skb_sta(struct iwl_mvm *mvm, struct sk_buff *skb,
 			else
 				kfree_skb(skb);
 			/* there was error, but we consumed skb one way or another, so return 0 */
+			printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 			return 0;
 		}
 	}
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 	return 0;
 }
 
