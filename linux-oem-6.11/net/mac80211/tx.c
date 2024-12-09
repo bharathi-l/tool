@@ -4552,6 +4552,8 @@ static bool __ieee80211_tx_8023(struct ieee80211_sub_if_data *sdata,
 	unsigned long flags;
 	int q = info->hw_queue;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
+
 	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
 
 	if (local->queue_stop_reasons[q] ||
@@ -4563,6 +4565,7 @@ static bool __ieee80211_tx_8023(struct ieee80211_sub_if_data *sdata,
 
 		spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
 
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 		return false;
 	}
 
@@ -4575,6 +4578,7 @@ static bool __ieee80211_tx_8023(struct ieee80211_sub_if_data *sdata,
 
 	drv_tx(local, &control, skb);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 	return true;
 }
 

@@ -298,18 +298,22 @@ static int ieee80211_change_mac(struct net_device *dev, void *addr)
 	struct ieee80211_local *local = sdata->local;
 	int ret;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 	/*
 	 * This happens during unregistration if there's a bond device
 	 * active (maybe other cases?) and we must get removed from it.
 	 * But we really don't care anymore if it's not registered now.
 	 */
-	if (!dev->ieee80211_ptr->registered)
+	if (!dev->ieee80211_ptr->registered) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 		return 0;
+	}
 
 	wiphy_lock(local->hw.wiphy);
 	ret = _ieee80211_change_mac(sdata, addr);
 	wiphy_unlock(local->hw.wiphy);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 	return ret;
 }
 
@@ -442,9 +446,13 @@ static int ieee80211_open(struct net_device *dev)
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	int err;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
+
 	/* fail early if user set an invalid address */
-	if (!is_valid_ether_addr(dev->dev_addr))
+	if (!is_valid_ether_addr(dev->dev_addr)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 		return -EADDRNOTAVAIL;
+	}
 
 	wiphy_lock(sdata->local->hw.wiphy);
 	err = ieee80211_check_concurrent_iface(sdata, sdata->vif.type);
@@ -452,9 +460,12 @@ static int ieee80211_open(struct net_device *dev)
 		goto out;
 
 	err = ieee80211_do_open(&sdata->wdev, true);
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 out:
 	wiphy_unlock(sdata->local->hw.wiphy);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 	return err;
 }
 
@@ -747,6 +758,8 @@ static void ieee80211_stop_mbssid(struct ieee80211_sub_if_data *sdata)
 static int ieee80211_stop(struct net_device *dev)
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 
 	/* close dependent VLAN and MBSSID interfaces before locking wiphy */
 	if (sdata->vif.type == NL80211_IFTYPE_AP) {
@@ -765,6 +778,7 @@ static int ieee80211_stop(struct net_device *dev)
 	ieee80211_do_stop(sdata, true);
 	wiphy_unlock(sdata->local->hw.wiphy);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 	return 0;
 }
 
@@ -773,6 +787,8 @@ static void ieee80211_set_multicast_list(struct net_device *dev)
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct ieee80211_local *local = sdata->local;
 	int allmulti, sdata_allmulti;
+
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 
 	allmulti = !!(dev->flags & IFF_ALLMULTI);
 	sdata_allmulti = !!(sdata->flags & IEEE80211_SDATA_ALLMULTI);
@@ -789,6 +805,8 @@ static void ieee80211_set_multicast_list(struct net_device *dev)
 	__hw_addr_sync(&local->mc_list, &dev->mc, dev->addr_len);
 	spin_unlock_bh(&local->filter_lock);
 	wiphy_work_queue(local->hw.wiphy, &local->reconfig_filter);
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
 
 /*
@@ -813,7 +831,9 @@ static void ieee80211_teardown_sdata(struct ieee80211_sub_if_data *sdata)
 
 static void ieee80211_uninit(struct net_device *dev)
 {
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 	ieee80211_teardown_sdata(IEEE80211_DEV_TO_SUB_IF(dev));
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
 
 static int ieee80211_netdev_setup_tc(struct net_device *dev,
@@ -821,8 +841,10 @@ static int ieee80211_netdev_setup_tc(struct net_device *dev,
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct ieee80211_local *local = sdata->local;
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 
 	return drv_net_setup_tc(local, sdata, dev, type, type_data);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
 
 static const struct net_device_ops ieee80211_dataif_ops = {
