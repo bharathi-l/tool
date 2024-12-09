@@ -932,7 +932,8 @@ static int ieee80211_dump_station(struct wiphy *wiphy, struct net_device *dev,
 	struct sta_info *sta;
 	int ret = -ENOENT;
 
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
+
 	lockdep_assert_wiphy(local->hw.wiphy);
 
 	sta = sta_info_get_by_idx(sdata, idx);
@@ -942,7 +943,7 @@ static int ieee80211_dump_station(struct wiphy *wiphy, struct net_device *dev,
 		sta_set_sinfo(sta, sinfo, true);
 	}
 
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 	return ret;
 }
 
