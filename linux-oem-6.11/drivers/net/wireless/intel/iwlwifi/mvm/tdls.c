@@ -150,6 +150,8 @@ void iwl_mvm_mac_mgd_protect_tdls_discover(struct ieee80211_hw *hw,
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 	u32 duration = 2 * vif->bss_conf.dtim_period * vif->bss_conf.beacon_int;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	/* Protect the session to hear the TDLS setup response on the channel */
 	guard(mvm)(mvm);
 	if (fw_has_capa(&mvm->fw->ucode_capa,
@@ -159,6 +161,8 @@ void iwl_mvm_mac_mgd_protect_tdls_discover(struct ieee80211_hw *hw,
 	else
 		iwl_mvm_protect_session(mvm, vif, duration,
 					duration, 100, true);
+	
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 static const char *
@@ -506,6 +510,8 @@ iwl_mvm_tdls_channel_switch(struct ieee80211_hw *hw,
 	unsigned int delay;
 	int ret;
 
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+
 	guard(mvm)(mvm);
 
 	IWL_DEBUG_TDLS(mvm, "TDLS channel switch with %pM ch %d width %d\n",
@@ -516,6 +522,7 @@ iwl_mvm_tdls_channel_switch(struct ieee80211_hw *hw,
 		IWL_DEBUG_TDLS(mvm,
 			       "Existing peer. Can't start switch with %pM\n",
 			       sta->addr);
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EBUSY;
 	}
 
@@ -524,16 +531,20 @@ iwl_mvm_tdls_channel_switch(struct ieee80211_hw *hw,
 						 sta->addr, sta->tdls_initiator,
 						 oper_class, chandef, 0, 0, 0,
 						 tmpl_skb, ch_sw_tm_ie);
-	if (ret)
+	if (ret) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return ret;
+	}
 
 	/*
 	 * Mark the peer as "in tdls switch" for this vif. We only allow a
 	 * single such peer per vif.
 	 */
 	mvm->tdls_cs.peer.skb = skb_copy(tmpl_skb, GFP_KERNEL);
-	if (!mvm->tdls_cs.peer.skb)
+	if (!mvm->tdls_cs.peer.skb) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -ENOMEM;
+	}
 
 	mvmsta = iwl_mvm_sta_from_mac80211(sta);
 	mvm->tdls_cs.peer.sta_id = mvmsta->deflink.sta_id;
@@ -550,6 +561,8 @@ iwl_mvm_tdls_channel_switch(struct ieee80211_hw *hw,
 			     vif->bss_conf.beacon_int);
 	mod_delayed_work(system_wq, &mvm->tdls_cs.dwork,
 			 msecs_to_jiffies(delay));
+	
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return 0;
 }
 
@@ -560,6 +573,8 @@ void iwl_mvm_tdls_cancel_channel_switch(struct ieee80211_hw *hw,
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 	struct ieee80211_sta *cur_sta;
 	bool wait_for_phy = false;
+
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	mutex_lock(&mvm->mutex);
 
@@ -591,6 +606,7 @@ void iwl_mvm_tdls_cancel_channel_switch(struct ieee80211_hw *hw,
 	dev_kfree_skb(mvm->tdls_cs.peer.skb);
 	mvm->tdls_cs.peer.skb = NULL;
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 out:
 	mutex_unlock(&mvm->mutex);
 
@@ -616,6 +632,8 @@ iwl_mvm_tdls_recv_channel_switch(struct ieee80211_hw *hw,
 	const char *action_str =
 		params->action_code == WLAN_TDLS_CHANNEL_SWITCH_REQUEST ?
 		"REQ" : "RESP";
+
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
 	guard(mvm)(mvm);
 
@@ -655,10 +673,12 @@ iwl_mvm_tdls_recv_channel_switch(struct ieee80211_hw *hw,
 					   params->tmpl_skb,
 					   params->ch_sw_tm_ie);
 
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 retry:
 	/* register a timeout in case we don't succeed in switching */
 	delay = vif->bss_conf.dtim_period * vif->bss_conf.beacon_int *
 		1024 / 1000;
 	mod_delayed_work(system_wq, &mvm->tdls_cs.dwork,
 			 msecs_to_jiffies(delay));
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
