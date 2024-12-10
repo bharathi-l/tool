@@ -1628,7 +1628,6 @@ int iwl_mvm_post_channel_switch(struct ieee80211_hw *hw,
 
 	ret = iwl_mvm_power_update_ps(mvm);
 
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 
 out_unlock:
 	if (mvmvif->csa_failed)
@@ -1910,7 +1909,6 @@ static int iwl_mvm_mac_add_interface(struct ieee80211_hw *hw,
 		mvm->csme_vif = vif;
 	}
 
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 out:
 	if (!ret && (vif->type == NL80211_IFTYPE_AP ||
 		     vif->type == NL80211_IFTYPE_ADHOC))
@@ -2039,8 +2037,6 @@ out:
 	}
 
 	mutex_unlock(&mvm->mutex);
-		
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 struct iwl_mvm_mc_iter_data {
@@ -2186,9 +2182,10 @@ void iwl_mvm_configure_filter(struct ieee80211_hw *hw,
 
 	iwl_mvm_recalc_multicast(mvm);
 	
-	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 out:
 	*total_flags = 0;
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
 
 static void iwl_mvm_config_iface_filter(struct ieee80211_hw *hw,
@@ -6698,7 +6695,7 @@ void iwl_mvm_sync_rx_queues_internal(struct iwl_mvm *mvm,
 		mvm->queue_sync_state = (1 << mvm->trans->num_rx_queues) - 1;
 	}
 
-	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(DATA_PATH_GROUP, TRIGGER_RX_QUEUES_NOTIF_CMD)\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [WIDE_ID(DATA_PATH_GROUP, TRIGGER_RX_QUEUES_NOTIF_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	ret = iwl_mvm_send_cmd(mvm, &hcmd);
 	if (ret) {
 		IWL_ERR(mvm, "Failed to trigger RX queues sync (%d)\n", ret);

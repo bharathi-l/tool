@@ -589,7 +589,7 @@ static void iwl_mvm_bt_coex_notif_handle(struct iwl_mvm *mvm)
 
 	/* Don't spam the fw with the same command over and over */
 	if (memcmp(&cmd, &mvm->last_bt_ci_cmd, sizeof(cmd))) {
-		printk("%s %d : iwl_mvm_send_cmd : BT_COEX_CI\n", __func__, __LINE__);
+		printk("[MODULE -> %s], [THREAD -> %s] [iwl_mvm_send_cmd : BT_COEX_CI] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		
 		if (iwl_mvm_send_cmd_pdu(mvm, BT_COEX_CI, 0,
 					 sizeof(cmd), &cmd))

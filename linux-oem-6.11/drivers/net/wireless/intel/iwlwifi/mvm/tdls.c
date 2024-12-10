@@ -606,7 +606,6 @@ void iwl_mvm_tdls_cancel_channel_switch(struct ieee80211_hw *hw,
 	dev_kfree_skb(mvm->tdls_cs.peer.skb);
 	mvm->tdls_cs.peer.skb = NULL;
 
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 out:
 	mutex_unlock(&mvm->mutex);
 
@@ -619,6 +618,8 @@ out:
 	flush_delayed_work(&mvm->tdls_cs.dwork);
 
 	IWL_DEBUG_TDLS(mvm, "TDLS ending channel switch with %pM\n", sta->addr);
+	
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }
 
 void
@@ -673,7 +674,6 @@ iwl_mvm_tdls_recv_channel_switch(struct ieee80211_hw *hw,
 					   params->tmpl_skb,
 					   params->ch_sw_tm_ie);
 
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 retry:
 	/* register a timeout in case we don't succeed in switching */
 	delay = vif->bss_conf.dtim_period * vif->bss_conf.beacon_int *

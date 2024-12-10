@@ -1688,7 +1688,6 @@ ieee80211_tdls_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 	if (!ret)
 		set_sta_flag(sta, WLAN_STA_TDLS_OFF_CHANNEL);
 
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 out:
 	dev_kfree_skb_any(skb);
 	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);

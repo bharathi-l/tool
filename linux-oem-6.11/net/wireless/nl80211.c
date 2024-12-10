@@ -7675,7 +7675,6 @@ static int nl80211_set_station(struct sk_buff *skb, struct genl_info *info)
 	/* driver will call cfg80211_check_station_change() */
 	err = rdev_change_station(rdev, dev, mac_addr, &params);
 
-    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_STATION] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
  out_put_vlan:
 	dev_put(params.vlan);
 
@@ -11215,14 +11214,14 @@ static int nl80211_dump_survey(struct sk_buff *skb, struct netlink_callback *cb)
 		survey_idx++;
 	}
 
-    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_GET_SURVEY] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
  out:
 	cb->args[2] = survey_idx;
 	res = skb->len;
  out_err:
 	kfree(attrbuf);
 	wiphy_unlock(&rdev->wiphy);
-    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_GET_SURVEY] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
+	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_GET_SURVEY] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return res;
 }
 
@@ -11924,7 +11923,6 @@ static int nl80211_associate(struct sk_buff *skb, struct genl_info *info)
 		}
 	}
 
-    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_ASSOCIATE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 free:
 	for (link_id = 0; link_id < ARRAY_SIZE(req.links); link_id++)
 		cfg80211_put_bss(&rdev->wiphy, req.links[link_id].bss);
@@ -15136,7 +15134,7 @@ static int nl80211_set_rekey_data(struct sk_buff *skb, struct genl_info *info)
     	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_REKEY_OFFLOAD] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	if (!info->attrs[NL80211_ATTR_REKEY_DATA]) {
-    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_REKEY_OFFLOAD] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_REKEY_OFFLOAD] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EINVAL;
 	}
 
@@ -15144,19 +15142,19 @@ static int nl80211_set_rekey_data(struct sk_buff *skb, struct genl_info *info)
 					  info->attrs[NL80211_ATTR_REKEY_DATA],
 					  nl80211_rekey_policy, info->extack);
 	if (err) {
-    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_REKEY_OFFLOAD] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_REKEY_OFFLOAD] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return err;
 	}
 
 	if (!tb[NL80211_REKEY_DATA_REPLAY_CTR] || !tb[NL80211_REKEY_DATA_KEK] ||
 	    !tb[NL80211_REKEY_DATA_KCK]) {
-    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_REKEY_OFFLOAD] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_REKEY_OFFLOAD] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EINVAL;
 	}
 	if (nla_len(tb[NL80211_REKEY_DATA_KEK]) != NL80211_KEK_LEN &&
 	    !(rdev->wiphy.flags & WIPHY_FLAG_SUPPORTS_EXT_KEK_KCK &&
 	      nla_len(tb[NL80211_REKEY_DATA_KEK]) == NL80211_KEK_EXT_LEN)) {
-    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_REKEY_OFFLOAD] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_REKEY_OFFLOAD] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -ERANGE;
 	}
 	if (nla_len(tb[NL80211_REKEY_DATA_KCK]) != NL80211_KCK_LEN &&
@@ -15164,7 +15162,7 @@ static int nl80211_set_rekey_data(struct sk_buff *skb, struct genl_info *info)
 	      nla_len(tb[NL80211_REKEY_DATA_KCK]) == NL80211_KCK_EXT_LEN) &&
 	     !(rdev->wiphy.flags & WIPHY_FLAG_SUPPORTS_EXT_KCK_32 &&
 	       nla_len(tb[NL80211_REKEY_DATA_KCK]) == NL80211_KCK_EXT_LEN_32)) {
-    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_REKEY_OFFLOAD] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_REKEY_OFFLOAD] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -ERANGE;
 	}
 
@@ -15177,16 +15175,16 @@ static int nl80211_set_rekey_data(struct sk_buff *skb, struct genl_info *info)
 		rekey_data.akm = nla_get_u32(tb[NL80211_REKEY_DATA_AKM]);
 
 	if (!wdev->connected) {
-    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_REKEY_OFFLOAD] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_REKEY_OFFLOAD] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -ENOTCONN;
 	}
 
 	if (!rdev->ops->set_rekey_data) {
-    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_REKEY_OFFLOAD] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+    		printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_REKEY_OFFLOAD] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EOPNOTSUPP;
 	}
 
-    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_REKEY_OFFLOAD] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+    	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_SET_REKEY_OFFLOAD] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return rdev_set_rekey_data(rdev, dev, &rekey_data);
 }
 

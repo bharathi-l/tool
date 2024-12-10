@@ -108,7 +108,7 @@ static int iwl_mvm_mld_rm_sta_from_fw(struct iwl_mvm *mvm, u32 sta_id)
 		return -EINVAL;
 	}
 	
-       	printk("%s %d : iwl_mvm_send_cmd : WIDE_ID(MAC_CONF_GROUP, STA_REMOVE_CMD)\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [WIDE_ID(MAC_CONF_GROUP, STA_REMOVE_CMD)] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	ret = iwl_mvm_send_cmd_pdu(mvm, WIDE_ID(MAC_CONF_GROUP, STA_REMOVE_CMD),
 				   0, sizeof(rm_sta_cmd), &rm_sta_cmd);
 	if (ret) {
