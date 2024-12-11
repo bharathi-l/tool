@@ -3400,6 +3400,7 @@ int iwl_mvm_mac_hw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 			struct ieee80211_scan_request *hw_req)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+	int ret;
 
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
@@ -3410,9 +3411,12 @@ int iwl_mvm_mac_hw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 	}
 
 	guard(mvm)(mvm);
-	
+
+	ret = iwl_mvm_reg_scan_start(mvm, vif, &hw_req->req, &hw_req->ies);
+
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
-	return iwl_mvm_reg_scan_start(mvm, vif, &hw_req->req, &hw_req->ies);
+
+	return ret;
 }
 
 void iwl_mvm_mac_cancel_hw_scan(struct ieee80211_hw *hw,
@@ -4733,13 +4737,17 @@ int iwl_mvm_mac_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 			struct ieee80211_key_conf *key)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+	int ret;
 
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	guard(mvm)(mvm);
 
+	ret = __iwl_mvm_mac_set_key(hw, cmd, vif, sta, key);
+
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
-	return __iwl_mvm_mac_set_key(hw, cmd, vif, sta, key);
+
+	return ret;
 }
 
 void iwl_mvm_mac_update_tkip_key(struct ieee80211_hw *hw,
@@ -5193,13 +5201,17 @@ int iwl_mvm_add_chanctx(struct ieee80211_hw *hw,
 			struct ieee80211_chanctx_conf *ctx)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+	int ret;
 
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	guard(mvm)(mvm);
 
+	ret = __iwl_mvm_add_chanctx(mvm, ctx);
+
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
-	return __iwl_mvm_add_chanctx(mvm, ctx);
+
+	return ret;
 }
 
 static void __iwl_mvm_remove_chanctx(struct iwl_mvm *mvm,
@@ -6269,6 +6281,7 @@ int iwl_mvm_mac_get_survey(struct ieee80211_hw *hw, int idx,
 					   WIDE_ID(SYSTEM_GROUP,
 						   SYSTEM_STATISTICS_CMD),
 					   IWL_FW_CMD_VER_UNKNOWN);
+	int ret;
 
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 
@@ -6286,8 +6299,9 @@ int iwl_mvm_mac_get_survey(struct ieee80211_hw *hw, int idx,
 	 * (Automatic Channel Selection).
 	 */
 	if (idx > 0) {
+		ret = iwl_mvm_mac_get_acs_survey(mvm, idx - 1, survey);
 		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
-		return iwl_mvm_mac_get_acs_survey(mvm, idx - 1, survey);
+		return ret;
 	}
 
 	guard(mvm)(mvm);
@@ -6725,6 +6739,7 @@ out:
 void iwl_mvm_sync_rx_queues(struct ieee80211_hw *hw)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	guard(mvm)(mvm);
 	iwl_mvm_sync_rx_queues_internal(mvm, IWL_MVM_RXQ_EMPTY, true, NULL, 0);

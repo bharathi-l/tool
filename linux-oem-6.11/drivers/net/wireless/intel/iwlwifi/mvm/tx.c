@@ -1349,7 +1349,7 @@ int iwl_mvm_tx_skb_sta(struct iwl_mvm *mvm, struct sk_buff *skb,
 	struct sk_buff_head mpdus_skbs;
 	struct ieee80211_vif *vif;
 	unsigned int payload_len;
-	int ret;
+	int ret, retfun;
 	struct sk_buff *orig_skb = skb;
 	const u8 *addr3;
 
@@ -1368,16 +1368,18 @@ int iwl_mvm_tx_skb_sta(struct iwl_mvm *mvm, struct sk_buff *skb,
 	memcpy(&info, skb->cb, sizeof(info));
 
 	if (!skb_is_gso(skb)) {
+		retfun = iwl_mvm_tx_mpdu(mvm, skb, &info, sta, NULL);
 		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
-		return iwl_mvm_tx_mpdu(mvm, skb, &info, sta, NULL);
+		return retfun;
 	}
 
 	payload_len = skb_tail_pointer(skb) - skb_transport_header(skb) -
 		tcp_hdrlen(skb) + skb->data_len;
 
 	if (payload_len <= skb_shinfo(skb)->gso_size) {
+		retfun = iwl_mvm_tx_mpdu(mvm, skb, &info, sta, NULL);
 		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
-		return iwl_mvm_tx_mpdu(mvm, skb, &info, sta, NULL);
+		return retfun;
 	}
 
 	__skb_queue_head_init(&mpdus_skbs);
