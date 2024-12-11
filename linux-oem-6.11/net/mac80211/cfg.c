@@ -177,7 +177,7 @@ static struct wireless_dev *ieee80211_add_iface(struct wiphy *wiphy,
 						struct vif_params *params)
 {
 	struct ieee80211_local *local = wiphy_priv(wiphy);
-	struct wireless_dev *wdev;
+	struct wireless_dev *wdev, *ret;
 	struct ieee80211_sub_if_data *sdata;
 	int err;
 
@@ -186,7 +186,8 @@ static struct wireless_dev *ieee80211_add_iface(struct wiphy *wiphy,
 	err = ieee80211_if_add(local, name, name_assign_type, &wdev, type, params);
 	if (err) {
     		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
-		return ERR_PTR(err);
+		ret = ERR_PTR(err);
+		return ret;
 	}
 
 	sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
@@ -279,7 +280,7 @@ static int ieee80211_start_p2p_device(struct wiphy *wiphy,
 				      struct wireless_dev *wdev)
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
-	int ret;
+	int ret, retfun;
 
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
@@ -292,7 +293,8 @@ static int ieee80211_start_p2p_device(struct wiphy *wiphy,
 	}
 
     	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
-	return ieee80211_do_open(wdev, true);
+	retfun = ieee80211_do_open(wdev, true);
+	return retfun;
 }
 
 static void ieee80211_stop_p2p_device(struct wiphy *wiphy,
@@ -529,7 +531,7 @@ static int ieee80211_add_key(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_local *local = sdata->local;
 	struct sta_info *sta = NULL;
 	struct ieee80211_key *key;
-	int err;
+	int err, ret;
 
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
@@ -546,8 +548,9 @@ static int ieee80211_add_key(struct wiphy *wiphy, struct net_device *dev,
 	}
 
 	if (pairwise && params->mode == NL80211_KEY_SET_TX) {
+		ret = ieee80211_set_tx(sdata, mac_addr, key_idx);
     		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
-		return ieee80211_set_tx(sdata, mac_addr, key_idx);
+		return ret;
 	}
 
 	/* reject WEP and TKIP keys if WEP failed to initialize */
@@ -957,10 +960,13 @@ static int ieee80211_dump_survey(struct wiphy *wiphy, struct net_device *dev,
 				 int idx, struct survey_info *survey)
 {
 	struct ieee80211_local *local = wdev_priv(dev->ieee80211_ptr);
+	int ret;
+
     	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
+	ret = drv_get_survey(local, idx, survey);
     	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
-	return drv_get_survey(local, idx, survey);
+	return ret;
 }
 
 static int ieee80211_get_station(struct wiphy *wiphy, struct net_device *dev,
@@ -971,7 +977,8 @@ static int ieee80211_get_station(struct wiphy *wiphy, struct net_device *dev,
 	struct sta_info *sta;
 	int ret = -ENOENT;
 
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+    	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
 	lockdep_assert_wiphy(local->hw.wiphy);
 
 	sta = sta_info_get_bss(sdata, mac);
@@ -980,7 +987,7 @@ static int ieee80211_get_station(struct wiphy *wiphy, struct net_device *dev,
 		sta_set_sinfo(sta, sinfo, true);
 	}
 
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+    	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return ret;
 }
 
@@ -3095,6 +3102,7 @@ static int ieee80211_scan(struct wiphy *wiphy,
 			  struct cfg80211_scan_request *req)
 {
 	struct ieee80211_sub_if_data *sdata;
+	int ret;
 
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
@@ -3137,8 +3145,9 @@ static int ieee80211_scan(struct wiphy *wiphy,
 		return -EOPNOTSUPP;
 	}
 
+	ret = ieee80211_request_scan(sdata, req);
     	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
-	return ieee80211_request_scan(sdata, req);
+	return ret;
 }
 
 static void ieee80211_abort_scan(struct wiphy *wiphy, struct wireless_dev *wdev)
@@ -3186,25 +3195,34 @@ ieee80211_sched_scan_stop(struct wiphy *wiphy, struct net_device *dev,
 static int ieee80211_auth(struct wiphy *wiphy, struct net_device *dev,
 			  struct cfg80211_auth_request *req)
 {
+	int ret;
+
     	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	ret = ieee80211_mgd_auth(IEEE80211_DEV_TO_SUB_IF(dev), req);
     	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
-	return ieee80211_mgd_auth(IEEE80211_DEV_TO_SUB_IF(dev), req);
+	return ret;
 }
 
 static int ieee80211_assoc(struct wiphy *wiphy, struct net_device *dev,
 			   struct cfg80211_assoc_request *req)
 {
+	int ret;
+
     	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	ret = ieee80211_mgd_assoc(IEEE80211_DEV_TO_SUB_IF(dev), req);
     	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
-	return ieee80211_mgd_assoc(IEEE80211_DEV_TO_SUB_IF(dev), req);
+	return ret;
 }
 
 static int ieee80211_deauth(struct wiphy *wiphy, struct net_device *dev,
 			    struct cfg80211_deauth_request *req)
 {
+	int ret;
+
     	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	ret = ieee80211_mgd_deauth(IEEE80211_DEV_TO_SUB_IF(dev), req);
     	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
-	return ieee80211_mgd_deauth(IEEE80211_DEV_TO_SUB_IF(dev), req);
+	return ret;
 }
 
 static int ieee80211_disassoc(struct wiphy *wiphy, struct net_device *dev,
@@ -4538,10 +4556,13 @@ static int ieee80211_set_antenna(struct wiphy *wiphy, u32 tx_ant, u32 rx_ant)
 static int ieee80211_get_antenna(struct wiphy *wiphy, u32 *tx_ant, u32 *rx_ant)
 {
 	struct ieee80211_local *local = wiphy_priv(wiphy);
+	int ret;
+
     	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
+	ret = drv_get_antenna(local, tx_ant, rx_ant);
     	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
-	return drv_get_antenna(local, tx_ant, rx_ant);
+	return ret;
 }
 
 static int ieee80211_set_rekey_data(struct wiphy *wiphy,

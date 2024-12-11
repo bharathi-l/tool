@@ -14,6 +14,7 @@
 #include <net/mac80211.h>
 #include "ieee80211_i.h"
 #include "driver-ops.h"
+#include <linux/drv_dbg.h>
 
 /*
  * Tell our hardware to disable PS.
@@ -828,7 +829,7 @@ int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 	int ret;
 	u8 *data;
 
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	lockdep_assert_wiphy(local->hw.wiphy);
 
@@ -875,13 +876,13 @@ int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 
 		if (!sta) {
 			rcu_read_unlock();
-			printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+			printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 			return -ENOLINK;
 		}
 		if (params->link_id >= 0 &&
 		    !(sta->sta.valid_links & BIT(params->link_id))) {
 			rcu_read_unlock();
-			printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+			printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 			return -ENOLINK;
 		}
 		link_id = params->link_id;
@@ -905,7 +906,7 @@ int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 		break;
 	case NL80211_IFTYPE_NAN:
 	default:
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EOPNOTSUPP;
 	}
 
@@ -913,7 +914,7 @@ int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 	 * specified
 	 */
 	if (need_offchan && !params->chan) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EINVAL;
 	}
 
@@ -1050,10 +1051,10 @@ int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 	if (ret)
 		ieee80211_free_txskb(&local->hw, skb);
 	
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
  out_unlock:
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return ret;
 }
 

@@ -461,7 +461,6 @@ static int ieee80211_open(struct net_device *dev)
 
 	err = ieee80211_do_open(&sdata->wdev, true);
 	
-	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 out:
 	wiphy_unlock(sdata->local->hw.wiphy);
 
@@ -841,10 +840,13 @@ static int ieee80211_netdev_setup_tc(struct net_device *dev,
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct ieee80211_local *local = sdata->local;
+	int ret;
+
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 
-	return drv_net_setup_tc(local, sdata, dev, type, type_data);
+	ret = drv_net_setup_tc(local, sdata, dev, type, type_data);
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
+	return ret;
 }
 
 static const struct net_device_ops ieee80211_dataif_ops = {
