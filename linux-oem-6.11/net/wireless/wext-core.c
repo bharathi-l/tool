@@ -20,6 +20,7 @@
 #include <net/netlink.h>
 #include <net/wext.h>
 #include <net/net_namespace.h>
+#include <linux/drv_dbg.h>
 
 typedef int (*wext_ioctl_func)(struct net_device *, struct iwreq *,
 			       unsigned int, struct iw_request_info *,
@@ -561,6 +562,7 @@ void wireless_send_event(struct net_device *	dev,
 	/* Send via the RtNetlink event channel */
 	nlh = rtnetlink_ifinfo_prep(dev, skb);
 	if (WARN_ON(!nlh)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		return;
 	}
@@ -568,6 +570,7 @@ void wireless_send_event(struct net_device *	dev,
 	/* Add the wireless events in the netlink packet */
 	nla = nla_reserve(skb, IFLA_WIRELESS, event_len);
 	if (!nla) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		return;
 	}
@@ -591,6 +594,7 @@ void wireless_send_event(struct net_device *	dev,
 
 	compskb = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_ATOMIC);
 	if (!compskb) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		return;
 	}
@@ -598,7 +602,9 @@ void wireless_send_event(struct net_device *	dev,
 	/* Send via the RtNetlink event channel */
 	nlh = rtnetlink_ifinfo_prep(dev, compskb);
 	if (WARN_ON(!nlh)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), compskb, __func__, __LINE__);
 		kfree_skb(compskb);
 		return;
 	}
@@ -606,7 +612,9 @@ void wireless_send_event(struct net_device *	dev,
 	/* Add the wireless events in the netlink packet */
 	nla = nla_reserve(compskb, IFLA_WIRELESS, event_len);
 	if (!nla) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), compskb, __func__, __LINE__);
 		kfree_skb(compskb);
 		return;
 	}

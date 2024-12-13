@@ -10409,15 +10409,17 @@ static int nl80211_start_sched_scan(struct sk_buff *skb,
 	bool want_multi;
 	int err;
 
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
-	if (!rdev->wiphy.max_sched_scan_reqs || !rdev->ops->sched_scan_start)
+	if (!rdev->wiphy.max_sched_scan_reqs || !rdev->ops->sched_scan_start) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EOPNOTSUPP;
+	}
 
 	want_multi = info->attrs[NL80211_ATTR_SCHED_SCAN_MULTI];
 	err = cfg80211_sched_scan_req_possible(rdev, want_multi);
 	if (err) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return err;
 	}
 
@@ -10448,13 +10450,13 @@ static int nl80211_start_sched_scan(struct sk_buff *skb,
 	cfg80211_add_sched_scan_req(rdev, sched_scan_req);
 
 	nl80211_send_sched_scan(sched_scan_req, NL80211_CMD_START_SCHED_SCAN);
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return 0;
 
 out_free:
 	kfree(sched_scan_req);
 out_err:
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return err;
 }
 
@@ -10464,17 +10466,18 @@ static int nl80211_stop_sched_scan(struct sk_buff *skb,
 	struct cfg80211_sched_scan_request *req;
 	struct cfg80211_registered_device *rdev = info->user_ptr[0];
 	u64 cookie;
+	int ret;
 
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	if (!rdev->wiphy.max_sched_scan_reqs || !rdev->ops->sched_scan_stop) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EOPNOTSUPP;
 	}
 
 	if (info->attrs[NL80211_ATTR_COOKIE]) {
 		cookie = nla_get_u64(info->attrs[NL80211_ATTR_COOKIE]); 
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return __cfg80211_stop_sched_scan(rdev, cookie, false);
 	}
 
@@ -10484,12 +10487,13 @@ static int nl80211_stop_sched_scan(struct sk_buff *skb,
 	if (!req || req->reqid ||
 	    (req->owner_nlportid &&
 	     req->owner_nlportid != info->snd_portid)) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -ENOENT;
 	}
 
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
-	return cfg80211_stop_sched_scan_req(rdev, req, false);
+	ret = cfg80211_stop_sched_scan_req(rdev, req, false);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+	return ret;
 }
 
 static int nl80211_start_radar_detection(struct sk_buff *skb,
@@ -12352,6 +12356,7 @@ __cfg80211_alloc_vendor_skb(struct cfg80211_registered_device *rdev,
 
 	hdr = nl80211hdr_put(skb, portid, seq, 0, cmd);
 	if (!hdr) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		return NULL;
 	}
@@ -12389,6 +12394,7 @@ __cfg80211_alloc_vendor_skb(struct cfg80211_registered_device *rdev,
 	return skb;
 
  nla_put_failure:
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	kfree_skb(skb);
 	return NULL;
 }
@@ -16054,6 +16060,7 @@ static int nl80211_get_protocol_features(struct sk_buff *skb,
 	return ret;
 
  nla_put_failure:
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), msg, __func__, __LINE__);
 	kfree_skb(msg);
     	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_GET_PROTOCOL_FEATURES] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return -ENOBUFS;
@@ -16506,6 +16513,7 @@ int cfg80211_vendor_cmd_reply(struct sk_buff *skb)
 	memset(skb->cb, 0, sizeof(skb->cb));
 
 	if (WARN_ON(!rdev->cur_cmd_info)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		return -EINVAL;
 	}
@@ -19473,8 +19481,12 @@ void cfg80211_rx_unprot_mlme_mgmt(struct net_device *dev, const u8 *buf,
 		.uapsd_queues = -1,
 	};
 
-	if (WARN_ON(len < 2))
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
+	if (WARN_ON(len < 2)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return;
+	}
 
 	if (ieee80211_is_deauth(mgmt->frame_control)) {
 		event.cmd = NL80211_CMD_UNPROT_DEAUTHENTICATE;
@@ -19487,11 +19499,14 @@ void cfg80211_rx_unprot_mlme_mgmt(struct net_device *dev, const u8 *buf,
 		event.cmd = NL80211_CMD_UNPROT_BEACON;
 		wdev->unprot_beacon_reported = jiffies;
 	} else {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return;
 	}
 
 	trace_cfg80211_rx_unprot_mlme_mgmt(dev, buf, len);
 	nl80211_send_mlme_event(rdev, dev, &event, GFP_ATOMIC);
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
 EXPORT_SYMBOL(cfg80211_rx_unprot_mlme_mgmt);
 
@@ -20327,16 +20342,20 @@ bool cfg80211_rx_spurious_frame(struct net_device *dev,
 	struct wireless_dev *wdev = dev->ieee80211_ptr;
 	bool ret;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
 	trace_cfg80211_rx_spurious_frame(dev, addr);
 
 	if (WARN_ON(wdev->iftype != NL80211_IFTYPE_AP &&
 		    wdev->iftype != NL80211_IFTYPE_P2P_GO)) {
 		trace_cfg80211_return_bool(false);
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return false;
 	}
 	ret = __nl80211_unexpected_frame(dev, NL80211_CMD_UNEXPECTED_FRAME,
 					 addr, gfp);
 	trace_cfg80211_return_bool(ret);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return ret;
 }
 EXPORT_SYMBOL(cfg80211_rx_spurious_frame);
@@ -20347,18 +20366,22 @@ bool cfg80211_rx_unexpected_4addr_frame(struct net_device *dev,
 	struct wireless_dev *wdev = dev->ieee80211_ptr;
 	bool ret;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
 	trace_cfg80211_rx_unexpected_4addr_frame(dev, addr);
 
 	if (WARN_ON(wdev->iftype != NL80211_IFTYPE_AP &&
 		    wdev->iftype != NL80211_IFTYPE_P2P_GO &&
 		    wdev->iftype != NL80211_IFTYPE_AP_VLAN)) {
 		trace_cfg80211_return_bool(false);
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return false;
 	}
 	ret = __nl80211_unexpected_frame(dev,
 					 NL80211_CMD_UNEXPECTED_4ADDR_FRAME,
 					 addr, gfp);
 	trace_cfg80211_return_bool(ret);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return ret;
 }
 EXPORT_SYMBOL(cfg80211_rx_unexpected_4addr_frame);
@@ -20552,10 +20575,13 @@ bool cfg80211_rx_control_port(struct net_device *dev, struct sk_buff *skb,
 {
 	int ret;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
 	trace_cfg80211_rx_control_port(dev, skb, unencrypted, link_id);
 	ret = __nl80211_rx_control_port(dev, skb, unencrypted, link_id,
 					GFP_ATOMIC);
 	trace_cfg80211_return_bool(ret == 0);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return ret == 0;
 }
 EXPORT_SYMBOL(cfg80211_rx_control_port);

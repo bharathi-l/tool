@@ -25,6 +25,7 @@
 #include "nl80211.h"
 #include "wext-compat.h"
 #include "rdev-ops.h"
+#include <linux/drv_dbg.h>
 
 /**
  * DOC: BSS tree/list structure
@@ -1143,6 +1144,8 @@ void cfg80211_scan_done(struct cfg80211_scan_request *request,
 {
 	struct cfg80211_scan_info old_info = request->info;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
 	trace_cfg80211_scan_done(request, info);
 	WARN_ON(request != wiphy_to_rdev(request->wiphy)->scan_req &&
 		request != wiphy_to_rdev(request->wiphy)->int_scan_req);
@@ -1163,6 +1166,8 @@ void cfg80211_scan_done(struct cfg80211_scan_request *request,
 	request->notified = true;
 	wiphy_work_queue(request->wiphy,
 			 &wiphy_to_rdev(request->wiphy)->scan_done_wk);
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
 EXPORT_SYMBOL(cfg80211_scan_done);
 
@@ -1260,6 +1265,8 @@ void cfg80211_sched_scan_results(struct wiphy *wiphy, u64 reqid)
 	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wiphy);
 	struct cfg80211_sched_scan_request *request;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
 	trace_cfg80211_sched_scan_results(wiphy, reqid);
 	/* ignore if we're not scanning */
 
@@ -1270,6 +1277,8 @@ void cfg80211_sched_scan_results(struct wiphy *wiphy, u64 reqid)
 		queue_work(cfg80211_wq, &rdev->sched_scan_res_wk);
 	}
 	rcu_read_unlock();
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
 EXPORT_SYMBOL(cfg80211_sched_scan_results);
 

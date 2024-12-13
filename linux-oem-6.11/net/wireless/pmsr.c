@@ -274,16 +274,24 @@ int nl80211_pmsr_start(struct sk_buff *skb, struct genl_info *info)
 	struct nlattr *peers, *peer;
 	int count, rem, err, idx;
 
-	if (!rdev->wiphy.pmsr_capa)
-		return -EOPNOTSUPP;
+	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
-	if (!reqattr)
+	if (!rdev->wiphy.pmsr_capa) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+		return -EOPNOTSUPP;
+	}
+
+	if (!reqattr) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EINVAL;
+	}
 
 	peers = nla_find(nla_data(reqattr), nla_len(reqattr),
 			 NL80211_PMSR_ATTR_PEERS);
-	if (!peers)
+	if (!peers) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EINVAL;
+	}
 
 	count = 0;
 	nla_for_each_nested(peer, peers, rem) {
@@ -292,13 +300,16 @@ int nl80211_pmsr_start(struct sk_buff *skb, struct genl_info *info)
 		if (count > rdev->wiphy.pmsr_capa->max_peers) {
 			NL_SET_ERR_MSG_ATTR(info->extack, peer,
 					    "Too many peers used");
+			printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 			return -EINVAL;
 		}
 	}
 
 	req = kzalloc(struct_size(req, peers, count), GFP_KERNEL);
-	if (!req)
+	if (!req) {
+		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -ENOMEM;
+	}
 	req->n_peers = count;
 
 	if (info->attrs[NL80211_ATTR_TIMEOUT])
@@ -340,9 +351,11 @@ int nl80211_pmsr_start(struct sk_buff *skb, struct genl_info *info)
 	list_add_tail(&req->list, &wdev->pmsr_list);
 
 	nl_set_extack_cookie_u64(info->extack, req->cookie);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return 0;
 out_err:
 	kfree(req);
+	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return err;
 }
 

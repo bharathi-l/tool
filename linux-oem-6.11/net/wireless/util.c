@@ -22,7 +22,7 @@
 #include <linux/nospec.h>
 #include "core.h"
 #include "rdev-ops.h"
-
+#include <linux/drv_dbg.h>
 
 const struct ieee80211_rate *
 ieee80211_get_response_rate(struct ieee80211_supported_band *sband,
@@ -758,6 +758,8 @@ __ieee80211_amsdu_copy(struct sk_buff *skb, unsigned int hlen,
 	if (!frame)
 		return NULL;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), frame, __func__, __LINE__);
+
 	frame->priority = skb->priority;
 	skb_reserve(frame, hlen + sizeof(struct ethhdr) + 2);
 	skb_copy_bits(skb, offset, skb_put(frame, cur_len), cur_len);
@@ -902,13 +904,16 @@ void ieee80211_amsdu_to_8023s(struct sk_buff *skb, struct sk_buff_head *list,
 		__skb_queue_tail(list, frame);
 	}
 
-	if (!reuse_skb)
+	if (!reuse_skb) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		dev_kfree_skb(skb);
+	}
 
 	return;
 
  purge:
 	__skb_queue_purge(list);
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	dev_kfree_skb(skb);
 }
 EXPORT_SYMBOL(ieee80211_amsdu_to_8023s);
@@ -2672,6 +2677,9 @@ void cfg80211_send_layer2_update(struct net_device *dev, const u8 *addr)
 	skb = dev_alloc_skb(sizeof(*msg));
 	if (!skb)
 		return;
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+	
 	msg = skb_put(skb, sizeof(*msg));
 
 	/* 802.2 Type 1 Logical Link Control (LLC) Exchange Identifier (XID)
@@ -2691,6 +2699,7 @@ void cfg80211_send_layer2_update(struct net_device *dev, const u8 *addr)
 	skb->dev = dev;
 	skb->protocol = eth_type_trans(skb, dev);
 	memset(skb->cb, 0, sizeof(skb->cb));
+	printk("[MODULE -> %s], [THREAD -> %s] [NETIF_RX -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	netif_rx(skb);
 }
 EXPORT_SYMBOL(cfg80211_send_layer2_update);

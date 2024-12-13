@@ -19,7 +19,7 @@
 #include "core.h"
 #include "nl80211.h"
 #include "rdev-ops.h"
-
+#include <linux/drv_dbg.h>
 
 void cfg80211_rx_assoc_resp(struct net_device *dev,
 			    const struct cfg80211_rx_assoc_resp_data *data)
@@ -40,6 +40,8 @@ void cfg80211_rx_assoc_resp(struct net_device *dev,
 		.ap_mld_addr = data->ap_mld_addr,
 	};
 	unsigned int link_id;
+
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	for (link_id = 0; link_id < ARRAY_SIZE(data->links); link_id++) {
 		cr.links[link_id].status = data->links[link_id].status;
@@ -88,12 +90,15 @@ void cfg80211_rx_assoc_resp(struct net_device *dev,
 			cfg80211_unhold_bss(bss_from_pub(bss));
 			cfg80211_put_bss(wiphy, bss);
 		}
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return;
 	}
 
 	nl80211_send_rx_assoc(rdev, dev, data);
 	/* update current_bss etc., consumes the bss reference */
 	__cfg80211_connect_result(dev, &cr, cr.status == WLAN_STATUS_SUCCESS);
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
 EXPORT_SYMBOL(cfg80211_rx_assoc_resp);
 
@@ -151,12 +156,16 @@ void cfg80211_rx_mlme_mgmt(struct net_device *dev, const u8 *buf, size_t len)
 	struct wireless_dev *wdev = dev->ieee80211_ptr;
 	struct ieee80211_mgmt *mgmt = (void *)buf;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
 	lockdep_assert_wiphy(wdev->wiphy);
 
 	trace_cfg80211_rx_mlme_mgmt(dev, buf, len);
 
-	if (WARN_ON(len < 2))
+	if (WARN_ON(len < 2)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return;
+	}
 
 	if (ieee80211_is_auth(mgmt->frame_control))
 		cfg80211_process_auth(wdev, buf, len);
@@ -164,6 +173,8 @@ void cfg80211_rx_mlme_mgmt(struct net_device *dev, const u8 *buf, size_t len)
 		cfg80211_process_deauth(wdev, buf, len, false);
 	else if (ieee80211_is_disassoc(mgmt->frame_control))
 		cfg80211_process_disassoc(wdev, buf, len, false);
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
 EXPORT_SYMBOL(cfg80211_rx_mlme_mgmt);
 
@@ -953,11 +964,14 @@ bool cfg80211_rx_mgmt_ext(struct wireless_dev *wdev,
 		cpu_to_le16(IEEE80211_FCTL_FTYPE | IEEE80211_FCTL_STYPE);
 	u16 stype;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
 	trace_cfg80211_rx_mgmt(wdev, info);
 	stype = (le16_to_cpu(mgmt->frame_control) & IEEE80211_FCTL_STYPE) >> 4;
 
 	if (!(stypes->rx & BIT(stype))) {
 		trace_cfg80211_return_bool(false);
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return false;
 	}
 
@@ -990,6 +1004,7 @@ bool cfg80211_rx_mgmt_ext(struct wireless_dev *wdev,
 	spin_unlock_bh(&rdev->mgmt_registrations_lock);
 
 	trace_cfg80211_return_bool(result);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return result;
 }
 EXPORT_SYMBOL(cfg80211_rx_mgmt_ext);
