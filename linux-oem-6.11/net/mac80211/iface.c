@@ -26,6 +26,7 @@
 #include "driver-ops.h"
 #include "wme.h"
 #include "rate.h"
+#include <linux/drv_dbg.h>
 
 /**
  * DOC: Interface list locking
@@ -1665,6 +1666,7 @@ static void ieee80211_iface_work(struct wiphy *wiphy, struct wiphy_work *work)
 		else
 			ieee80211_iface_process_skb(local, sdata, skb);
 
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		kcov_remote_stop();
 	}
@@ -1674,6 +1676,7 @@ static void ieee80211_iface_work(struct wiphy *wiphy, struct wiphy_work *work)
 		kcov_remote_start_common(skb_get_kcov_handle(skb));
 
 		ieee80211_iface_process_status(sdata, skb);
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 
 		kcov_remote_stop();

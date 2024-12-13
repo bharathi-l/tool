@@ -22,6 +22,9 @@ static void mle_defrag(struct kunit *test)
 	int i;
 
 	skb = alloc_skb(1024, GFP_KERNEL);
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+	
 	KUNIT_ASSERT_NOT_NULL(test, skb);
 
 	if (skb_pad(skb, skb_tailroom(skb))) {
@@ -86,6 +89,7 @@ static void mle_defrag(struct kunit *test)
 
 	kfree(parsed);
 free_skb:
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	kfree_skb(skb);
 }
 

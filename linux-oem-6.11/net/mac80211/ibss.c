@@ -24,6 +24,7 @@
 #include "ieee80211_i.h"
 #include "driver-ops.h"
 #include "rate.h"
+#include <linux/drv_dbg.h>
 
 #define IEEE80211_SCAN_INTERVAL (2 * HZ)
 #define IEEE80211_IBSS_JOIN_TIMEOUT (7 * HZ)
@@ -1538,6 +1539,8 @@ static void ieee80211_rx_mgmt_probe_req(struct ieee80211_sub_if_data *sdata,
 	skb = dev_alloc_skb(local->tx_headroom + presp->head_len);
 	if (!skb)
 		return;
+
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 
 	skb_reserve(skb, local->tx_headroom);
 	skb_put_data(skb, presp->head, presp->head_len);

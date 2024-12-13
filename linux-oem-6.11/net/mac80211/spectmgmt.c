@@ -18,6 +18,7 @@
 #include "ieee80211_i.h"
 #include "sta_info.h"
 #include "wme.h"
+#include <linux/drv_dbg.h>
 
 static bool
 wbcs_elem_to_chandef(const struct ieee80211_wide_bw_chansw_ie *wbcs_elem,
@@ -419,6 +420,8 @@ static void ieee80211_send_refuse_measurement_request(struct ieee80211_sub_if_da
 				sizeof(struct ieee80211_msrment_ie));
 	if (!skb)
 		return;
+
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 	msr_report = skb_put_zero(skb, 24);

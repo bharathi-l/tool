@@ -30,6 +30,7 @@
 #include "rate.h"
 #include "led.h"
 #include "fils_aead.h"
+#include <linux/drv_dbg.h>
 
 #define IEEE80211_AUTH_TIMEOUT		(HZ / 5)
 #define IEEE80211_AUTH_TIMEOUT_LONG	(HZ / 2)
@@ -1873,6 +1874,8 @@ static int ieee80211_send_assoc(struct ieee80211_sub_if_data *sdata)
 	if (!skb)
 		return -ENOMEM;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 
 	if (ifmgd->flags & IEEE80211_STA_ENABLE_RRM)
@@ -1968,6 +1971,7 @@ static int ieee80211_send_assoc(struct ieee80211_sub_if_data *sdata)
 	if (assoc_data->fils_kek_len) {
 		ret = fils_encrypt_assoc_req(skb, assoc_data);
 		if (ret < 0) {
+			printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 			dev_kfree_skb(skb);
 			return ret;
 		}
@@ -1977,6 +1981,7 @@ static int ieee80211_send_assoc(struct ieee80211_sub_if_data *sdata)
 	kfree(ifmgd->assoc_req_ies);
 	ifmgd->assoc_req_ies = kmemdup(ie_start, pos - ie_start, GFP_ATOMIC);
 	if (!ifmgd->assoc_req_ies) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		dev_kfree_skb(skb);
 		return -ENOMEM;
 	}
@@ -2055,6 +2060,8 @@ void ieee80211_send_4addr_nullfunc(struct ieee80211_local *local,
 	skb = dev_alloc_skb(local->hw.extra_tx_headroom + 30);
 	if (!skb)
 		return;
+
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 
@@ -7093,6 +7100,8 @@ ieee80211_send_neg_ttlm_req(struct ieee80211_sub_if_data *sdata,
 	if (!skb)
 		return;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+
 	skb_reserve(skb, local->tx_headroom);
 	mgmt = skb_put_zero(skb, hdr_len);
 	mgmt->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT |
@@ -7161,6 +7170,8 @@ ieee80211_send_neg_ttlm_res(struct ieee80211_sub_if_data *sdata,
 	skb = dev_alloc_skb(local->tx_headroom + hdr_len + ttlm_max_len);
 	if (!skb)
 		return;
+
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 
 	skb_reserve(skb, local->tx_headroom);
 	mgmt = skb_put_zero(skb, hdr_len);
@@ -7395,6 +7406,8 @@ void ieee80211_send_teardown_neg_ttlm(struct ieee80211_vif *vif)
 	skb = dev_alloc_skb(local->hw.extra_tx_headroom + frame_len);
 	if (!skb)
 		return;
+
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 	mgmt = skb_put_zero(skb, frame_len);
@@ -9263,6 +9276,7 @@ void ieee80211_mgd_stop(struct ieee80211_sub_if_data *sdata)
 		ieee80211_destroy_auth_data(sdata, false);
 	spin_lock_bh(&ifmgd->teardown_lock);
 	if (ifmgd->teardown_skb) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), ifmgd->teardown_skb, __func__, __LINE__);
 		kfree_skb(ifmgd->teardown_skb);
 		ifmgd->teardown_skb = NULL;
 		ifmgd->orig_teardown_skb = NULL;

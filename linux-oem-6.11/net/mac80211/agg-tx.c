@@ -19,6 +19,7 @@
 #include "ieee80211_i.h"
 #include "driver-ops.h"
 #include "wme.h"
+#include <linux/drv_dbg.h>
 
 /**
  * DOC: TX A-MPDU aggregation
@@ -73,6 +74,8 @@ static void ieee80211_send_addba_request(struct ieee80211_sub_if_data *sdata,
 	if (!skb)
 		return;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 	mgmt = skb_put_zero(skb, 24);
 	memcpy(mgmt->da, da, ETH_ALEN);
@@ -120,6 +123,8 @@ void ieee80211_send_bar(struct ieee80211_vif *vif, u8 *ra, u16 tid, u16 ssn)
 	skb = dev_alloc_skb(sizeof(*bar) + local->hw.extra_tx_headroom);
 	if (!skb)
 		return;
+
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 	bar = skb_put_zero(skb, sizeof(*bar));

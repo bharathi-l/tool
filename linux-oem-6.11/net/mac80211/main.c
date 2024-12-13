@@ -33,6 +33,7 @@
 #include "wep.h"
 #include "led.h"
 #include "debugfs.h"
+#include <linux/drv_dbg.h>
 
 void ieee80211_configure_filter(struct ieee80211_local *local)
 {
@@ -445,6 +446,7 @@ void ieee80211_handle_queued_frames(struct ieee80211_local *local)
 		default:
 			WARN(1, "mac80211: Packet is of unknown type %d\n",
 			     skb->pkt_type);
+			printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 			dev_kfree_skb(skb);
 			break;
 		}
@@ -1699,6 +1701,7 @@ EXPORT_SYMBOL(ieee80211_unregister_hw);
 static int ieee80211_free_ack_frame(int id, void *p, void *data)
 {
 	WARN_ONCE(1, "Have pending ack frames!\n");
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), p, __func__, __LINE__);
 	kfree_skb(p);
 	return 0;
 }

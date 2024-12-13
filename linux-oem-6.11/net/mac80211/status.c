@@ -17,7 +17,7 @@
 #include "mesh.h"
 #include "led.h"
 #include "wme.h"
-
+#include <linux/drv_dbg.h>
 
 void ieee80211_tx_status_irqsafe(struct ieee80211_hw *hw,
 				 struct sk_buff *skb)
@@ -908,6 +908,7 @@ void ieee80211_tx_monitor(struct ieee80211_local *local, struct sk_buff *skb,
 	rtap_len = ieee80211_tx_radiotap_len(info, status);
 	if (WARN_ON_ONCE(skb_headroom(skb) < rtap_len)) {
 		pr_err("ieee80211_tx_status: headroom too small\n");
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		dev_kfree_skb(skb);
 		return;
 	}
@@ -935,6 +936,7 @@ void ieee80211_tx_monitor(struct ieee80211_local *local, struct sk_buff *skb,
 				skb2 = skb_clone(skb, GFP_ATOMIC);
 				if (skb2) {
 					skb2->dev = prev_dev;
+					printk("[MODULE -> %s], [THREAD -> %s] [NETIF_RX -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb2, __func__, __LINE__);
 					netif_rx(skb2);
 				}
 			}
@@ -944,10 +946,12 @@ void ieee80211_tx_monitor(struct ieee80211_local *local, struct sk_buff *skb,
 	}
 	if (prev_dev) {
 		skb->dev = prev_dev;
+		printk("[MODULE -> %s], [THREAD -> %s] [NETIF_RX -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		netif_rx(skb);
 		skb = NULL;
 	}
 	rcu_read_unlock();
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	dev_kfree_skb(skb);
 }
 
@@ -1102,8 +1106,11 @@ static void __ieee80211_tx_status(struct ieee80211_hw *hw,
 	if (!local->monitors && (!send_to_cooked || !local->cooked_mntrs)) {
 		if (status->free_list)
 			list_add_tail(&skb->list, status->free_list);
-		else
+		else {
+			printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 			dev_kfree_skb(skb);
+		}
+
 		return;
 	}
 
@@ -1252,8 +1259,10 @@ free:
 	ieee80211_report_used_skb(local, skb, false, status->ack_hwtstamp);
 	if (status->free_list)
 		list_add_tail(&skb->list, status->free_list);
-	else
+	else {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		dev_kfree_skb(skb);
+	}
 }
 EXPORT_SYMBOL(ieee80211_tx_status_ext);
 

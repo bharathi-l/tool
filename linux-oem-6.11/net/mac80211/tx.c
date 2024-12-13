@@ -917,6 +917,8 @@ static int ieee80211_fragment(struct ieee80211_tx_data *tx,
 		if (!tmp)
 			return -ENOMEM;
 
+		printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), tmp, __func__, __LINE__);
+
 		__skb_queue_tail(&tx->skbs, tmp);
 
 		skb_reserve(tmp,
@@ -1941,6 +1943,7 @@ static bool ieee80211_tx(struct ieee80211_sub_if_data *sdata,
 	bool result = true;
 
 	if (unlikely(skb->len < 10)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		dev_kfree_skb(skb);
 		return true;
 	}
@@ -2457,6 +2460,7 @@ netdev_tx_t ieee80211_monitor_start_xmit(struct sk_buff *skb,
 fail_rcu:
 	rcu_read_unlock();
 fail:
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	dev_kfree_skb(skb);
 	return NETDEV_TX_OK; /* meaning, we dealt with the skb */
 }
@@ -2566,6 +2570,7 @@ static u16 ieee80211_store_ack_skb(struct ieee80211_local *local,
 				IEEE80211_SKB_CB(ack_skb)->ack.cookie = *cookie;
 			}
 		} else {
+			printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), ack_skb, __func__, __LINE__);
 			kfree_skb(ack_skb);
 		}
 	}
@@ -2998,6 +3003,7 @@ static struct sk_buff *ieee80211_build_hdr(struct ieee80211_sub_if_data *sdata,
 
 	return skb;
  free:
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	kfree_skb(skb);
 	return ERR_PTR(ret);
 }
@@ -3660,6 +3666,7 @@ ieee80211_tx_skb_fixup(struct sk_buff *skb, netdev_features_t features)
 	return skb;
 
 free:
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	kfree_skb(skb);
 	return NULL;
 }
@@ -3749,6 +3756,7 @@ void __ieee80211_xmit_fast(struct ieee80211_sub_if_data *sdata,
 	return;
 
 free:
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	kfree_skb(skb);
 }
 
@@ -4278,6 +4286,7 @@ void __ieee80211_subif_start_xmit(struct sk_buff *skb,
 	int len = skb->len;
 
 	if (unlikely(!ieee80211_sdata_running(sdata) || skb->len < ETH_HLEN)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		return;
 	}
@@ -4339,6 +4348,7 @@ void __ieee80211_subif_start_xmit(struct sk_buff *skb,
 	}
 	goto out;
  out_free:
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	kfree_skb(skb);
 	len = 0;
  out:
@@ -4429,6 +4439,7 @@ ieee80211_convert_to_unicast(struct sk_buff *skb, struct net_device *dev,
 		if (!cloned_skb)
 			goto multicast;
 		if (unlikely(ieee80211_change_da(cloned_skb, sta))) {
+			printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), cloned_skb, __func__, __LINE__);
 			dev_kfree_skb(cloned_skb);
 			goto multicast;
 		}
@@ -4441,6 +4452,7 @@ ieee80211_convert_to_unicast(struct sk_buff *skb, struct net_device *dev,
 		__skb_queue_tail(queue, skb);
 	} else {
 		/* no STA connected, drop */
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		skb = NULL;
 	}
@@ -4488,6 +4500,7 @@ static void ieee80211_mlo_multicast_tx(struct net_device *dev,
 		ieee80211_mlo_multicast_tx_one(sdata, skb, ctrl_flags, link);
 		ctrl_flags = 0;
 	}
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	kfree_skb(skb);
 }
 
@@ -4512,6 +4525,7 @@ netdev_tx_t ieee80211_subif_start_xmit(struct sk_buff *skb,
 		goto normal;
 
 	if (unlikely(!ieee80211_sdata_running(sdata))) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 		return NETDEV_TX_OK;
@@ -4687,6 +4701,7 @@ static void ieee80211_8023_xmit(struct ieee80211_sub_if_data *sdata,
 	return;
 
 out_free:
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	kfree_skb(skb);
 }
 
@@ -4699,6 +4714,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8023(struct sk_buff *skb,
 	struct sta_info *sta;
 
 	if (unlikely(!ieee80211_sdata_running(sdata) || skb->len < ETH_HLEN)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		return NETDEV_TX_OK;
 	}
@@ -4706,6 +4722,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8023(struct sk_buff *skb,
 	rcu_read_lock();
 
 	if (ieee80211_lookup_ra_sta(sdata, skb, &sta)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		goto out;
 	}
@@ -4749,6 +4766,7 @@ ieee80211_build_data_template(struct ieee80211_sub_if_data *sdata,
 	rcu_read_lock();
 
 	if (ieee80211_lookup_ra_sta(sdata, skb, &sta)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		skb = ERR_PTR(-EINVAL);
 		goto out;
@@ -4765,6 +4783,7 @@ ieee80211_build_data_template(struct ieee80211_sub_if_data *sdata,
 
 	if (ieee80211_tx_h_select_key(&tx) != TX_CONTINUE) {
 		rcu_read_unlock();
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		return ERR_PTR(-EINVAL);
 	}
@@ -4812,6 +4831,7 @@ static bool ieee80211_tx_pending_skb(struct ieee80211_local *local,
 			chanctx_conf =
 				rcu_dereference(sdata->vif.bss_conf.chanctx_conf);
 			if (unlikely(!chanctx_conf)) {
+				printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 				dev_kfree_skb(skb);
 				return true;
 			}
@@ -4820,6 +4840,7 @@ static bool ieee80211_tx_pending_skb(struct ieee80211_local *local,
 		result = ieee80211_tx(sdata, NULL, skb, true);
 	} else if (info->flags & IEEE80211_TX_CTL_HW_80211_ENCAP) {
 		if (ieee80211_lookup_ra_sta(sdata, skb, &sta)) {
+			printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 			dev_kfree_skb(skb);
 			return true;
 		}
@@ -5333,6 +5354,8 @@ ieee80211_beacon_get_ap(struct ieee80211_hw *hw,
 	if (!skb)
 		return NULL;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+
 	skb_reserve(skb, local->tx_headroom);
 	skb_put_data(skb, beacon->head, beacon->head_len);
 
@@ -5356,6 +5379,7 @@ ieee80211_beacon_get_ap(struct ieee80211_hw *hw,
 		skb_put_data(skb, beacon->tail, beacon->tail_len);
 
 	if (ieee80211_beacon_protect(skb, local, sdata, link) < 0) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		dev_kfree_skb(skb);
 		return NULL;
 	}
@@ -5480,6 +5504,9 @@ __ieee80211_beacon_get(struct ieee80211_hw *hw,
 				    local->hw.extra_beacon_tailroom);
 		if (!skb)
 			goto out;
+	
+		printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+
 		skb_reserve(skb, local->tx_headroom);
 		skb_put_data(skb, beacon->head, beacon->head_len);
 
@@ -5518,6 +5545,9 @@ __ieee80211_beacon_get(struct ieee80211_hw *hw,
 				    local->hw.extra_beacon_tailroom);
 		if (!skb)
 			goto out;
+	
+		printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+
 		skb_reserve(skb, local->tx_headroom);
 		skb_put_data(skb, beacon->head, beacon->head_len);
 		ieee80211_beacon_add_tim(sdata, link, &ifmsh->ps, skb,
@@ -5571,8 +5601,10 @@ void ieee80211_beacon_free_ema_list(struct ieee80211_ema_beacons *ema_beacons)
 	if (!ema_beacons)
 		return;
 
-	for (i = 0; i < ema_beacons->cnt; i++)
+	for (i = 0; i < ema_beacons->cnt; i++) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), ema_beacons->bcn[i].skb, __func__, __LINE__);
 		kfree_skb(ema_beacons->bcn[i].skb);
+	}
 
 	kfree(ema_beacons);
 }
@@ -5648,6 +5680,8 @@ struct sk_buff *ieee80211_proberesp_get(struct ieee80211_hw *hw,
 	if (!skb)
 		goto out;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+
 	skb_put_data(skb, presp->data, presp->len);
 
 	hdr = (struct ieee80211_hdr *) skb->data;
@@ -5677,6 +5711,9 @@ struct sk_buff *ieee80211_get_fils_discovery_tmpl(struct ieee80211_hw *hw,
 	}
 
 	skb = dev_alloc_skb(sdata->local->hw.extra_tx_headroom + tmpl->len);
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+	
 	if (skb) {
 		skb_reserve(skb, sdata->local->hw.extra_tx_headroom);
 		skb_put_data(skb, tmpl->data, tmpl->len);
@@ -5706,6 +5743,9 @@ ieee80211_get_unsol_bcast_probe_resp_tmpl(struct ieee80211_hw *hw,
 	}
 
 	skb = dev_alloc_skb(sdata->local->hw.extra_tx_headroom + tmpl->len);
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+	
 	if (skb) {
 		skb_reserve(skb, sdata->local->hw.extra_tx_headroom);
 		skb_put_data(skb, tmpl->data, tmpl->len);
@@ -5733,6 +5773,8 @@ struct sk_buff *ieee80211_pspoll_get(struct ieee80211_hw *hw,
 	skb = dev_alloc_skb(local->hw.extra_tx_headroom + sizeof(*pspoll));
 	if (!skb)
 		return NULL;
+
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 
@@ -5770,6 +5812,8 @@ struct sk_buff *ieee80211_nullfunc_get(struct ieee80211_hw *hw,
 	if (!skb)
 		return NULL;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+
 	rcu_read_lock();
 	if (qos_ok) {
 		struct sta_info *sta;
@@ -5782,6 +5826,7 @@ struct sk_buff *ieee80211_nullfunc_get(struct ieee80211_hw *hw,
 		link = rcu_dereference(sdata->link[link_id]);
 		if (WARN_ON_ONCE(!link)) {
 			rcu_read_unlock();
+			printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 			kfree_skb(skb);
 			return NULL;
 		}
@@ -5838,6 +5883,8 @@ struct sk_buff *ieee80211_probereq_get(struct ieee80211_hw *hw,
 			    ie_ssid_len + tailroom);
 	if (!skb)
 		return NULL;
+
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 
@@ -6125,6 +6172,7 @@ void ieee80211_tx_skb_tid(struct ieee80211_sub_if_data *sdata,
 			rcu_dereference(sdata->vif.bss_conf.chanctx_conf);
 		if (WARN_ON(!chanctx_conf)) {
 			rcu_read_unlock();
+			printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 			kfree_skb(skb);
 			return;
 		}
@@ -6186,6 +6234,8 @@ int ieee80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
 		return -ENOMEM;
 	}
 
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+
 	skb_reserve(skb, local->hw.extra_tx_headroom + sizeof(struct ethhdr));
 
 	skb_put_data(skb, buf, len);
@@ -6207,6 +6257,7 @@ int ieee80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
 		rcu_read_lock();
 		link_conf = rcu_dereference(sdata->vif.link_conf[link_id]);
 		if (!link_conf) {
+			printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 			dev_kfree_skb(skb);
 			rcu_read_unlock();
 			printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
@@ -6233,6 +6284,7 @@ int ieee80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
 	rcu_read_lock();
 	err = ieee80211_lookup_ra_sta(sdata, skb, &sta);
 	if (err) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		dev_kfree_skb(skb);
 		rcu_read_unlock();
 		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
@@ -6278,6 +6330,8 @@ int ieee80211_probe_mesh_link(struct wiphy *wiphy, struct net_device *dev,
     		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -ENOMEM;
 	}
+
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 	skb_put_data(skb, buf, len);

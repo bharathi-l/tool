@@ -27,6 +27,7 @@
 #include "debugfs_sta.h"
 #include "mesh.h"
 #include "wme.h"
+#include <linux/drv_dbg.h>
 
 /**
  * DOC: STA information lifetime rules
@@ -1797,6 +1798,8 @@ static void ieee80211_send_null_response(struct sta_info *sta, int tid,
 	if (!skb)
 		return;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 
 	nullfunc = skb_put(skb, size);
@@ -1845,6 +1848,7 @@ static void ieee80211_send_null_response(struct sta_info *sta, int tid,
 	chanctx_conf = rcu_dereference(sdata->vif.bss_conf.chanctx_conf);
 	if (WARN_ON(!chanctx_conf)) {
 		rcu_read_unlock();
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		return;
 	}

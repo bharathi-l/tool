@@ -3164,14 +3164,14 @@ ieee80211_sched_scan_start(struct wiphy *wiphy,
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	if (!sdata->local->ops->sched_scan_start) {
 		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 		return -EOPNOTSUPP;
 	}
 
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return ieee80211_request_sched_scan_start(sdata, req);
 }
 
@@ -3181,14 +3181,14 @@ ieee80211_sched_scan_stop(struct wiphy *wiphy, struct net_device *dev,
 {
 	struct ieee80211_local *local = wiphy_priv(wiphy);
 
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	if (!local->ops->sched_scan_stop) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EOPNOTSUPP;
 	}
 
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return ieee80211_request_sched_scan_stop(local);
 }
 
@@ -4474,6 +4474,7 @@ int ieee80211_attach_ack_skb(struct ieee80211_local *local, struct sk_buff *skb,
 	spin_unlock_irqrestore(&local->ack_status_lock, spin_flags);
 
 	if (id < 0) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), ack_skb, __func__, __LINE__);
 		kfree_skb(ack_skb);
 		return -ENOMEM;
 	}
@@ -4640,6 +4641,8 @@ static int ieee80211_probe_client(struct wiphy *wiphy, struct net_device *dev,
 		goto unlock;
 	}
 
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+
 	skb->dev = dev;
 
 	skb_reserve(skb, local->hw.extra_tx_headroom);
@@ -4665,6 +4668,7 @@ static int ieee80211_probe_client(struct wiphy *wiphy, struct net_device *dev,
 
 	ret = ieee80211_attach_ack_skb(local, skb, cookie, GFP_ATOMIC);
 	if (ret) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		goto unlock;
 	}

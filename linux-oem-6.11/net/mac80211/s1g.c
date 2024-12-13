@@ -8,6 +8,7 @@
 #include <net/mac80211.h>
 #include "ieee80211_i.h"
 #include "driver-ops.h"
+#include <linux/drv_dbg.h>
 
 void ieee80211_s1g_sta_rate_init(struct sta_info *sta)
 {
@@ -43,6 +44,8 @@ ieee80211_s1g_send_twt_setup(struct ieee80211_sub_if_data *sdata, const u8 *da,
 	if (!skb)
 		return;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 	mgmt = skb_put_zero(skb, len);
 	mgmt->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT |
@@ -74,6 +77,8 @@ ieee80211_s1g_send_twt_teardown(struct ieee80211_sub_if_data *sdata,
 			    IEEE80211_MIN_ACTION_SIZE + 2);
 	if (!skb)
 		return;
+
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 	mgmt = skb_put_zero(skb, IEEE80211_MIN_ACTION_SIZE + 2);

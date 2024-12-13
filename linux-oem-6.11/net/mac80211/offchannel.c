@@ -980,6 +980,9 @@ int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 		ret = -ENOMEM;
 		goto out_unlock;
 	}
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+	
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 
 	data = skb_put_data(skb, params->buf, params->len);
@@ -1020,6 +1023,7 @@ int ieee80211_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 		 */
 		ret = ieee80211_attach_ack_skb(local, skb, cookie, GFP_KERNEL);
 		if (ret) {
+			printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 			kfree_skb(skb);
 			goto out_unlock;
 		}

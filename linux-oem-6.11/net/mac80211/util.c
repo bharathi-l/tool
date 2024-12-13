@@ -33,6 +33,7 @@
 #include "wme.h"
 #include "led.h"
 #include "wep.h"
+#include <linux/drv_dbg.h>
 
 /* privid for wiphys to determine whether they belong to us or not */
 const void *const mac80211_wiphy_privid = &mac80211_wiphy_privid;
@@ -1104,6 +1105,8 @@ void ieee80211_send_auth(struct ieee80211_sub_if_data *sdata,
 	if (!skb)
 		return;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+
 	skb_reserve(skb, local->hw.extra_tx_headroom + IEEE80211_WEP_IV_LEN);
 
 	mgmt = skb_put_zero(skb, 24 + 6);
@@ -1124,6 +1127,7 @@ void ieee80211_send_auth(struct ieee80211_sub_if_data *sdata,
 		mgmt->frame_control |= cpu_to_le16(IEEE80211_FCTL_PROTECTED);
 		err = ieee80211_wep_encrypt(local, skb, key, key_len, key_idx);
 		if (WARN_ON(err)) {
+			printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 			kfree_skb(skb);
 			return;
 		}
@@ -1158,6 +1162,8 @@ void ieee80211_send_deauth_disassoc(struct ieee80211_sub_if_data *sdata,
 				    IEEE80211_DEAUTH_FRAME_LEN);
 		if (!skb)
 			return;
+
+		printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 
 		skb_reserve(skb, local->hw.extra_tx_headroom);
 
@@ -1435,6 +1441,8 @@ int ieee80211_build_preq_ies(struct ieee80211_sub_if_data *sdata, u8 *buffer,
 
 	if (!skb)
 		return -ENOMEM;
+		
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 
 	start = skb_tail_pointer(skb);
 	memset(start, 0, skb_tailroom(skb));
@@ -3646,6 +3654,8 @@ int ieee80211_send_action_csa(struct ieee80211_sub_if_data *sdata,
 			    8); /* mesh channel switch parameters element */
 	if (!skb)
 		return -ENOMEM;
+
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 
 	skb_reserve(skb, local->tx_headroom);
 	mgmt = skb_put_zero(skb, hdr_len);

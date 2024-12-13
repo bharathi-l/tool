@@ -21,6 +21,7 @@
 #include "debugfs.h"
 #include "debugfs_netdev.h"
 #include "driver-ops.h"
+#include <linux/drv_dbg.h>
 
 struct ieee80211_if_read_sdata_data {
 	ssize_t (*format)(const struct ieee80211_sub_if_data *, char *, int);
@@ -458,6 +459,9 @@ static ssize_t ieee80211_if_parse_tkip_mic_test(
 	skb = dev_alloc_skb(local->hw.extra_tx_headroom + 24 + 100);
 	if (!skb)
 		return -ENOMEM;
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+	
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 
 	hdr = skb_put_zero(skb, 24);
@@ -475,6 +479,7 @@ static ssize_t ieee80211_if_parse_tkip_mic_test(
 		fc |= cpu_to_le16(IEEE80211_FCTL_TODS);
 		/* BSSID SA DA */
 		if (!sdata->u.mgd.associated) {
+			printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 			dev_kfree_skb(skb);
 			return -ENOTCONN;
 		}
@@ -483,6 +488,7 @@ static ssize_t ieee80211_if_parse_tkip_mic_test(
 		memcpy(hdr->addr3, addr, ETH_ALEN);
 		break;
 	default:
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		dev_kfree_skb(skb);
 		return -EOPNOTSUPP;
 	}

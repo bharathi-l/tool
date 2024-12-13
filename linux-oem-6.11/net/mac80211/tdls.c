@@ -17,6 +17,7 @@
 #include "driver-ops.h"
 #include "rate.h"
 #include "wme.h"
+#include <linux/drv_dbg.h>
 
 /* give usermode some time for retries in setting up the TDLS session */
 #define TDLS_PEER_SETUP_TIMEOUT	(15 * HZ)
@@ -988,6 +989,7 @@ ieee80211_tdls_build_mgmt_packet_data(struct ieee80211_sub_if_data *sdata,
 	return skb;
 
 fail:
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	dev_kfree_skb(skb);
 unlock:
 	rcu_read_unlock();
@@ -1128,6 +1130,7 @@ ieee80211_tdls_prep_mgmt_packet(struct wiphy *wiphy, struct net_device *dev,
 	return ret;
 
 fail:
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	dev_kfree_skb(skb);
 	return ret;
 }

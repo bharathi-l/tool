@@ -33,6 +33,7 @@
 #include "tkip.h"
 #include "wme.h"
 #include "rate.h"
+#include <linux/drv_dbg.h>
 
 /*
  * monitor mode reception
@@ -78,6 +79,7 @@ static struct sk_buff *ieee80211_clean_skb(struct sk_buff *skb,
 	hdr->frame_control &= ~cpu_to_le16(IEEE80211_FCTL_ORDER);
 
 	if (!pskb_may_pull(skb, hdrlen)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		dev_kfree_skb(skb);
 		return NULL;
 	}
@@ -731,6 +733,7 @@ ieee80211_make_monitor_skb(struct ieee80211_local *local,
 		 */
 		if (skb_headroom(skb) < needed_headroom &&
 		    pskb_expand_head(skb, needed_headroom, 0, GFP_ATOMIC)) {
+			printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 			dev_kfree_skb(skb);
 			return NULL;
 		}
@@ -779,6 +782,7 @@ ieee80211_rx_monitor(struct ieee80211_local *local, struct sk_buff *origskb,
 	if (WARN_ON_ONCE(status->flag & RX_FLAG_RADIOTAP_TLV_AT_END &&
 			 !skb_mac_header_was_set(origskb))) {
 		/* with this skb no way to know where frame payload starts */
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), origskb, __func__, __LINE__);
 		dev_kfree_skb(origskb);
 		return NULL;
 	}
@@ -811,6 +815,7 @@ ieee80211_rx_monitor(struct ieee80211_local *local, struct sk_buff *origskb,
 			if (unlikely(origskb->len <= FCS_LEN + rtap_space)) {
 				/* driver bug */
 				WARN_ON(1);
+				printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), origskb, __func__, __LINE__);
 				dev_kfree_skb(origskb);
 				return NULL;
 			}
@@ -823,6 +828,7 @@ ieee80211_rx_monitor(struct ieee80211_local *local, struct sk_buff *origskb,
 
 	/* ensure that the expected data elements are in skb head */
 	if (!pskb_may_pull(origskb, min_head_len)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), origskb, __func__, __LINE__);
 		dev_kfree_skb(origskb);
 		return NULL;
 	}
@@ -831,6 +837,7 @@ ieee80211_rx_monitor(struct ieee80211_local *local, struct sk_buff *origskb,
 
 	if (!local->monitors || (status->flag & RX_FLAG_SKIP_MONITOR)) {
 		if (only_monitor) {
+			printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), origskb, __func__, __LINE__);
 			dev_kfree_skb(origskb);
 			return NULL;
 		}
@@ -864,6 +871,7 @@ ieee80211_rx_monitor(struct ieee80211_local *local, struct sk_buff *origskb,
 			if (skb) {
 				skb->dev = sdata->dev;
 				dev_sw_netstats_rx_add(skb->dev, skb->len);
+				printk("[MODULE -> %s], [THREAD -> %s] [NETIF_RECV_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 				netif_receive_skb(skb);
 			}
 		}
@@ -873,6 +881,7 @@ ieee80211_rx_monitor(struct ieee80211_local *local, struct sk_buff *origskb,
 	}
 
 	/* this happens if last_monitor was erroneously false */
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), monskb, __func__, __LINE__);
 	dev_kfree_skb(monskb);
 
 	/* ditto */
@@ -1285,6 +1294,7 @@ static bool ieee80211_sta_manage_reorder_buf(struct ieee80211_sub_if_data *sdata
 
 	/* frame with out of date sequence number */
 	if (ieee80211_sn_less(mpdu_seq_num, head_seq_num)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		dev_kfree_skb(skb);
 		goto out;
 	}
@@ -1307,6 +1317,7 @@ static bool ieee80211_sta_manage_reorder_buf(struct ieee80211_sub_if_data *sdata
 
 	/* check if we already stored this frame */
 	if (ieee80211_rx_reorder_ready(tid_agg_rx, index)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		dev_kfree_skb(skb);
 		goto out;
 	}
@@ -1718,6 +1729,7 @@ ieee80211_rx_h_uapsd_and_pspoll(struct ieee80211_rx_data *rx)
 
 		/* Free PS Poll skb here instead of returning RX_DROP that would
 		 * count as an dropped frame. */
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), rx->skb, __func__, __LINE__);
 		dev_kfree_skb(rx->skb);
 
 		return RX_QUEUED;
@@ -1862,6 +1874,7 @@ ieee80211_rx_h_sta_process(struct ieee80211_rx_data *rx)
 		 * counting this as a dropped packed.
 		 */
 		link_sta->rx_stats.packets++;
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), rx->skb, __func__, __LINE__);
 		dev_kfree_skb(rx->skb);
 		return RX_QUEUED;
 	}
@@ -2393,6 +2406,7 @@ ieee80211_rx_h_defragment(struct ieee80211_rx_data *rx)
 	}
 	while ((skb = __skb_dequeue(&entry->skb_list))) {
 		skb_put_data(rx->skb, skb->data, skb->len);
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		dev_kfree_skb(skb);
 	}
 
@@ -2620,6 +2634,7 @@ static void ieee80211_deliver_skb_to_local_stack(struct sk_buff *skb,
 		bool noencrypt = !(status->flag & RX_FLAG_DECRYPTED);
 
 		cfg80211_rx_control_port(dev, skb, noencrypt, rx->link_id);
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		dev_kfree_skb(skb);
 	} else {
 		struct ethhdr *ehdr = (void *)skb_mac_header(skb);
@@ -2648,8 +2663,10 @@ static void ieee80211_deliver_skb_to_local_stack(struct sk_buff *skb,
 		/* deliver to local stack */
 		if (rx->list)
 			list_add_tail(&skb->list, rx->list);
-		else
+		else {
+			printk("[MODULE -> %s], [THREAD -> %s] [NETIF_RECV_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 			netif_receive_skb(skb);
+		}
 	}
 }
 
@@ -2725,6 +2742,7 @@ ieee80211_deliver_skb(struct ieee80211_rx_data *rx)
 		align = (unsigned long)(skb->data + sizeof(struct ethhdr)) & 3;
 		if (align) {
 			if (WARN_ON(skb_headroom(skb) < 3)) {
+				printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 				dev_kfree_skb(skb);
 				skb = NULL;
 			} else {
@@ -2989,6 +3007,7 @@ ieee80211_rx_mesh_data(struct ieee80211_sub_if_data *sdata, struct sta_info *sta
 					   WLAN_REASON_MESH_PATH_NOFORWARD,
 					   sta->sta.addr);
 		IEEE80211_IFSTA_MESH_CTR_INC(ifmsh, dropped_frames_no_route);
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), fwd_skb, __func__, __LINE__);
 		kfree_skb(fwd_skb);
 		goto rx_accept;
 	}
@@ -3094,6 +3113,7 @@ __ieee80211_rx_h_amsdu(struct ieee80211_rx_data *rx, u8 data_offset)
 		continue;
 
 free:
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), rx->skb, __func__, __LINE__);
 		dev_kfree_skb(rx->skb);
 	}
 
@@ -3297,6 +3317,7 @@ ieee80211_rx_h_ctrl(struct ieee80211_rx_data *rx, struct sk_buff_head *frames)
 
 		drv_event_callback(rx->local, rx->sdata, &event);
 
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		return RX_QUEUED;
 	}
@@ -3336,6 +3357,8 @@ static void ieee80211_process_sa_query_req(struct ieee80211_sub_if_data *sdata,
 	skb = dev_alloc_skb(sizeof(*resp) + local->hw.extra_tx_headroom);
 	if (skb == NULL)
 		return;
+
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 
 	skb_reserve(skb, local->hw.extra_tx_headroom);
 	resp = skb_put_zero(skb, 24);
@@ -3828,6 +3851,7 @@ ieee80211_rx_h_action(struct ieee80211_rx_data *rx)
  handled:
 	if (rx->sta)
 		rx->link_sta->rx_stats.packets++;
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), rx->skb, __func__, __LINE__);
 	dev_kfree_skb(rx->skb);
 	return RX_QUEUED;
 
@@ -3872,6 +3896,7 @@ ieee80211_rx_h_userspace_mgmt(struct ieee80211_rx_data *rx)
 	if (cfg80211_rx_mgmt_ext(&rx->sdata->wdev, &info)) {
 		if (rx->sta)
 			rx->link_sta->rx_stats.packets++;
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), rx->skb, __func__, __LINE__);
 		dev_kfree_skb(rx->skb);
 		return RX_QUEUED;
 	}
@@ -3910,6 +3935,7 @@ ieee80211_rx_h_action_post_userspace(struct ieee80211_rx_data *rx)
  handled:
 	if (rx->sta)
 		rx->link_sta->rx_stats.packets++;
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), rx->skb, __func__, __LINE__);
 	dev_kfree_skb(rx->skb);
 	return RX_QUEUED;
 }
@@ -4103,6 +4129,7 @@ static void ieee80211_rx_cooked_monitor(struct ieee80211_rx_data *rx,
 			skb2 = skb_clone(skb, GFP_ATOMIC);
 			if (skb2) {
 				skb2->dev = prev_dev;
+				printk("[MODULE -> %s], [THREAD -> %s] [NETIF_RECV_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb2, __func__, __LINE__);
 				netif_receive_skb(skb2);
 			}
 		}
@@ -4113,6 +4140,7 @@ static void ieee80211_rx_cooked_monitor(struct ieee80211_rx_data *rx,
 
 	if (prev_dev) {
 		skb->dev = prev_dev;
+		printk("[MODULE -> %s], [THREAD -> %s] [NETIF_RECV_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		netif_receive_skb(skb);
 		return;
 	}
@@ -4771,6 +4799,7 @@ static void ieee80211_rx_8023(struct ieee80211_rx_data *rx,
 	if (rx->link_id >= 0) {
 		link_sta = rcu_dereference(sta->link[rx->link_id]);
 		if (WARN_ON_ONCE(!link_sta)) {
+			printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), rx->skb, __func__, __LINE__);
 			dev_kfree_skb(rx->skb);
 			return;
 		}
@@ -4995,6 +5024,7 @@ static bool ieee80211_invoke_fast_rx(struct ieee80211_rx_data *rx,
 
 	return true;
  drop:
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	dev_kfree_skb(skb);
 
 	if (fast_rx->uses_rss)
@@ -5136,6 +5166,7 @@ static void __ieee80211_rx_handle_8023(struct ieee80211_hw *hw,
 	return;
 
 drop:
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	dev_kfree_skb(skb);
 }
 
@@ -5211,6 +5242,7 @@ static void __ieee80211_rx_handle_packet(struct ieee80211_hw *hw,
 	}
 
 	if (err) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		dev_kfree_skb(skb);
 		return;
 	}
@@ -5329,6 +5361,7 @@ static void __ieee80211_rx_handle_packet(struct ieee80211_hw *hw,
 	}
 
  out:
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	dev_kfree_skb(skb);
 }
 
@@ -5465,6 +5498,7 @@ void ieee80211_rx_list(struct ieee80211_hw *hw, struct ieee80211_sta *pubsta,
 	kcov_remote_stop();
 	return;
  drop:
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	kfree_skb(skb);
 }
 EXPORT_SYMBOL(ieee80211_rx_list);
@@ -5475,7 +5509,7 @@ void ieee80211_rx_napi(struct ieee80211_hw *hw, struct ieee80211_sta *pubsta,
 	struct sk_buff *tmp;
 	LIST_HEAD(list);
 
-
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	/*
 	 * key references and virtual interfaces are protected using RCU
 	 * and this requires that we are in a read-side RCU section during
@@ -5487,6 +5521,7 @@ void ieee80211_rx_napi(struct ieee80211_hw *hw, struct ieee80211_sta *pubsta,
 
 	if (!napi) {
 		netif_receive_skb_list(&list);
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return;
 	}
 
@@ -5494,6 +5529,7 @@ void ieee80211_rx_napi(struct ieee80211_hw *hw, struct ieee80211_sta *pubsta,
 		skb_list_del_init(skb);
 		napi_gro_receive(napi, skb);
 	}
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
 EXPORT_SYMBOL(ieee80211_rx_napi);
 
@@ -5503,10 +5539,14 @@ void ieee80211_rx_irqsafe(struct ieee80211_hw *hw, struct sk_buff *skb)
 {
 	struct ieee80211_local *local = hw_to_local(hw);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
+
 	BUILD_BUG_ON(sizeof(struct ieee80211_rx_status) > sizeof(skb->cb));
 
 	skb->pkt_type = IEEE80211_RX_MSG;
 	skb_queue_tail(&local->skb_queue, skb);
 	tasklet_schedule(&local->tasklet);
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
 EXPORT_SYMBOL(ieee80211_rx_irqsafe);
