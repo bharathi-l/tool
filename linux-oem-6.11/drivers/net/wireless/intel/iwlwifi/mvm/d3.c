@@ -16,6 +16,7 @@
 #include "fw-api.h"
 #include "mvm.h"
 #include "fw/img.h"
+#include <linux/drv_dbg.h>
 
 void iwl_mvm_set_rekey_data(struct ieee80211_hw *hw,
 			    struct ieee80211_vif *vif,
@@ -1575,6 +1576,8 @@ static void iwl_mvm_report_wakeup_reasons(struct iwl_mvm *mvm,
 			if (!pkt)
 				goto report;
 
+			printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), pkt, __func__, __LINE__);
+
 			skb_put_data(pkt, pktdata, hdrlen);
 			pktdata += hdrlen;
 			pktsize -= hdrlen;
@@ -1635,6 +1638,7 @@ static void iwl_mvm_report_wakeup_reasons(struct iwl_mvm *mvm,
 
  report:
 	ieee80211_report_wowlan_wakeup(vif, wakeup_report, GFP_KERNEL);
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), pkt, __func__, __LINE__);
 	kfree_skb(pkt);
 }
 

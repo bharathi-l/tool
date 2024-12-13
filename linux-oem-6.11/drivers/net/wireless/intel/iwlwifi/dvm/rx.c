@@ -20,6 +20,7 @@
 #include "dev.h"
 #include "calib.h"
 #include "agn.h"
+#include <linux/drv_dbg.h>
 
 /******************************************************************************
  *
@@ -633,6 +634,7 @@ static void iwlagn_pass_packet_to_mac80211(struct iwl_priv *priv,
 		IWL_ERR(priv, "alloc_skb failed\n");
 		return;
 	}
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	/* If frame is small enough to fit in skb->head, pull it completely.
 	 * If not, only pull ieee80211_hdr so that splice() or TCP coalesce
 	 * are more efficient.

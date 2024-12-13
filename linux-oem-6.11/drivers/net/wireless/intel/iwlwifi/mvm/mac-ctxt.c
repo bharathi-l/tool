@@ -12,6 +12,7 @@
 #include "fw-api.h"
 #include "mvm.h"
 #include "time-event.h"
+#include <linux/drv_dbg.h>
 
 const u8 iwl_mvm_ac_to_tx_fifo[] = {
 	IWL_MVM_TX_FIFO_VO,
@@ -1217,12 +1218,14 @@ int iwl_mvm_mac_ctxt_beacon_changed(struct iwl_mvm *mvm,
 
 #ifdef CONFIG_IWLWIFI_DEBUGFS
 	if (mvm->beacon_inject_active) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), beacon, __func__, __LINE__);
 		dev_kfree_skb(beacon);
 		return -EBUSY;
 	}
 #endif
 
 	ret = iwl_mvm_mac_ctxt_send_beacon(mvm, vif, beacon, link_conf);
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), beacon, __func__, __LINE__);
 	dev_kfree_skb(beacon);
 	return ret;
 }
@@ -1726,6 +1729,8 @@ void iwl_mvm_rx_stored_beacon_notif(struct iwl_mvm *mvm,
 		IWL_ERR(mvm, "alloc_skb failed\n");
 		return;
 	}
+
+	printk("[MODULE -> %s], [THREAD -> %s] [ALLOC_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 
 	/* update rx_status according to the notification's metadata */
 	memset(&rx_status, 0, sizeof(rx_status));

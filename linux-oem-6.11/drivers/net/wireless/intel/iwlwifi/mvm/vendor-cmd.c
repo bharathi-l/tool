@@ -5,6 +5,7 @@
 #include "mvm.h"
 #include <linux/nl80211-vnd-intel.h>
 #include <net/netlink.h>
+#include <linux/drv_dbg.h>
 
 static const struct nla_policy
 iwl_mvm_vendor_attr_policy[NUM_IWL_MVM_VENDOR_ATTR] = {
@@ -53,6 +54,7 @@ static int iwl_mvm_vendor_get_csme_conn_info(struct wiphy *wiphy,
 		       csme_conn_info->conn_info.channel) ||
 	    nla_put(skb, IWL_MVM_VENDOR_ATTR_ADDR, ETH_ALEN,
 		    csme_conn_info->conn_info.bssid)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		err = -ENOBUFS;
 	}
@@ -149,5 +151,6 @@ void iwl_mvm_send_roaming_forbidden_event(struct iwl_mvm *mvm,
 	return;
 
  nla_put_failure:
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), msg, __func__, __LINE__);
 	kfree_skb(msg);
 }

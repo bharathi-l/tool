@@ -25,6 +25,7 @@
 #include "iwl-op-mode.h"
 #include "internal.h"
 #include "fw/api/tx.h"
+#include <linux/drv_dbg.h>
 
 /*************** DMA-QUEUE-GENERAL-FUNCTIONS  *****
  * DMA services
@@ -1703,6 +1704,8 @@ static int iwl_fill_data_tbs(struct iwl_trans *trans, struct sk_buff *skb,
 	head_tb_len = skb_headlen(skb) - hdr_len;
 
 	if (head_tb_len > 0) {
+		printk("[MODULE -> %s], [THREAD -> %s] [DMA_MAP_SINGLE -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+		printk("[MODULE -> %s], [THREAD -> %s] [DMA_MAP_SINGLE -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb->data, __func__, __LINE__);
 		dma_addr_t tb_phys = dma_map_single(trans->dev,
 						    skb->data + hdr_len,
 						    head_tb_len, DMA_TO_DEVICE);

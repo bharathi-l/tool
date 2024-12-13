@@ -1383,6 +1383,7 @@ static int _iwl_dbgfs_inject_beacon_ie(struct iwl_mvm *mvm, char *bin, int len)
 		goto out_err;
 
 	if (len && hex2bin(skb_put_zero(beacon, len), bin, len)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), beacon, __func__, __LINE__);
 		dev_kfree_skb(beacon);
 		goto out_err;
 	}
@@ -1422,6 +1423,7 @@ static int _iwl_dbgfs_inject_beacon_ie(struct iwl_mvm *mvm, char *bin, int len)
 	}
 	mutex_unlock(&mvm->mutex);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), beacon, __func__, __LINE__);
 	dev_kfree_skb(beacon);
 
 	return 0;

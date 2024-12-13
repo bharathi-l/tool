@@ -37,7 +37,7 @@
 #include "dev.h"
 #include "calib.h"
 #include "agn.h"
-
+#include <linux/drv_dbg.h>
 
 /******************************************************************************
  *
@@ -291,6 +291,7 @@ static void iwl_bg_beacon_update(struct work_struct *work)
 	}
 
 	/* new beacon skb is allocated every time; dispose previous.*/
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), priv->beacon_skb, __func__, __LINE__);
 	dev_kfree_skb(priv->beacon_skb);
 
 	priv->beacon_skb = beacon;
@@ -943,6 +944,7 @@ void iwl_down(struct iwl_priv *priv)
 			test_bit(STATUS_EXIT_PENDING, &priv->status) <<
 				STATUS_EXIT_PENDING;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), priv->beacon_skb, __func__, __LINE__);
 	dev_kfree_skb(priv->beacon_skb);
 	priv->beacon_skb = NULL;
 }
@@ -1529,6 +1531,7 @@ static void iwl_op_mode_dvm_stop(struct iwl_op_mode *op_mode)
 
 	iwl_uninit_drv(priv);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), priv->beacon_skb, __func__, __LINE__);
 	dev_kfree_skb(priv->beacon_skb);
 
 	iwl_trans_op_mode_leave(priv->trans);

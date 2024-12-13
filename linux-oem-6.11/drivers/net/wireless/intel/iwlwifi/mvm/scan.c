@@ -2766,10 +2766,12 @@ static void iwl_mvm_mei_scan_work(struct work_struct *wk)
 	while ((skb = skb_dequeue(&scan_filter->scan_res))) {
 		struct ieee80211_mgmt *mgmt = (void *)skb->data;
 
-		if (!memcmp(mgmt->bssid, bssid, ETH_ALEN))
+		if (!memcmp(mgmt->bssid, bssid, ETH_ALEN)) {
 			ieee80211_rx_irqsafe(mvm->hw, skb);
-		else
+		} else {
+			printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 			kfree_skb(skb);
+		}
 	}
 }
 

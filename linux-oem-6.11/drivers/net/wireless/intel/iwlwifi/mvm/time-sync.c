@@ -6,6 +6,7 @@
 #include "mvm.h"
 #include "time-sync.h"
 #include <linux/ieee80211.h>
+#include <linux/drv_dbg.h>
 
 void iwl_mvm_init_time_sync(struct iwl_time_sync_data *data)
 {
@@ -43,6 +44,7 @@ static struct sk_buff *iwl_mvm_time_sync_find_skb(struct iwl_mvm *mvm, u8 *addr,
 		if (iwl_mvm_is_skb_match(skb, addr, dialog_token))
 			break;
 
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		kfree_skb(skb);
 		skb = NULL;
 	}

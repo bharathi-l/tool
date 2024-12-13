@@ -14,6 +14,7 @@
 #include "fw/api/commands.h"
 #include "fw/api/datapath.h"
 #include "iwl-scd.h"
+#include <linux/drv_dbg.h>
 
 static struct page *get_workaround_page(struct iwl_trans *trans,
 					struct sk_buff *skb)
@@ -441,6 +442,8 @@ iwl_tfh_tfd *iwl_txq_gen2_build_tx(struct iwl_trans *trans,
 	if (tb2_len > 0) {
 		int ret;
 
+		printk("[MODULE -> %s], [THREAD -> %s] [DMA_MAP_SINGLE -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
+		printk("[MODULE -> %s], [THREAD -> %s] [DMA_MAP_SINGLE -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb->data, __func__, __LINE__);
 		tb_phys = dma_map_single(trans->dev, skb->data + hdr_len,
 					 tb2_len, DMA_TO_DEVICE);
 		ret = iwl_txq_gen2_set_tb_with_wa(trans, skb, tfd, tb_phys,
@@ -456,6 +459,8 @@ iwl_tfh_tfd *iwl_txq_gen2_build_tx(struct iwl_trans *trans,
 	skb_walk_frags(skb, frag) {
 		int ret;
 
+		printk("[MODULE -> %s], [THREAD -> %s] [DMA_MAP_SINGLE -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), frag, __func__, __LINE__);
+		printk("[MODULE -> %s], [THREAD -> %s] [DMA_MAP_SINGLE -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), frag->data, __func__, __LINE__);
 		tb_phys = dma_map_single(trans->dev, frag->data,
 					 skb_headlen(frag), DMA_TO_DEVICE);
 		ret = iwl_txq_gen2_set_tb_with_wa(trans, skb, tfd, tb_phys,
@@ -662,16 +667,18 @@ void iwl_txq_gen2_tfd_unmap(struct iwl_trans *trans,
 
 	/* first TB is never freed - it's the bidirectional DMA data */
 	for (i = 1; i < num_tbs; i++) {
-		if (meta->tbs & BIT(i))
+		if (meta->tbs & BIT(i)) {
 			dma_unmap_page(trans->dev,
 				       le64_to_cpu(tfd->tbs[i].addr),
 				       le16_to_cpu(tfd->tbs[i].tb_len),
 				       DMA_TO_DEVICE);
-		else
+		} else {
+			printk("[MODULE -> %s], [THREAD -> %s] [DMA_UNMAP_SINGLE -> 0x%llx] [INDEX -> %d] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), le64_to_cpu(tfd->tbs[i].addr),i, __func__, __LINE__);
 			dma_unmap_single(trans->dev,
 					 le64_to_cpu(tfd->tbs[i].addr),
 					 le16_to_cpu(tfd->tbs[i].tb_len),
 					 DMA_TO_DEVICE);
+		}
 	}
 
 	iwl_txq_set_tfd_invalid_gen2(trans, tfd);

@@ -4446,15 +4446,15 @@ int iwl_mvm_mac_sched_scan_start(struct ieee80211_hw *hw,
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	guard(mvm)(mvm);
 
 	if (!vif->cfg.idle) {
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EBUSY;
 	}
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return iwl_mvm_sched_scan_start(mvm, vif, req, ies, IWL_MVM_SCAN_SCHED);
 }
 
@@ -4464,7 +4464,7 @@ int iwl_mvm_mac_sched_scan_stop(struct ieee80211_hw *hw,
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 	int ret;
 
-	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	mutex_lock(&mvm->mutex);
 
@@ -4478,7 +4478,7 @@ int iwl_mvm_mac_sched_scan_stop(struct ieee80211_hw *hw,
 	*/
 	if (!(mvm->scan_status & IWL_MVM_SCAN_SCHED)) {
 		mutex_unlock(&mvm->mutex);
-		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return 0;
 	}
 
@@ -4486,7 +4486,7 @@ int iwl_mvm_mac_sched_scan_stop(struct ieee80211_hw *hw,
 	mutex_unlock(&mvm->mutex);
 	iwl_mvm_wait_for_async_handlers(mvm);
 
-	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return ret;
 }
 

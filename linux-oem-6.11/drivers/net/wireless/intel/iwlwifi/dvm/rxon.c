@@ -11,6 +11,7 @@
 #include "dev.h"
 #include "agn.h"
 #include "calib.h"
+#include <linux/drv_dbg.h>
 
 /*
  * initialize rxon structure with default values from eeprom
@@ -182,6 +183,7 @@ static int iwlagn_update_beacon(struct iwl_priv *priv,
 {
 	lockdep_assert_held(&priv->mutex);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), priv->beacon_skb, __func__, __LINE__);
 	dev_kfree_skb(priv->beacon_skb);
 	priv->beacon_skb = ieee80211_beacon_get(priv->hw, vif, 0);
 	if (!priv->beacon_skb)

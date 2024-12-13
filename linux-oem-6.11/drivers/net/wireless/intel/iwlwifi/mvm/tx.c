@@ -1437,10 +1437,12 @@ int iwl_mvm_tx_skb_sta(struct iwl_mvm *mvm, struct sk_buff *skb,
 			/* skb here is not necessarily same as skb that entered this method,
 			 * so free it explicitly.
 			 */
-			if (skb == orig_skb)
+			if (skb == orig_skb) {
 				ieee80211_free_txskb(mvm->hw, skb);
-			else
+			} else {
+				printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 				kfree_skb(skb);
+			}
 			/* there was error, but we consumed skb one way or another, so return 0 */
 			printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 			return 0;

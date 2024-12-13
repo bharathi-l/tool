@@ -603,6 +603,7 @@ void iwl_mvm_tdls_cancel_channel_switch(struct ieee80211_hw *hw,
 		wait_for_phy = true;
 
 	mvm->tdls_cs.peer.sta_id = IWL_MVM_INVALID_STA;
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), mvm->tdls_cs.peer.skb, __func__, __LINE__);
 	dev_kfree_skb(mvm->tdls_cs.peer.skb);
 	mvm->tdls_cs.peer.skb = NULL;
 

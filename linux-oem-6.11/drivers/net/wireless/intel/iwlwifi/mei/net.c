@@ -24,6 +24,7 @@
 #include "internal.h"
 #include "sap.h"
 #include "iwl-mei.h"
+#include <linux/drv_dbg.h>
 
 /*
  * Returns true if further filtering should be stopped. Only in that case
@@ -360,8 +361,10 @@ rx_handler_result_t iwl_mei_rx_filter(struct sk_buff *orig_skb,
 	 * In case we drop the packet, don't free it, the caller will do that
 	 * for us
 	 */
-	if (ret == RX_HANDLER_PASS)
+	if (ret == RX_HANDLER_PASS) {
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		dev_kfree_skb(skb);
+	}
 
 	return ret;
 }
@@ -407,6 +410,7 @@ void iwl_mei_tx_copy_to_csme(struct sk_buff *origskb, unsigned int ivlen)
 
 	iwl_mei_add_data_to_ring(skb, true);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	dev_kfree_skb(skb);
 }
 EXPORT_SYMBOL_GPL(iwl_mei_tx_copy_to_csme);

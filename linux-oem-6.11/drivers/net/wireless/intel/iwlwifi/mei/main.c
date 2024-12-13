@@ -24,6 +24,7 @@
 #include "trace.h"
 #include "trace-data.h"
 #include "sap.h"
+#include <linux/drv_dbg.h>
 
 MODULE_DESCRIPTION("The Intel(R) wireless / CSME firmware interface");
 MODULE_LICENSE("GPL");
@@ -600,6 +601,7 @@ static rx_handler_result_t iwl_mei_rx_handler(struct sk_buff **pskb)
 
 	if (res != RX_HANDLER_PASS) {
 		trace_iwlmei_sap_data(skb, IWL_SAP_RX_DATA_DROPPED_FROM_AIR);
+		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		dev_kfree_skb(skb);
 	}
 
