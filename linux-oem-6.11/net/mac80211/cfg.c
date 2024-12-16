@@ -3163,6 +3163,7 @@ ieee80211_sched_scan_start(struct wiphy *wiphy,
 			   struct cfg80211_sched_scan_request *req)
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+	int ret;
 
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
@@ -3171,8 +3172,9 @@ ieee80211_sched_scan_start(struct wiphy *wiphy,
 		return -EOPNOTSUPP;
 	}
 
+	ret = ieee80211_request_sched_scan_start(sdata, req);
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
-	return ieee80211_request_sched_scan_start(sdata, req);
+	return ret;
 }
 
 static int
@@ -3180,6 +3182,7 @@ ieee80211_sched_scan_stop(struct wiphy *wiphy, struct net_device *dev,
 			  u64 reqid)
 {
 	struct ieee80211_local *local = wiphy_priv(wiphy);
+	int ret;
 
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
@@ -3188,8 +3191,9 @@ ieee80211_sched_scan_stop(struct wiphy *wiphy, struct net_device *dev,
 		return -EOPNOTSUPP;
 	}
 
+	ret = ieee80211_request_sched_scan_stop(local);
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
-	return ieee80211_request_sched_scan_stop(local);
+	return ret;
 }
 
 static int ieee80211_auth(struct wiphy *wiphy, struct net_device *dev,
