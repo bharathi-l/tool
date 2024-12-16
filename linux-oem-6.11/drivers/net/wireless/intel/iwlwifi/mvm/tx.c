@@ -1373,6 +1373,7 @@ int iwl_mvm_tx_skb_sta(struct iwl_mvm *mvm, struct sk_buff *skb,
 		return retfun;
 	}
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 	payload_len = skb_tail_pointer(skb) - skb_transport_header(skb) -
 		tcp_hdrlen(skb) + skb->data_len;
 
@@ -2049,7 +2050,6 @@ void iwl_mvm_rx_tx_cmd(struct iwl_mvm *mvm, struct iwl_rx_cmd_buffer *rxb)
 {
 	struct iwl_rx_packet *pkt = rxb_addr(rxb);
 	struct iwl_mvm_tx_resp *tx_resp = (void *)pkt->data;
-
 	if (tx_resp->frame_count == 1)
 		iwl_mvm_rx_tx_cmd_single(mvm, pkt);
 	else

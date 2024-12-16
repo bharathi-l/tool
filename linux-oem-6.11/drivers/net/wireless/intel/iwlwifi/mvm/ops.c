@@ -30,6 +30,7 @@
 #include "fw/acpi.h"
 #include "fw/uefi.h"
 #include "time-sync.h"
+#include <linux/drv_dbg.h>
 
 #define DRV_DESCRIPTION	"The new Intel(R) wireless AGN driver for Linux"
 MODULE_DESCRIPTION(DRV_DESCRIPTION);
@@ -1694,6 +1695,21 @@ static inline void iwl_mvm_rx_check_trigger(struct iwl_mvm *mvm,
 	}
 }
 
+#ifdef HANDLERS_DBG_PRINT
+
+void debug_handler_print(const struct iwl_rx_handlers* handlers, size_t num_handlers) 
+{
+	for (size_t i = 0; i < num_handlers; ++i) {
+		printk("[MODULE -> %s], [THREAD -> %s] [HANDLER -> %zu] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), i+1, __func__, __LINE__);
+		printk("[MODULE -> %s], [THREAD -> %s] [CMD_ID -> %x] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), handlers[i].cmd_id, __func__, __LINE__);
+		printk("[MODULE -> %s], [THREAD -> %s] [FN -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), handlers[i].fn, __func__, __LINE__);
+		printk("[MODULE -> %s], [THREAD -> %s] [CONTEXT -> %d] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), handlers[i].context, __func__, __LINE__);
+		printk("[MODULE -> %s], [THREAD -> %s] [MIN_SIZE -> %u] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), handlers[i].min_size, __func__, __LINE__);
+	}
+
+}
+#endif
+
 static void iwl_mvm_rx_common(struct iwl_mvm *mvm,
 			      struct iwl_rx_cmd_buffer *rxb,
 			      struct iwl_rx_packet *pkt)
@@ -1702,6 +1718,9 @@ static void iwl_mvm_rx_common(struct iwl_mvm *mvm,
 	int i;
 	union iwl_dbg_tlv_tp_data tp_data = { .fw_pkt = pkt };
 
+#ifdef HANDLERS_DBG_PRINT
+	size_t num_handlers = sizeof(iwl_mvm_rx_handlers) / sizeof(iwl_mvm_rx_handlers[0]);
+#endif	
 	iwl_dbg_tlv_time_point(&mvm->fwrt,
 			       IWL_FW_INI_TIME_POINT_FW_RSP_OR_NOTIF, &tp_data);
 	iwl_mvm_rx_check_trigger(mvm, pkt);
@@ -1716,7 +1735,7 @@ static void iwl_mvm_rx_common(struct iwl_mvm *mvm,
 	for (i = 0; i < ARRAY_SIZE(iwl_mvm_rx_handlers); i++) {
 		const struct iwl_rx_handlers *rx_h = &iwl_mvm_rx_handlers[i];
 		struct iwl_async_handler_entry *entry;
-
+		
 		if (rx_h->cmd_id != WIDE_ID(pkt->hdr.group_id, pkt->hdr.cmd))
 			continue;
 
@@ -1726,6 +1745,9 @@ static void iwl_mvm_rx_common(struct iwl_mvm *mvm,
 			return;
 
 		if (rx_h->context == RX_HANDLER_SYNC) {
+#ifdef HANDLERS_DBG_PRINT
+    			debug_handler_print(iwl_mvm_rx_handlers, num_handlers);	
+#endif			
 			rx_h->fn(mvm, rxb);
 			return;
 		}
@@ -1775,7 +1797,6 @@ void iwl_mvm_rx_mq(struct iwl_op_mode *op_mode,
 	struct iwl_rx_packet *pkt = rxb_addr(rxb);
 	struct iwl_mvm *mvm = IWL_OP_MODE_GET_MVM(op_mode);
 	u16 cmd = WIDE_ID(pkt->hdr.group_id, pkt->hdr.cmd);
-
 	if (likely(cmd == WIDE_ID(LEGACY_GROUP, REPLY_RX_MPDU_CMD)))
 		iwl_mvm_rx_mpdu_mq(mvm, napi, rxb, 0);
 	else if (unlikely(cmd == WIDE_ID(DATA_PATH_GROUP,

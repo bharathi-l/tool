@@ -4445,6 +4445,7 @@ int iwl_mvm_mac_sched_scan_start(struct ieee80211_hw *hw,
 				 struct ieee80211_scan_ies *ies)
 {
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
+	int ret;
 
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
@@ -4454,8 +4455,10 @@ int iwl_mvm_mac_sched_scan_start(struct ieee80211_hw *hw,
 		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return -EBUSY;
 	}
+
+	ret = iwl_mvm_sched_scan_start(mvm, vif, req, ies, IWL_MVM_SCAN_SCHED);
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
-	return iwl_mvm_sched_scan_start(mvm, vif, req, ies, IWL_MVM_SCAN_SCHED);
+	return ret;
 }
 
 int iwl_mvm_mac_sched_scan_stop(struct ieee80211_hw *hw,
