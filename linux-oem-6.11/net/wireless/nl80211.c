@@ -19494,8 +19494,10 @@ void cfg80211_rx_unprot_mlme_mgmt(struct net_device *dev, const u8 *buf,
 		event.cmd = NL80211_CMD_UNPROT_DISASSOCIATE;
 	} else if (ieee80211_is_beacon(mgmt->frame_control)) {
 		if (wdev->unprot_beacon_reported &&
-		    elapsed_jiffies_msecs(wdev->unprot_beacon_reported) < 10000)
+		    elapsed_jiffies_msecs(wdev->unprot_beacon_reported) < 10000) {
+			printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 			return;
+		}
 		event.cmd = NL80211_CMD_UNPROT_BEACON;
 		wdev->unprot_beacon_reported = jiffies;
 	} else {
