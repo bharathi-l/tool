@@ -4292,7 +4292,9 @@ void __ieee80211_subif_start_xmit(struct sk_buff *skb,
 	}
 
 	sk_pacing_shift_update(skb->sk, sdata->local->hw.tx_sk_pacing_shift);
-
+	
+	get_data_type(skb);
+	
 	rcu_read_lock();
 
 	if (ieee80211_vif_is_mesh(&sdata->vif) &&
