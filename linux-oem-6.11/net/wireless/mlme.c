@@ -765,7 +765,7 @@ void cfg80211_mlme_unregister_socket(struct wireless_dev *wdev, u32 nlportid)
 		kfree(reg);
 
 		wdev->mgmt_registrations_need_update = 1;
-		schedule_work(&rdev->mgmt_registrations_update_wk);
+		schedule_work_dbg(&rdev->mgmt_registrations_update_wk);
 	}
 
 	spin_unlock_bh(&rdev->mgmt_registrations_lock);
@@ -1011,8 +1011,8 @@ EXPORT_SYMBOL(cfg80211_rx_mgmt_ext);
 
 void cfg80211_sched_dfs_chan_update(struct cfg80211_registered_device *rdev)
 {
-	cancel_delayed_work(&rdev->dfs_update_channels_wk);
-	queue_delayed_work(cfg80211_wq, &rdev->dfs_update_channels_wk, 0);
+	cancel_delayed_work_dbg(&rdev->dfs_update_channels_wk);
+	queue_delayed_work_dbg(cfg80211_wq, &rdev->dfs_update_channels_wk, 0);
 }
 
 void cfg80211_dfs_channels_update_work(struct work_struct *work)
@@ -1092,7 +1092,7 @@ void cfg80211_dfs_channels_update_work(struct work_struct *work)
 
 	/* reschedule if there are other channels waiting to be cleared again */
 	if (check_again)
-		queue_delayed_work(cfg80211_wq, &rdev->dfs_update_channels_wk,
+		queue_delayed_work_dbg(cfg80211_wq, &rdev->dfs_update_channels_wk,
 				   next_time);
 }
 
@@ -1112,14 +1112,14 @@ void __cfg80211_radar_event(struct wiphy *wiphy,
 	cfg80211_set_dfs_state(wiphy, chandef, NL80211_DFS_UNAVAILABLE);
 
 	if (offchan)
-		queue_work(cfg80211_wq, &rdev->background_cac_abort_wk);
+		queue_work_dbg(cfg80211_wq, &rdev->background_cac_abort_wk);
 
 	cfg80211_sched_dfs_chan_update(rdev);
 
 	nl80211_radar_notify(rdev, chandef, NL80211_RADAR_DETECTED, NULL, gfp);
 
 	memcpy(&rdev->radar_chandef, chandef, sizeof(struct cfg80211_chan_def));
-	queue_work(cfg80211_wq, &rdev->propagate_radar_detect_wk);
+	queue_work_dbg(cfg80211_wq, &rdev->propagate_radar_detect_wk);
 }
 EXPORT_SYMBOL(__cfg80211_radar_event);
 
@@ -1149,7 +1149,7 @@ void cfg80211_cac_event(struct net_device *netdev,
 		cfg80211_set_dfs_state(wiphy, chandef, NL80211_DFS_AVAILABLE);
 		memcpy(&rdev->cac_done_chandef, chandef,
 		       sizeof(struct cfg80211_chan_def));
-		queue_work(cfg80211_wq, &rdev->propagate_cac_done_wk);
+		queue_work_dbg(cfg80211_wq, &rdev->propagate_cac_done_wk);
 		cfg80211_sched_dfs_chan_update(rdev);
 		fallthrough;
 	case NL80211_RADAR_CAC_ABORTED:
@@ -1188,12 +1188,12 @@ __cfg80211_background_cac_event(struct cfg80211_registered_device *rdev,
 	case NL80211_RADAR_CAC_FINISHED:
 		cfg80211_set_dfs_state(wiphy, chandef, NL80211_DFS_AVAILABLE);
 		memcpy(&rdev->cac_done_chandef, chandef, sizeof(*chandef));
-		queue_work(cfg80211_wq, &rdev->propagate_cac_done_wk);
+		queue_work_dbg(cfg80211_wq, &rdev->propagate_cac_done_wk);
 		cfg80211_sched_dfs_chan_update(rdev);
 		wdev = rdev->background_radar_wdev;
 		break;
 	case NL80211_RADAR_CAC_ABORTED:
-		if (!cancel_delayed_work(&rdev->background_cac_done_wk))
+		if (!cancel_delayed_work_dbg(&rdev->background_cac_done_wk))
 			return;
 		wdev = rdev->background_radar_wdev;
 		break;
@@ -1243,7 +1243,7 @@ void cfg80211_background_cac_abort(struct wiphy *wiphy)
 {
 	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wiphy);
 
-	queue_work(cfg80211_wq, &rdev->background_cac_abort_wk);
+	queue_work_dbg(cfg80211_wq, &rdev->background_cac_abort_wk);
 }
 EXPORT_SYMBOL(cfg80211_background_cac_abort);
 
@@ -1283,7 +1283,7 @@ cfg80211_start_background_radar_detection(struct cfg80211_registered_device *rde
 
 	__cfg80211_background_cac_event(rdev, wdev, chandef,
 					NL80211_RADAR_CAC_STARTED);
-	queue_delayed_work(cfg80211_wq, &rdev->background_cac_done_wk,
+	queue_delayed_work_dbg(cfg80211_wq, &rdev->background_cac_done_wk,
 			   msecs_to_jiffies(cac_time_ms));
 
 	return 0;

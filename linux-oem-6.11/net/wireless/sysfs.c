@@ -17,6 +17,7 @@
 #include "sysfs.h"
 #include "core.h"
 #include "rdev-ops.h"
+#include <linux/drv_dbg.h>
 
 static inline struct cfg80211_registered_device *dev_to_rdev(
 	struct device *dev)
@@ -137,7 +138,7 @@ static int wiphy_resume(struct device *dev)
 	if (rdev->wiphy.registered && rdev->ops->resume)
 		ret = rdev_resume(rdev);
 	rdev->suspended = false;
-	queue_work(system_unbound_wq, &rdev->wiphy_work);
+	queue_work_dbg(system_unbound_wq, &rdev->wiphy_work);
 	wiphy_unlock(&rdev->wiphy);
 
 	if (ret)

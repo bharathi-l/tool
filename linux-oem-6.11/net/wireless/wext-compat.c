@@ -22,6 +22,7 @@
 #include "wext-compat.h"
 #include "core.h"
 #include "rdev-ops.h"
+#include <linux/drv_dbg.h>
 
 int cfg80211_wext_giwname(struct net_device *dev,
 			  struct iw_request_info *info,
@@ -947,7 +948,7 @@ static int cfg80211_wext_siwtxpower(struct net_device *dev,
 		}
 	} else {
 		if (rfkill_set_sw_state(rdev->wiphy.rfkill, true))
-			schedule_work(&rdev->rfkill_block);
+			schedule_work_dbg(&rdev->rfkill_block);
 		return 0;
 	}
 

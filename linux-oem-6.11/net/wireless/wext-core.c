@@ -367,7 +367,7 @@ static int wext_netdev_notifier_call(struct notifier_block *nb,
 	 * to avoid them going out in a strange order, e.g. RTM_NEWLINK after
 	 * RTM_DELLINK, or with IFF_UP after without IFF_UP during dev_close()
 	 * or similar - all of which could otherwise happen due to delays from
-	 * schedule_work().
+	 * schedule_work_dbg().
 	 */
 	wireless_nlevent_flush();
 
@@ -641,7 +641,7 @@ void wireless_send_event(struct net_device *	dev,
 	skb_shinfo(skb)->frag_list = compskb;
 #endif
 	skb_queue_tail(&dev_net(dev)->wext_nlevents, skb);
-	schedule_work(&wireless_nlevent_work);
+	schedule_work_dbg(&wireless_nlevent_work);
 }
 EXPORT_SYMBOL(wireless_send_event);
 

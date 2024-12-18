@@ -14,7 +14,7 @@
 #include "wext-compat.h"
 #include "nl80211.h"
 #include "rdev-ops.h"
-
+#include <linux/drv_dbg.h>
 
 void __cfg80211_ibss_joined(struct net_device *dev, const u8 *bssid,
 			    struct ieee80211_channel *channel)
@@ -80,7 +80,7 @@ void cfg80211_ibss_joined(struct net_device *dev, const u8 *bssid,
 	spin_lock_irqsave(&wdev->event_lock, flags);
 	list_add_tail(&ev->list, &wdev->event_list);
 	spin_unlock_irqrestore(&wdev->event_lock, flags);
-	queue_work(cfg80211_wq, &rdev->event_work);
+	queue_work_dbg(cfg80211_wq, &rdev->event_work);
 }
 EXPORT_SYMBOL(cfg80211_ibss_joined);
 

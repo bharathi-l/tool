@@ -64,6 +64,7 @@
 #include "reg.h"
 #include "rdev-ops.h"
 #include "nl80211.h"
+#include <linux/drv_dbg.h>
 
 /*
  * Grace period we give before making sure all current interfaces reside on
@@ -521,7 +522,7 @@ static int reg_schedule_apply(const struct ieee80211_regdomain *regdom)
 	list_add_tail(&request->list, &reg_regdb_apply_list);
 	mutex_unlock(&reg_regdb_apply_mutex);
 
-	schedule_work(&reg_regdb_work);
+	schedule_work_dbg(&reg_regdb_work);
 	return 0;
 }
 
@@ -545,12 +546,12 @@ static void crda_timeout_work(struct work_struct *work)
 
 static void cancel_crda_timeout(void)
 {
-	cancel_delayed_work(&crda_timeout);
+	cancel_delayed_work_dbg(&crda_timeout);
 }
 
 static void cancel_crda_timeout_sync(void)
 {
-	cancel_delayed_work_sync(&crda_timeout);
+	cancel_delayed_work_sync_dbg(&crda_timeout);
 }
 
 static void reset_crda_timeouts(void)
@@ -586,7 +587,7 @@ static int call_crda(const char *alpha2)
 	if (ret)
 		return ret;
 
-	queue_delayed_work(system_power_efficient_wq,
+	queue_delayed_work_dbg(system_power_efficient_wq,
 			   &crda_timeout, msecs_to_jiffies(3142));
 	return 0;
 }
@@ -2491,7 +2492,7 @@ void reg_check_channels(void)
 	 * Give usermode a chance to do something nicer (move to another
 	 * channel, orderly disconnection), before forcing a disconnection.
 	 */
-	mod_delayed_work(system_power_efficient_wq,
+	mod_delayed_work_dbg(system_power_efficient_wq,
 			 &reg_check_chans,
 			 msecs_to_jiffies(REG_ENFORCE_GRACE_MS));
 }
@@ -2675,7 +2676,7 @@ static void reg_set_request_processed(void)
 	cancel_crda_timeout();
 
 	if (need_more_processing)
-		schedule_work(&reg_work);
+		schedule_work_dbg(&reg_work);
 }
 
 /**
@@ -3131,7 +3132,7 @@ static void reg_process_pending_hints(void)
 
 	spin_lock(&reg_requests_lock);
 	if (!list_empty(&reg_requests_list) && lr && lr->processed)
-		schedule_work(&reg_work);
+		schedule_work_dbg(&reg_work);
 	spin_unlock(&reg_requests_lock);
 }
 
@@ -3231,7 +3232,7 @@ static void queue_regulatory_request(struct regulatory_request *request)
 	list_add_tail(&request->list, &reg_requests_list);
 	spin_unlock(&reg_requests_lock);
 
-	schedule_work(&reg_work);
+	schedule_work_dbg(&reg_work);
 }
 
 /*
@@ -3591,7 +3592,7 @@ static void restore_regulatory_settings(bool reset_user, bool cached)
 
 	pr_debug("Kicking the queue\n");
 
-	schedule_work(&reg_work);
+	schedule_work_dbg(&reg_work);
 }
 
 static bool is_wiphy_all_set_reg_flag(enum ieee80211_regulatory_flags flag)
@@ -3707,7 +3708,7 @@ void regulatory_hint_found_beacon(struct wiphy *wiphy,
 	list_add_tail(&reg_beacon->list, &reg_pending_beacons);
 	spin_unlock_bh(&reg_pending_beacons_lock);
 
-	schedule_work(&reg_work);
+	schedule_work_dbg(&reg_work);
 }
 
 static void print_rd_rules(const struct ieee80211_regdomain *rd)
@@ -4074,7 +4075,7 @@ int regulatory_set_wiphy_regd(struct wiphy *wiphy,
 	if (ret)
 		return ret;
 
-	schedule_work(&reg_work);
+	schedule_work_dbg(&reg_work);
 	return 0;
 }
 EXPORT_SYMBOL(regulatory_set_wiphy_regd);
@@ -4362,9 +4363,9 @@ void regulatory_exit(void)
 	struct regulatory_request *reg_request, *tmp;
 	struct reg_beacon *reg_beacon, *btmp;
 
-	cancel_work_sync(&reg_work);
+	cancel_work_sync_dbg(&reg_work);
 	cancel_crda_timeout_sync();
-	cancel_delayed_work_sync(&reg_check_chans);
+	cancel_delayed_work_sync_dbg(&reg_check_chans);
 
 	/* Lock to suppress warnings */
 	rtnl_lock();

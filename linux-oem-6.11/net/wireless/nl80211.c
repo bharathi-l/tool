@@ -10510,7 +10510,7 @@ static int nl80211_start_radar_detection(struct sk_buff *skb,
 
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
-	flush_delayed_work(&rdev->dfs_update_channels_wk);
+	flush_delayed_work_dbg(&rdev->dfs_update_channels_wk);
 
 	switch (wdev->iftype) {
 	case NL80211_IFTYPE_AP:
@@ -10646,7 +10646,7 @@ static int nl80211_notify_radar_detection(struct sk_buff *skb,
 	rdev->radar_chandef = chandef;
 
 	/* Propagate this notification to other radios as well */
-	queue_work(cfg80211_wq, &rdev->propagate_radar_detect_wk);
+	queue_work_dbg(cfg80211_wq, &rdev->propagate_radar_detect_wk);
 
 	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return 0;
@@ -20658,7 +20658,7 @@ void cfg80211_cqm_rssi_notify(struct net_device *dev,
 	if (cqm_config) {
 		cqm_config->last_rssi_event_value = rssi_level;
 		cqm_config->last_rssi_event_type = rssi_event;
-		wiphy_work_queue(wdev->wiphy, &wdev->cqm_rssi_work);
+		wiphy_work_queue_dbg(wdev->wiphy, &wdev->cqm_rssi_work);
 	}
 	rcu_read_unlock();
 }
@@ -21483,7 +21483,7 @@ static int nl80211_netlink_notify(struct notifier_block * nb,
 					list) {
 			if (sched_scan_req->owner_nlportid == notify->portid) {
 				sched_scan_req->nl_owner_dead = true;
-				wiphy_work_queue(&rdev->wiphy,
+				wiphy_work_queue_dbg(&rdev->wiphy,
 						 &rdev->sched_scan_stop_wk);
 			}
 		}
@@ -21493,9 +21493,9 @@ static int nl80211_netlink_notify(struct notifier_block * nb,
 
 			if (wdev->owner_nlportid == notify->portid) {
 				wdev->nl_owner_dead = true;
-				schedule_work(&rdev->destroy_work);
+				schedule_work_dbg(&rdev->destroy_work);
 			} else if (wdev->conn_owner_nlportid == notify->portid) {
-				schedule_work(&wdev->disconnect_wk);
+				schedule_work_dbg(&wdev->disconnect_wk);
 			}
 
 			cfg80211_release_pmsr(wdev, notify->portid);

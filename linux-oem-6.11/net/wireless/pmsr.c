@@ -6,6 +6,7 @@
 #include "core.h"
 #include "nl80211.h"
 #include "rdev-ops.h"
+#include <linux/drv_dbg.h>
 
 static int pmsr_parse_ftm(struct cfg80211_registered_device *rdev,
 			  struct nlattr *ftmreq,
@@ -674,7 +675,7 @@ void cfg80211_release_pmsr(struct wireless_dev *wdev, u32 portid)
 	list_for_each_entry(req, &wdev->pmsr_list, list) {
 		if (req->nl_portid == portid) {
 			req->nl_portid = 0;
-			schedule_work(&wdev->pmsr_free_wk);
+			schedule_work_dbg(&wdev->pmsr_free_wk);
 		}
 	}
 	spin_unlock_bh(&wdev->pmsr_lock);

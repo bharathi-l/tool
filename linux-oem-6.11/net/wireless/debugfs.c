@@ -10,6 +10,7 @@
 #include <linux/slab.h>
 #include "core.h"
 #include "debugfs.h"
+#include <linux/drv_dbg.h>
 
 #define DEBUGFS_READONLY_FILE(name, buflen, fmt, value...)		\
 static ssize_t name## _read(struct file *file, char __user *userbuf,	\
@@ -141,7 +142,7 @@ static void wiphy_locked_debugfs_read_cancel(struct dentry *dentry,
 {
 	struct debugfs_read_work *w = data;
 
-	wiphy_work_cancel(w->wiphy, &w->work);
+	wiphy_work_cancel_dbg(w->wiphy, &w->work);
 	complete(&w->completion);
 }
 
@@ -174,8 +175,8 @@ ssize_t wiphy_locked_debugfs_read(struct wiphy *wiphy, struct file *file,
 	/* don't leak stack data or whatever */
 	memset(buf, 0, bufsize);
 
-	wiphy_work_init(&work.work, wiphy_locked_debugfs_read_work);
-	wiphy_work_queue(wiphy, &work.work);
+	wiphy_work_init_dbg(&work.work, wiphy_locked_debugfs_read_work);
+	wiphy_work_queue_dbg(wiphy, &work.work);
 
 	debugfs_enter_cancellation(file, &cancellation);
 	wait_for_completion(&work.completion);
@@ -221,7 +222,7 @@ static void wiphy_locked_debugfs_write_cancel(struct dentry *dentry,
 {
 	struct debugfs_write_work *w = data;
 
-	wiphy_work_cancel(w->wiphy, &w->work);
+	wiphy_work_cancel_dbg(w->wiphy, &w->work);
 	complete(&w->completion);
 }
 
@@ -259,8 +260,8 @@ ssize_t wiphy_locked_debugfs_write(struct wiphy *wiphy,
 	if (copy_from_user(buf, userbuf, count))
 		return -EFAULT;
 
-	wiphy_work_init(&work.work, wiphy_locked_debugfs_write_work);
-	wiphy_work_queue(wiphy, &work.work);
+	wiphy_work_init_dbg(&work.work, wiphy_locked_debugfs_write_work);
+	wiphy_work_queue_dbg(wiphy, &work.work);
 
 	debugfs_enter_cancellation(file, &cancellation);
 	wait_for_completion(&work.completion);

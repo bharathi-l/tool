@@ -9,7 +9,7 @@
 #include "nl80211.h"
 #include "core.h"
 #include "rdev-ops.h"
-
+#include <linux/drv_dbg.h>
 
 static int ___cfg80211_stop_ap(struct cfg80211_registered_device *rdev,
 			       struct net_device *dev, unsigned int link_id,
@@ -47,7 +47,7 @@ static int ___cfg80211_stop_ap(struct cfg80211_registered_device *rdev,
 		cfg80211_sched_dfs_chan_update(rdev);
 	}
 
-	schedule_work(&cfg80211_disconnect_work);
+	schedule_work_dbg(&cfg80211_disconnect_work);
 
 	return err;
 }

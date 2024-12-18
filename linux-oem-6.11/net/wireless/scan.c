@@ -1164,7 +1164,7 @@ void cfg80211_scan_done(struct cfg80211_scan_request *request,
 	}
 
 	request->notified = true;
-	wiphy_work_queue(request->wiphy,
+	wiphy_work_queue_dbg(request->wiphy,
 			 &wiphy_to_rdev(request->wiphy)->scan_done_wk);
 	
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
@@ -1274,7 +1274,7 @@ void cfg80211_sched_scan_results(struct wiphy *wiphy, u64 reqid)
 	request = cfg80211_find_sched_scan_req(rdev, reqid);
 	if (request) {
 		request->report_results = true;
-		queue_work(cfg80211_wq, &rdev->sched_scan_res_wk);
+		queue_work_dbg(cfg80211_wq, &rdev->sched_scan_res_wk);
 	}
 	rcu_read_unlock();
 	

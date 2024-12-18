@@ -25,6 +25,7 @@
 #include <linux/string.h>
 
 #include <net/lib80211.h>
+#include <linux/drv_dbg.h>
 
 #define DRV_DESCRIPTION	"common routines for IEEE802.11 drivers"
 
@@ -54,7 +55,7 @@ int lib80211_crypt_info_init(struct lib80211_crypt_info *info, char *name,
 	info->lock = lock;
 
 	INIT_LIST_HEAD(&info->crypt_deinit_list);
-	timer_setup(&info->crypt_deinit_timer, lib80211_crypt_deinit_handler,
+	timer_setup_dbg(&info->crypt_deinit_timer, lib80211_crypt_deinit_handler,
 		    0);
 
 	return 0;
@@ -66,7 +67,7 @@ void lib80211_crypt_info_free(struct lib80211_crypt_info *info)
 	int i;
 
         lib80211_crypt_quiescing(info);
-        del_timer_sync(&info->crypt_deinit_timer);
+        del_timer_sync_dbg(&info->crypt_deinit_timer);
         lib80211_crypt_deinit_entries(info, 1);
 
         for (i = 0; i < NUM_WEP_KEYS; i++) {
@@ -128,7 +129,7 @@ static void lib80211_crypt_deinit_handler(struct timer_list *t)
 		printk(KERN_DEBUG "%s: entries remaining in delayed crypt "
 		       "deletion list\n", info->name);
 		info->crypt_deinit_timer.expires = jiffies + HZ;
-		add_timer(&info->crypt_deinit_timer);
+		add_timer_dbg(&info->crypt_deinit_timer);
 	}
 	spin_unlock_irqrestore(info->lock, flags);
 }
@@ -154,7 +155,7 @@ void lib80211_crypt_delayed_deinit(struct lib80211_crypt_info *info,
 		list_add(&tmp->list, &info->crypt_deinit_list);
 		if (!timer_pending(&info->crypt_deinit_timer)) {
 			info->crypt_deinit_timer.expires = jiffies + HZ;
-			add_timer(&info->crypt_deinit_timer);
+			add_timer_dbg(&info->crypt_deinit_timer);
 		}
 	}
 	spin_unlock_irqrestore(info->lock, flags);

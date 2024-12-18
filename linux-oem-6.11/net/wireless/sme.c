@@ -21,6 +21,7 @@
 #include "nl80211.h"
 #include "reg.h"
 #include "rdev-ops.h"
+#include <linux/drv_dbg.h>
 
 /*
  * Software SME in cfg80211, using auth/assoc/deauth calls to the
@@ -309,7 +310,7 @@ static struct cfg80211_bss *cfg80211_get_conn_bss(struct wireless_dev *wdev)
 		return NULL;
 
 	cfg80211_step_auth_next(wdev->conn, bss);
-	schedule_work(&rdev->conn_work);
+	schedule_work_dbg(&rdev->conn_work);
 
 	return bss;
 }
@@ -333,7 +334,7 @@ void cfg80211_sme_scan_done(struct net_device *dev)
 	if (bss)
 		cfg80211_put_bss(&rdev->wiphy, bss);
 	else
-		schedule_work(&rdev->conn_work);
+		schedule_work_dbg(&rdev->conn_work);
 }
 
 void cfg80211_sme_rx_auth(struct wireless_dev *wdev, const u8 *buf, size_t len)
@@ -372,7 +373,7 @@ void cfg80211_sme_rx_auth(struct wireless_dev *wdev, const u8 *buf, size_t len)
 			break;
 		}
 		wdev->conn->state = CFG80211_CONN_AUTHENTICATE_NEXT;
-		schedule_work(&rdev->conn_work);
+		schedule_work_dbg(&rdev->conn_work);
 	} else if (status_code != WLAN_STATUS_SUCCESS) {
 		struct cfg80211_connect_resp_params cr;
 
@@ -383,7 +384,7 @@ void cfg80211_sme_rx_auth(struct wireless_dev *wdev, const u8 *buf, size_t len)
 		__cfg80211_connect_result(wdev->netdev, &cr, false);
 	} else if (wdev->conn->state == CFG80211_CONN_AUTHENTICATING) {
 		wdev->conn->state = CFG80211_CONN_ASSOCIATE_NEXT;
-		schedule_work(&rdev->conn_work);
+		schedule_work_dbg(&rdev->conn_work);
 	}
 }
 
@@ -407,12 +408,12 @@ bool cfg80211_sme_rx_assoc_resp(struct wireless_dev *wdev, u16 status)
 		 */
 		wdev->conn->prev_bssid_valid = false;
 		wdev->conn->state = CFG80211_CONN_ASSOCIATE_NEXT;
-		schedule_work(&rdev->conn_work);
+		schedule_work_dbg(&rdev->conn_work);
 		return true;
 	}
 
 	wdev->conn->state = CFG80211_CONN_ASSOC_FAILED;
-	schedule_work(&rdev->conn_work);
+	schedule_work_dbg(&rdev->conn_work);
 	return false;
 }
 
@@ -429,7 +430,7 @@ void cfg80211_sme_auth_timeout(struct wireless_dev *wdev)
 		return;
 
 	wdev->conn->state = CFG80211_CONN_AUTH_FAILED_TIMEOUT;
-	schedule_work(&rdev->conn_work);
+	schedule_work_dbg(&rdev->conn_work);
 }
 
 void cfg80211_sme_disassoc(struct wireless_dev *wdev)
@@ -440,7 +441,7 @@ void cfg80211_sme_disassoc(struct wireless_dev *wdev)
 		return;
 
 	wdev->conn->state = CFG80211_CONN_DEAUTH;
-	schedule_work(&rdev->conn_work);
+	schedule_work_dbg(&rdev->conn_work);
 }
 
 void cfg80211_sme_assoc_timeout(struct wireless_dev *wdev)
@@ -451,7 +452,7 @@ void cfg80211_sme_assoc_timeout(struct wireless_dev *wdev)
 		return;
 
 	wdev->conn->state = CFG80211_CONN_ASSOC_FAILED_TIMEOUT;
-	schedule_work(&rdev->conn_work);
+	schedule_work_dbg(&rdev->conn_work);
 }
 
 void cfg80211_sme_abandon_assoc(struct wireless_dev *wdev)
@@ -462,7 +463,7 @@ void cfg80211_sme_abandon_assoc(struct wireless_dev *wdev)
 		return;
 
 	wdev->conn->state = CFG80211_CONN_ABANDON;
-	schedule_work(&rdev->conn_work);
+	schedule_work_dbg(&rdev->conn_work);
 }
 
 static void cfg80211_wdev_release_bsses(struct wireless_dev *wdev)
@@ -1068,7 +1069,7 @@ void cfg80211_connect_done(struct net_device *dev,
 	spin_lock_irqsave(&wdev->event_lock, flags);
 	list_add_tail(&ev->list, &wdev->event_list);
 	spin_unlock_irqrestore(&wdev->event_lock, flags);
-	queue_work(cfg80211_wq, &rdev->event_work);
+	queue_work_dbg(cfg80211_wq, &rdev->event_work);
 }
 EXPORT_SYMBOL(cfg80211_connect_done);
 
@@ -1273,7 +1274,7 @@ void cfg80211_roamed(struct net_device *dev, struct cfg80211_roam_info *info,
 	spin_lock_irqsave(&wdev->event_lock, flags);
 	list_add_tail(&ev->list, &wdev->event_list);
 	spin_unlock_irqrestore(&wdev->event_lock, flags);
-	queue_work(cfg80211_wq, &rdev->event_work);
+	queue_work_dbg(cfg80211_wq, &rdev->event_work);
 
 	return;
 out:
@@ -1333,7 +1334,7 @@ void cfg80211_port_authorized(struct net_device *dev, const u8 *peer_addr,
 	spin_lock_irqsave(&wdev->event_lock, flags);
 	list_add_tail(&ev->list, &wdev->event_list);
 	spin_unlock_irqrestore(&wdev->event_lock, flags);
-	queue_work(cfg80211_wq, &rdev->event_work);
+	queue_work_dbg(cfg80211_wq, &rdev->event_work);
 }
 EXPORT_SYMBOL(cfg80211_port_authorized);
 
@@ -1396,7 +1397,7 @@ void __cfg80211_disconnected(struct net_device *dev, const u8 *ie,
 	wdev->wext.connect.ssid_len = 0;
 #endif
 
-	schedule_work(&cfg80211_disconnect_work);
+	schedule_work_dbg(&cfg80211_disconnect_work);
 
 	cfg80211_schedule_channels_check(wdev);
 }
@@ -1424,7 +1425,7 @@ void cfg80211_disconnected(struct net_device *dev, u16 reason,
 	spin_lock_irqsave(&wdev->event_lock, flags);
 	list_add_tail(&ev->list, &wdev->event_list);
 	spin_unlock_irqrestore(&wdev->event_lock, flags);
-	queue_work(cfg80211_wq, &rdev->event_work);
+	queue_work_dbg(cfg80211_wq, &rdev->event_work);
 }
 EXPORT_SYMBOL(cfg80211_disconnected);
 

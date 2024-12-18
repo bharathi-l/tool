@@ -30,6 +30,7 @@
 #include "debugfs.h"
 #include "wext-compat.h"
 #include "rdev-ops.h"
+#include <linux/drv_dbg.h>
 
 /* name for sysfs, %d is appended */
 #define PHY_NAME "phy"
@@ -433,7 +434,7 @@ static void cfg80211_wiphy_work(struct work_struct *work)
 	if (wk) {
 		list_del_init(&wk->entry);
 		if (!list_empty(&rdev->wiphy_work_list))
-			queue_work(system_unbound_wq, work);
+			queue_work_dbg(system_unbound_wq, work);
 		spin_unlock_irq(&rdev->wiphy_work_lock);
 
 		trace_wiphy_work_run(&rdev->wiphy, wk);
@@ -532,7 +533,7 @@ use_default_name:
 	spin_lock_init(&rdev->bss_lock);
 	INIT_LIST_HEAD(&rdev->bss_list);
 	INIT_LIST_HEAD(&rdev->sched_scan_req_list);
-	wiphy_work_init(&rdev->scan_done_wk, __cfg80211_scan_done);
+	wiphy_work_init_dbg(&rdev->scan_done_wk, __cfg80211_scan_done);
 	INIT_DELAYED_WORK(&rdev->dfs_update_channels_wk,
 			  cfg80211_dfs_channels_update_work);
 #ifdef CONFIG_CFG80211_WEXT
@@ -545,7 +546,7 @@ use_default_name:
 	device_enable_async_suspend(&rdev->wiphy.dev);
 
 	INIT_WORK(&rdev->destroy_work, cfg80211_destroy_iface_wk);
-	wiphy_work_init(&rdev->sched_scan_stop_wk, cfg80211_sched_scan_stop_wk);
+	wiphy_work_init_dbg(&rdev->sched_scan_stop_wk, cfg80211_sched_scan_stop_wk);
 	INIT_WORK(&rdev->sched_scan_res_wk, cfg80211_sched_scan_results_wk);
 	INIT_WORK(&rdev->propagate_radar_detect_wk,
 		  cfg80211_propagate_radar_detect_wk);
@@ -1132,17 +1133,17 @@ void wiphy_unregister(struct wiphy *wiphy)
 	rtnl_unlock();
 
 	/* this has nothing to do now but make sure it's gone */
-	cancel_work_sync(&rdev->wiphy_work);
+	cancel_work_sync_dbg(&rdev->wiphy_work);
 
-	cancel_work_sync(&rdev->conn_work);
-	flush_work(&rdev->event_work);
-	cancel_delayed_work_sync(&rdev->dfs_update_channels_wk);
-	cancel_delayed_work_sync(&rdev->background_cac_done_wk);
-	flush_work(&rdev->destroy_work);
-	flush_work(&rdev->propagate_radar_detect_wk);
-	flush_work(&rdev->propagate_cac_done_wk);
-	flush_work(&rdev->mgmt_registrations_update_wk);
-	flush_work(&rdev->background_cac_abort_wk);
+	cancel_work_sync_dbg(&rdev->conn_work);
+	flush_work_dbg(&rdev->event_work);
+	cancel_delayed_work_sync_dbg(&rdev->dfs_update_channels_wk);
+	cancel_delayed_work_sync_dbg(&rdev->background_cac_done_wk);
+	flush_work_dbg(&rdev->destroy_work);
+	flush_work_dbg(&rdev->propagate_radar_detect_wk);
+	flush_work_dbg(&rdev->propagate_cac_done_wk);
+	flush_work_dbg(&rdev->mgmt_registrations_update_wk);
+	flush_work_dbg(&rdev->background_cac_abort_wk);
 
 	cfg80211_rdev_free_wowlan(rdev);
 	cfg80211_free_coalesce(rdev->coalesce);
@@ -1187,7 +1188,7 @@ void wiphy_rfkill_set_hw_state_reason(struct wiphy *wiphy, bool blocked,
 	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wiphy);
 
 	if (rfkill_set_hw_state_reason(wiphy->rfkill, blocked, reason))
-		schedule_work(&rdev->rfkill_block);
+		schedule_work_dbg(&rdev->rfkill_block);
 }
 EXPORT_SYMBOL(wiphy_rfkill_set_hw_state_reason);
 
@@ -1232,7 +1233,7 @@ static void _cfg80211_unregister_wdev(struct wireless_dev *wdev,
 	kfree_sensitive(wdev->wext.keys);
 	wdev->wext.keys = NULL;
 #endif
-	wiphy_work_cancel(wdev->wiphy, &wdev->cqm_rssi_work);
+	wiphy_work_cancel_dbg(wdev->wiphy, &wdev->cqm_rssi_work);
 	/* deleted from the list, so can't be found from nl80211 any more */
 	cqm_config = rcu_access_pointer(wdev->cqm_config);
 	kfree_rcu(cqm_config, rcu_head);
@@ -1358,7 +1359,7 @@ void cfg80211_stop_iface(struct wiphy *wiphy, struct wireless_dev *wdev,
 	spin_lock_irqsave(&wdev->event_lock, flags);
 	list_add_tail(&ev->list, &wdev->event_list);
 	spin_unlock_irqrestore(&wdev->event_lock, flags);
-	queue_work(cfg80211_wq, &rdev->event_work);
+	queue_work_dbg(cfg80211_wq, &rdev->event_work);
 }
 EXPORT_SYMBOL(cfg80211_stop_iface);
 
@@ -1377,7 +1378,7 @@ void cfg80211_init_wdev(struct wireless_dev *wdev)
 	wdev->wext.connect.auth_type = NL80211_AUTHTYPE_AUTOMATIC;
 #endif
 
-	wiphy_work_init(&wdev->cqm_rssi_work, cfg80211_cqm_rssi_notify_work);
+	wiphy_work_init_dbg(&wdev->cqm_rssi_work, cfg80211_cqm_rssi_notify_work);
 
 	if (wdev->wiphy->flags & WIPHY_FLAG_PS_ON_BY_DEFAULT)
 		wdev->ps = true;
@@ -1501,8 +1502,8 @@ static int cfg80211_netdev_notifier_call(struct notifier_block *nb,
 		cfg80211_remove_links(wdev);
 		wiphy_unlock(&rdev->wiphy);
 		/* since we just did cfg80211_leave() nothing to do there */
-		cancel_work_sync(&wdev->disconnect_wk);
-		cancel_work_sync(&wdev->pmsr_free_wk);
+		cancel_work_sync_dbg(&wdev->disconnect_wk);
+		cancel_work_sync_dbg(&wdev->pmsr_free_wk);
 		break;
 	case NETDEV_DOWN:
 		wiphy_lock(&rdev->wiphy);
@@ -1622,11 +1623,11 @@ void wiphy_work_queue(struct wiphy *wiphy, struct wiphy_work *work)
 		list_add_tail(&work->entry, &rdev->wiphy_work_list);
 	spin_unlock_irqrestore(&rdev->wiphy_work_lock, flags);
 
-	queue_work(system_unbound_wq, &rdev->wiphy_work);
+	queue_work_dbg(system_unbound_wq, &rdev->wiphy_work);
 }
 EXPORT_SYMBOL_GPL(wiphy_work_queue);
 
-void wiphy_work_cancel(struct wiphy *wiphy, struct wiphy_work *work)
+void wiphy_work_cancel_dbg(struct wiphy *wiphy, struct wiphy_work *work)
 {
 	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wiphy);
 	unsigned long flags;
@@ -1640,9 +1641,9 @@ void wiphy_work_cancel(struct wiphy *wiphy, struct wiphy_work *work)
 		list_del_init(&work->entry);
 	spin_unlock_irqrestore(&rdev->wiphy_work_lock, flags);
 }
-EXPORT_SYMBOL_GPL(wiphy_work_cancel);
+EXPORT_SYMBOL_GPL(wiphy_work_cancel_dbg);
 
-void wiphy_work_flush(struct wiphy *wiphy, struct wiphy_work *work)
+void wiphy_work_flush_dbg(struct wiphy *wiphy, struct wiphy_work *work)
 {
 	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wiphy);
 	unsigned long flags;
@@ -1657,40 +1658,40 @@ void wiphy_work_flush(struct wiphy *wiphy, struct wiphy_work *work)
 	if (run)
 		cfg80211_process_wiphy_works(rdev, work);
 }
-EXPORT_SYMBOL_GPL(wiphy_work_flush);
+EXPORT_SYMBOL_GPL(wiphy_work_flush_dbg);
 
 void wiphy_delayed_work_timer(struct timer_list *t)
 {
 	struct wiphy_delayed_work *dwork = from_timer(dwork, t, timer);
 
-	wiphy_work_queue(dwork->wiphy, &dwork->work);
+	wiphy_work_queue_dbg(dwork->wiphy, &dwork->work);
 }
 EXPORT_SYMBOL(wiphy_delayed_work_timer);
 
-void wiphy_delayed_work_queue(struct wiphy *wiphy,
+void wiphy_delayed_work_queue_dbg(struct wiphy *wiphy,
 			      struct wiphy_delayed_work *dwork,
 			      unsigned long delay)
 {
 	trace_wiphy_delayed_work_queue(wiphy, &dwork->work, delay);
 
 	if (!delay) {
-		del_timer(&dwork->timer);
-		wiphy_work_queue(wiphy, &dwork->work);
+		del_timer_dbg(&dwork->timer);
+		wiphy_work_queue_dbg(wiphy, &dwork->work);
 		return;
 	}
 
 	dwork->wiphy = wiphy;
-	mod_timer(&dwork->timer, jiffies + delay);
+	mod_timer_dbg(&dwork->timer, jiffies + delay);
 }
-EXPORT_SYMBOL_GPL(wiphy_delayed_work_queue);
+EXPORT_SYMBOL_GPL(wiphy_delayed_work_queue_dbg);
 
 void wiphy_delayed_work_cancel(struct wiphy *wiphy,
 			       struct wiphy_delayed_work *dwork)
 {
 	lockdep_assert_held(&wiphy->mtx);
 
-	del_timer_sync(&dwork->timer);
-	wiphy_work_cancel(wiphy, &dwork->work);
+	del_timer_sync_dbg(&dwork->timer);
+	wiphy_work_cancel_dbg(wiphy, &dwork->work);
 }
 EXPORT_SYMBOL_GPL(wiphy_delayed_work_cancel);
 
@@ -1699,8 +1700,8 @@ void wiphy_delayed_work_flush(struct wiphy *wiphy,
 {
 	lockdep_assert_held(&wiphy->mtx);
 
-	del_timer_sync(&dwork->timer);
-	wiphy_work_flush(wiphy, &dwork->work);
+	del_timer_sync_dbg(&dwork->timer);
+	wiphy_work_flush_dbg(wiphy, &dwork->work);
 }
 EXPORT_SYMBOL_GPL(wiphy_delayed_work_flush);
 
@@ -1730,7 +1731,7 @@ static int __init cfg80211_init(void)
 	if (err)
 		goto out_fail_reg;
 
-	cfg80211_wq = alloc_ordered_workqueue("cfg80211", WQ_MEM_RECLAIM);
+	cfg80211_wq = alloc_ordered_workqueue_dbg("cfg80211", WQ_MEM_RECLAIM);
 	if (!cfg80211_wq) {
 		err = -ENOMEM;
 		goto out_fail_wq;
@@ -1762,6 +1763,6 @@ static void __exit cfg80211_exit(void)
 	wiphy_sysfs_exit();
 	regulatory_exit();
 	unregister_pernet_device(&cfg80211_pernet_ops);
-	destroy_workqueue(cfg80211_wq);
+	destroy_workqueue_dbg(cfg80211_wq);
 }
 module_exit(cfg80211_exit);
