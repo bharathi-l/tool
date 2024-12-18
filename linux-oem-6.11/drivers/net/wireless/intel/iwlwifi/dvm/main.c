@@ -546,7 +546,7 @@ static void iwl_bg_ucode_trace(struct timer_list *t)
 	if (priv->event_log.ucode_trace) {
 		iwl_continuous_event_trace(priv);
 		/* Reschedule the timer to occur in UCODE_TRACE_PERIOD */
-		mod_timer(&priv->ucode_trace,
+		mod_timer_dbg(&priv->ucode_trace,
 			 jiffies + msecs_to_jiffies(UCODE_TRACE_PERIOD));
 	}
 }
@@ -777,7 +777,7 @@ int iwl_alive_start(struct iwl_priv *priv)
 
 	if (priv->event_log.ucode_trace) {
 		/* start collecting data now */
-		mod_timer(&priv->ucode_trace, jiffies);
+		mod_timer_dbg(&priv->ucode_trace, jiffies);
 	}
 
 	/* download priority table before any calibration request */
@@ -1052,7 +1052,7 @@ static void iwl_bg_restart(struct work_struct *data)
 
 static void iwl_setup_deferred_work(struct iwl_priv *priv)
 {
-	priv->workqueue = alloc_ordered_workqueue(DRV_NAME, 0);
+	priv->workqueue = alloc_ordered_workqueue_dbg(DRV_NAME, 0);
 
 	INIT_WORK(&priv->restart, iwl_bg_restart);
 	INIT_WORK(&priv->beacon_update, iwl_bg_beacon_update);
@@ -1066,9 +1066,9 @@ static void iwl_setup_deferred_work(struct iwl_priv *priv)
 	if (priv->lib->bt_params)
 		iwlagn_bt_setup_deferred_work(priv);
 
-	timer_setup(&priv->statistics_periodic, iwl_bg_statistics_periodic, 0);
+	timer_setup_dbg(&priv->statistics_periodic, iwl_bg_statistics_periodic, 0);
 
-	timer_setup(&priv->ucode_trace, iwl_bg_ucode_trace, 0);
+	timer_setup_dbg(&priv->ucode_trace, iwl_bg_ucode_trace, 0);
 }
 
 void iwl_cancel_deferred_work(struct iwl_priv *priv)
@@ -1076,16 +1076,16 @@ void iwl_cancel_deferred_work(struct iwl_priv *priv)
 	if (priv->lib->bt_params)
 		iwlagn_bt_cancel_deferred_work(priv);
 
-	cancel_work_sync(&priv->run_time_calib_work);
-	cancel_work_sync(&priv->beacon_update);
+	cancel_work_sync_dbg(&priv->run_time_calib_work);
+	cancel_work_sync_dbg(&priv->beacon_update);
 
 	iwl_cancel_scan_deferred_work(priv);
 
-	cancel_work_sync(&priv->bt_full_concurrency);
-	cancel_work_sync(&priv->bt_runtime_config);
+	cancel_work_sync_dbg(&priv->bt_full_concurrency);
+	cancel_work_sync_dbg(&priv->bt_runtime_config);
 
-	del_timer_sync(&priv->statistics_periodic);
-	del_timer_sync(&priv->ucode_trace);
+	del_timer_sync_dbg(&priv->statistics_periodic);
+	del_timer_sync_dbg(&priv->ucode_trace);
 }
 
 static int iwl_init_drv(struct iwl_priv *priv)
@@ -1494,7 +1494,7 @@ static struct iwl_op_mode *iwl_op_mode_dvm_start(struct iwl_trans *trans,
 out_destroy_workqueue:
 	iwl_tt_exit(priv);
 	iwl_cancel_deferred_work(priv);
-	destroy_workqueue(priv->workqueue);
+	destroy_workqueue_dbg(priv->workqueue);
 	priv->workqueue = NULL;
 	iwl_uninit_drv(priv);
 out_free_eeprom_blob:
@@ -1526,7 +1526,7 @@ static void iwl_op_mode_dvm_stop(struct iwl_op_mode *op_mode)
 	/* ieee80211_unregister_hw calls iwlagn_mac_stop, which flushes
 	 * priv->workqueue... so we can't take down the workqueue
 	 * until now... */
-	destroy_workqueue(priv->workqueue);
+	destroy_workqueue_dbg(priv->workqueue);
 	priv->workqueue = NULL;
 
 	iwl_uninit_drv(priv);
@@ -1940,7 +1940,7 @@ static void iwlagn_fw_error(struct iwl_priv *priv, bool ondemand)
 		if (iwlwifi_mod_params.fw_restart) {
 			IWL_DEBUG_FW(priv,
 				     "Restarting adapter due to uCode error.\n");
-			queue_work(priv->workqueue, &priv->restart);
+			queue_work_dbg(priv->workqueue, &priv->restart);
 		} else
 			IWL_DEBUG_FW(priv,
 				     "Detected FW error, but not restarting\n");

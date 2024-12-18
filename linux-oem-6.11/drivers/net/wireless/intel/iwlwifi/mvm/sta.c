@@ -275,7 +275,7 @@ static void iwl_mvm_rx_agg_session_expired(struct timer_list *t)
 
 	timeout = ba_data->last_rx + TU_TO_JIFFIES(ba_data->timeout * 2);
 	if (time_is_after_jiffies(timeout)) {
-		mod_timer(&ba_data->session_timer, timeout);
+		mod_timer_dbg(&ba_data->session_timer, timeout);
 		goto unlock;
 	}
 
@@ -2125,7 +2125,7 @@ bool iwl_mvm_sta_del(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 	 */
 	if (WARN_ON_ONCE(mvm->tdls_cs.peer.sta_id == sta_id)) {
 		mvm->tdls_cs.peer.sta_id = IWL_MVM_INVALID_STA;
-		cancel_delayed_work(&mvm->tdls_cs.dwork);
+		cancel_delayed_work_dbg(&mvm->tdls_cs.dwork);
 	}
 
 	return false;
@@ -2995,7 +2995,7 @@ int iwl_mvm_sta_rx_agg(struct iwl_mvm *mvm, struct ieee80211_sta *sta,
 		baid_data->timeout = timeout;
 		baid_data->last_rx = jiffies;
 		baid_data->rcu_ptr = &mvm->baid_map[baid];
-		timer_setup(&baid_data->session_timer,
+		timer_setup_dbg(&baid_data->session_timer,
 			    iwl_mvm_rx_agg_session_expired, 0);
 		baid_data->mvm = mvm;
 		baid_data->tid = tid;
@@ -3004,7 +3004,7 @@ int iwl_mvm_sta_rx_agg(struct iwl_mvm *mvm, struct ieee80211_sta *sta,
 
 		mvm_sta->tid_to_baid[tid] = baid;
 		if (timeout)
-			mod_timer(&baid_data->session_timer,
+			mod_timer_dbg(&baid_data->session_timer,
 				  TU_TO_EXP_TIME(timeout * 2));
 
 		iwl_mvm_init_reorder_buffer(mvm, baid_data, ssn);
@@ -3036,7 +3036,7 @@ int iwl_mvm_sta_rx_agg(struct iwl_mvm *mvm, struct ieee80211_sta *sta,
 
 		/* synchronize all rx queues so we can safely delete */
 		iwl_mvm_free_reorder(mvm, baid_data);
-		timer_shutdown_sync(&baid_data->session_timer);
+		timer_shutdown_sync_dbg(&baid_data->session_timer);
 		RCU_INIT_POINTER(mvm->baid_map[baid], NULL);
 		kfree_rcu(baid_data, rcu_head);
 		IWL_DEBUG_HT(mvm, "BAID %d is free\n", baid);
@@ -4501,7 +4501,7 @@ void iwl_mvm_count_mpdu(struct iwl_mvm_sta *mvm_sta, u8 fw_sta_id, u32 count,
 				    queue_counter->per_link[i].rx;
 
 	if (total_mpdus > IWL_MVM_ENTER_ESR_TPT_THRESH)
-		wiphy_work_queue(mvmvif->mvm->hw->wiphy,
+		wiphy_work_queue_dbg(mvmvif->mvm->hw->wiphy,
 				 &mvmvif->unblock_esr_tpt_wk);
 
 out:

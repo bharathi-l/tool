@@ -28,6 +28,7 @@
 #include "internal.h"
 #include "iwl-fh.h"
 #include "iwl-context-info-gen3.h"
+#include <linux/drv_dbg.h>
 
 /* extended range in FW SRAM */
 #define IWL_FW_MEM_EXTENDED_START	0x40000
@@ -2060,7 +2061,7 @@ void iwl_trans_pcie_free(struct iwl_trans *trans)
 	iwl_pcie_rx_free(trans);
 
 	if (trans_pcie->rba.alloc_wq) {
-		destroy_workqueue(trans_pcie->rba.alloc_wq);
+		destroy_workqueue_dbg(trans_pcie->rba.alloc_wq);
 		trans_pcie->rba.alloc_wq = NULL;
 	}
 
@@ -2182,7 +2183,7 @@ void iwl_trans_pcie_remove(struct iwl_trans *trans, bool rescan)
 	removal->rescan = rescan;
 	INIT_WORK(&removal->work, iwl_trans_pcie_removal_wk);
 	pci_dev_get(removal->pdev);
-	schedule_work(&removal->work);
+	schedule_work_dbg(&removal->work);
 }
 EXPORT_SYMBOL(iwl_trans_pcie_remove);
 
@@ -3623,7 +3624,7 @@ struct iwl_trans *iwl_trans_pcie_alloc(struct pci_dev *pdev,
 	init_waitqueue_head(&trans_pcie->fw_reset_waitq);
 	init_waitqueue_head(&trans_pcie->imr_waitq);
 
-	trans_pcie->rba.alloc_wq = alloc_workqueue("rb_allocator",
+	trans_pcie->rba.alloc_wq = alloc_workqueue_dbg("rb_allocator",
 						   WQ_HIGHPRI | WQ_UNBOUND, 0);
 	if (!trans_pcie->rba.alloc_wq) {
 		ret = -ENOMEM;
@@ -3746,7 +3747,7 @@ struct iwl_trans *iwl_trans_pcie_alloc(struct pci_dev *pdev,
 out_free_ict:
 	iwl_pcie_free_ict(trans);
 out_no_pci:
-	destroy_workqueue(trans_pcie->rba.alloc_wq);
+	destroy_workqueue_dbg(trans_pcie->rba.alloc_wq);
 out_free_ndev:
 	free_netdev(trans_pcie->napi_dev);
 out_free_tso:

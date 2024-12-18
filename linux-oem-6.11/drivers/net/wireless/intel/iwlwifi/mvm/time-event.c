@@ -6,7 +6,6 @@
  */
 #include <linux/jiffies.h>
 #include <net/mac80211.h>
-#include <linux/drv_dbg.h>
 
 #include "fw/notif-wait.h"
 #include "iwl-trans.h"
@@ -15,6 +14,7 @@
 #include "mvm.h"
 #include "iwl-io.h"
 #include "iwl-prph.h"
+#include <linux/drv_dbg.h>
 
 /*
  * For the high priority TE use a time event type that has similar priority to
@@ -151,7 +151,7 @@ static void iwl_mvm_roc_finished(struct iwl_mvm *mvm)
 	 * it will of course synchronize the TX path to make sure that
 	 * any *new* TX will be rejected.
 	 */
-	schedule_work(&mvm->roc_done_wk);
+	schedule_work_dbg(&mvm->roc_done_wk);
 }
 
 static void iwl_mvm_csa_noa_start(struct iwl_mvm *mvm)
@@ -255,7 +255,7 @@ iwl_mvm_te_handle_notify_csa(struct iwl_mvm *mvm,
 			break;
 		}
 		iwl_mvm_csa_client_absent(mvm, te_data->vif);
-		cancel_delayed_work(&mvmvif->csa_work);
+		cancel_delayed_work_dbg(&mvmvif->csa_work);
 		ieee80211_chswitch_done(te_data->vif, true, 0);
 		break;
 	default:

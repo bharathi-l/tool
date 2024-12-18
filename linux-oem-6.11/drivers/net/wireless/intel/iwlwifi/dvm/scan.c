@@ -8,6 +8,7 @@
 #include <linux/types.h>
 #include <linux/etherdevice.h>
 #include <net/mac80211.h>
+#include <linux/drv_dbg.h>
 
 #include "dev.h"
 #include "agn.h"
@@ -99,7 +100,7 @@ static void iwl_process_scan_complete(struct iwl_priv *priv)
 
 	IWL_DEBUG_SCAN(priv, "Completed scan.\n");
 
-	cancel_delayed_work(&priv->scan_check);
+	cancel_delayed_work_dbg(&priv->scan_check);
 
 	aborted = test_and_clear_bit(STATUS_SCAN_ABORTING, &priv->status);
 	if (aborted)
@@ -188,7 +189,7 @@ static void iwl_do_scan_abort(struct iwl_priv *priv)
 int iwl_scan_cancel(struct iwl_priv *priv)
 {
 	IWL_DEBUG_SCAN(priv, "Queuing abort scan\n");
-	queue_work(priv->workqueue, &priv->abort_scan);
+	queue_work_dbg(priv->workqueue, &priv->abort_scan);
 	return 0;
 }
 
@@ -307,7 +308,7 @@ static void iwl_rx_scan_complete_notif(struct iwl_priv *priv,
 	 */
 	set_bit(STATUS_SCAN_COMPLETE, &priv->status);
 	clear_bit(STATUS_SCAN_HW, &priv->status);
-	queue_work(priv->workqueue, &priv->scan_completed);
+	queue_work_dbg(priv->workqueue, &priv->scan_completed);
 
 	if (priv->iw_mode != NL80211_IFTYPE_ADHOC &&
 	    iwl_advanced_bt_coexist(priv) &&
@@ -327,7 +328,7 @@ static void iwl_rx_scan_complete_notif(struct iwl_priv *priv,
 				IWL_BT_COEX_TRAFFIC_LOAD_NONE;
 		}
 		priv->bt_status = scan_notif->bt_status;
-		queue_work(priv->workqueue,
+		queue_work_dbg(priv->workqueue,
 			   &priv->bt_traffic_change_work);
 	}
 }
@@ -927,7 +928,7 @@ int __must_check iwl_scan_initiate(struct iwl_priv *priv,
 
 	lockdep_assert_held(&priv->mutex);
 
-	cancel_delayed_work(&priv->scan_check);
+	cancel_delayed_work_dbg(&priv->scan_check);
 
 	if (!iwl_is_ready_rf(priv)) {
 		IWL_WARN(priv, "Request scan called when driver not ready.\n");
@@ -961,7 +962,7 @@ int __must_check iwl_scan_initiate(struct iwl_priv *priv,
 		return ret;
 	}
 
-	queue_delayed_work(priv->workqueue, &priv->scan_check,
+	queue_delayed_work_dbg(priv->workqueue, &priv->scan_check,
 			   IWL_SCAN_CHECK_WATCHDOG);
 
 	return 0;
@@ -974,7 +975,7 @@ int __must_check iwl_scan_initiate(struct iwl_priv *priv,
  */
 void iwl_internal_short_hw_scan(struct iwl_priv *priv)
 {
-	queue_work(priv->workqueue, &priv->start_internal_scan);
+	queue_work_dbg(priv->workqueue, &priv->start_internal_scan);
 }
 
 static void iwl_bg_start_internal_scan(struct work_struct *work)
@@ -1050,11 +1051,11 @@ void iwl_setup_scan_deferred_work(struct iwl_priv *priv)
 
 void iwl_cancel_scan_deferred_work(struct iwl_priv *priv)
 {
-	cancel_work_sync(&priv->start_internal_scan);
-	cancel_work_sync(&priv->abort_scan);
-	cancel_work_sync(&priv->scan_completed);
+	cancel_work_sync_dbg(&priv->start_internal_scan);
+	cancel_work_sync_dbg(&priv->abort_scan);
+	cancel_work_sync_dbg(&priv->scan_completed);
 
-	if (cancel_delayed_work_sync(&priv->scan_check)) {
+	if (cancel_delayed_work_sync_dbg(&priv->scan_check)) {
 		mutex_lock(&priv->mutex);
 		iwl_force_scan_end(priv);
 		mutex_unlock(&priv->mutex);

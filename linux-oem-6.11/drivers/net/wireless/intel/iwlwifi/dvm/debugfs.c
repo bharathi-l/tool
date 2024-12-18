@@ -17,6 +17,7 @@
 #include "iwl-io.h"
 #include "dev.h"
 #include "agn.h"
+#include <linux/drv_dbg.h>
 
 /* create and remove of files */
 #define DEBUGFS_ADD_FILE(name, parent, mode) do {			\
@@ -1866,11 +1867,11 @@ static ssize_t iwl_dbgfs_ucode_tracing_write(struct file *file,
 		priv->event_log.ucode_trace = true;
 		if (iwl_is_alive(priv)) {
 			/* start collecting data now */
-			mod_timer(&priv->ucode_trace, jiffies);
+			mod_timer_dbg(&priv->ucode_trace, jiffies);
 		}
 	} else {
 		priv->event_log.ucode_trace = false;
-		del_timer_sync(&priv->ucode_trace);
+		del_timer_sync_dbg(&priv->ucode_trace);
 	}
 
 	return count;

@@ -20,6 +20,7 @@
 #include "dev.h"
 #include "commands.h"
 #include "tt.h"
+#include <linux/drv_dbg.h>
 
 /* default Thermal Throttling transaction table
  * Current state   |         Throttling Down               |  Throttling Up
@@ -173,7 +174,7 @@ static void iwl_tt_check_exit_ct_kill(struct timer_list *t)
 		 * CT_KILL_EXIT_DURATION seconds to ensure we get a
 		 * thermal update */
 		IWL_DEBUG_TEMP(priv, "schedule ct_kill exit timer\n");
-		mod_timer(&priv->thermal_throttle.ct_kill_exit_tm,
+		mod_timer_dbg(&priv->thermal_throttle.ct_kill_exit_tm,
 			  jiffies + CT_KILL_EXIT_DURATION * HZ);
 	}
 }
@@ -187,7 +188,7 @@ static void iwl_perform_ct_kill_task(struct iwl_priv *priv,
 			ieee80211_stop_queues(priv->hw);
 		IWL_DEBUG_TEMP(priv,
 				"Schedule 5 seconds CT_KILL Timer\n");
-		mod_timer(&priv->thermal_throttle.ct_kill_exit_tm,
+		mod_timer_dbg(&priv->thermal_throttle.ct_kill_exit_tm,
 			  jiffies + CT_KILL_EXIT_DURATION * HZ);
 	} else {
 		IWL_DEBUG_TEMP(priv, "Wake all queues\n");
@@ -221,7 +222,7 @@ static void iwl_prepare_ct_kill_task(struct iwl_priv *priv)
 	/* make request to retrieve statistics information */
 	iwl_send_statistics_request(priv, 0, false);
 	/* Reschedule the ct_kill wait timer */
-	mod_timer(&priv->thermal_throttle.ct_kill_waiting_tm,
+	mod_timer_dbg(&priv->thermal_throttle.ct_kill_waiting_tm,
 		 jiffies + msecs_to_jiffies(CT_KILL_WAITING_DURATION));
 }
 
@@ -268,7 +269,7 @@ static void iwl_legacy_tt_handler(struct iwl_priv *priv, s32 temp, bool force)
 	tt->tt_previous_temp = temp;
 #endif
 	/* stop ct_kill_waiting_tm timer */
-	del_timer_sync(&priv->thermal_throttle.ct_kill_waiting_tm);
+	del_timer_sync_dbg(&priv->thermal_throttle.ct_kill_waiting_tm);
 	if (tt->state != old_state) {
 		switch (tt->state) {
 		case IWL_TI_0:
@@ -389,7 +390,7 @@ static void iwl_advance_tt_handler(struct iwl_priv *priv, s32 temp, bool force)
 		}
 	}
 	/* stop ct_kill_waiting_tm timer */
-	del_timer_sync(&priv->thermal_throttle.ct_kill_waiting_tm);
+	del_timer_sync_dbg(&priv->thermal_throttle.ct_kill_waiting_tm);
 	if (changed) {
 		if (tt->state >= IWL_TI_1) {
 			/* force PI = IWL_POWER_INDEX_5 in the case of TI > 0 */
@@ -517,7 +518,7 @@ static void iwl_bg_ct_exit(struct work_struct *work)
 		return;
 
 	/* stop ct_kill_exit_tm timer */
-	del_timer_sync(&priv->thermal_throttle.ct_kill_exit_tm);
+	del_timer_sync_dbg(&priv->thermal_throttle.ct_kill_exit_tm);
 
 	if (tt->state == IWL_TI_CT_KILL) {
 		IWL_ERR(priv,
@@ -544,7 +545,7 @@ void iwl_tt_enter_ct_kill(struct iwl_priv *priv)
 		return;
 
 	IWL_DEBUG_TEMP(priv, "Queueing critical temperature enter.\n");
-	queue_work(priv->workqueue, &priv->ct_enter);
+	queue_work_dbg(priv->workqueue, &priv->ct_enter);
 }
 
 void iwl_tt_exit_ct_kill(struct iwl_priv *priv)
@@ -553,7 +554,7 @@ void iwl_tt_exit_ct_kill(struct iwl_priv *priv)
 		return;
 
 	IWL_DEBUG_TEMP(priv, "Queueing critical temperature exit.\n");
-	queue_work(priv->workqueue, &priv->ct_exit);
+	queue_work_dbg(priv->workqueue, &priv->ct_exit);
 }
 
 static void iwl_bg_tt_work(struct work_struct *work)
@@ -576,7 +577,7 @@ void iwl_tt_handler(struct iwl_priv *priv)
 		return;
 
 	IWL_DEBUG_TEMP(priv, "Queueing thermal throttling work.\n");
-	queue_work(priv->workqueue, &priv->tt_work);
+	queue_work_dbg(priv->workqueue, &priv->tt_work);
 }
 
 /* Thermal throttling initialization
@@ -595,9 +596,9 @@ void iwl_tt_initialize(struct iwl_priv *priv)
 	memset(tt, 0, sizeof(struct iwl_tt_mgmt));
 
 	tt->state = IWL_TI_0;
-	timer_setup(&priv->thermal_throttle.ct_kill_exit_tm,
+	timer_setup_dbg(&priv->thermal_throttle.ct_kill_exit_tm,
 		    iwl_tt_check_exit_ct_kill, 0);
-	timer_setup(&priv->thermal_throttle.ct_kill_waiting_tm,
+	timer_setup_dbg(&priv->thermal_throttle.ct_kill_waiting_tm,
 		    iwl_tt_ready_for_ct_kill, 0);
 	/* setup deferred ct kill work */
 	INIT_WORK(&priv->tt_work, iwl_bg_tt_work);
@@ -651,12 +652,12 @@ void iwl_tt_exit(struct iwl_priv *priv)
 	struct iwl_tt_mgmt *tt = &priv->thermal_throttle;
 
 	/* stop ct_kill_exit_tm timer if activated */
-	del_timer_sync(&priv->thermal_throttle.ct_kill_exit_tm);
+	del_timer_sync_dbg(&priv->thermal_throttle.ct_kill_exit_tm);
 	/* stop ct_kill_waiting_tm timer if activated */
-	del_timer_sync(&priv->thermal_throttle.ct_kill_waiting_tm);
-	cancel_work_sync(&priv->tt_work);
-	cancel_work_sync(&priv->ct_enter);
-	cancel_work_sync(&priv->ct_exit);
+	del_timer_sync_dbg(&priv->thermal_throttle.ct_kill_waiting_tm);
+	cancel_work_sync_dbg(&priv->tt_work);
+	cancel_work_sync_dbg(&priv->ct_enter);
+	cancel_work_sync_dbg(&priv->ct_exit);
 
 	if (priv->thermal_throttle.advanced_tt) {
 		/* free advance thermal throttling memory */

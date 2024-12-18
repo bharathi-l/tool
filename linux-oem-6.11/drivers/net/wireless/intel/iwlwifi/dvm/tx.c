@@ -15,6 +15,7 @@
 #include "iwl-agn-hw.h"
 #include "dev.h"
 #include "agn.h"
+#include <linux/drv_dbg.h>
 
 static const u8 tid_to_ac[] = {
 	IEEE80211_AC_BE,
@@ -1102,7 +1103,7 @@ static void iwl_check_abort_status(struct iwl_priv *priv,
 	if (frame_count == 1 && status == TX_STATUS_FAIL_RFKILL_FLUSH) {
 		IWL_ERR(priv, "Tx flush command to flush out all frames\n");
 		if (!test_bit(STATUS_EXIT_PENDING, &priv->status))
-			queue_work(priv->workqueue, &priv->tx_flush);
+			queue_work_dbg(priv->workqueue, &priv->tx_flush);
 	}
 }
 

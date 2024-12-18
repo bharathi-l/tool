@@ -962,7 +962,7 @@ static bool iwl_mvm_check_esr_prevention(struct iwl_mvm *mvm,
 		       delay / HZ, mvmvif->exit_same_reason_count,
 		       iwl_get_esr_state_string(reason), reason);
 
-	wiphy_delayed_work_queue(mvm->hw->wiphy,
+	wiphy_delayed_work_queue_dbg(mvm->hw->wiphy,
 				 &mvmvif->prevent_esr_done_wk, delay);
 	return true;
 }
@@ -1017,7 +1017,7 @@ void iwl_mvm_exit_esr(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 		return;
 
 	/* If EMLSR is not blocked - try enabling it again in 30 seconds */
-	wiphy_delayed_work_queue(mvm->hw->wiphy,
+	wiphy_delayed_work_queue_dbg(mvm->hw->wiphy,
 				 &mvmvif->mlo_int_scan_wk,
 				 round_jiffies_relative(IWL_MVM_TRIGGER_LINK_SEL_TIME));
 }
@@ -1107,7 +1107,7 @@ static void iwl_mvm_esr_unblocked(struct iwl_mvm *mvm,
 	 */
 	if (need_new_sel || hweight16(mvmvif->link_selection_res) < 2) {
 		IWL_DEBUG_INFO(mvm, "Trigger MLO scan\n");
-		wiphy_delayed_work_queue(mvm->hw->wiphy,
+		wiphy_delayed_work_queue_dbg(mvm->hw->wiphy,
 					 &mvmvif->mlo_int_scan_wk, 0);
 	/*
 	 * If EMLSR was blocked for less than 30 seconds, and the last link

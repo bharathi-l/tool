@@ -7,6 +7,7 @@
 #include "iwl-debug.h"
 #include <linux/timekeeping.h>
 #include <linux/math64.h>
+#include <linux/drv_dbg.h>
 
 #define IWL_PTP_GP2_WRAP	0x100000000ULL
 #define IWL_PTP_WRAP_TIME	(3600 * HZ)
@@ -41,7 +42,7 @@ static void iwl_mvm_ptp_update_new_read(struct iwl_mvm *mvm, u32 gp2)
 	}
 
 	mvm->ptp_data.last_gp2 = gp2;
-	schedule_delayed_work(&mvm->ptp_data.dwork, IWL_PTP_WRAP_TIME);
+	schedule_delayed_work_dbg(&mvm->ptp_data.dwork, IWL_PTP_WRAP_TIME);
 }
 
 u64 iwl_mvm_ptp_get_adj_time(struct iwl_mvm *mvm, u64 base_time_ns)
@@ -321,6 +322,6 @@ void iwl_mvm_ptp_remove(struct iwl_mvm *mvm)
 		memset(&mvm->ptp_data.ptp_clock_info, 0,
 		       sizeof(mvm->ptp_data.ptp_clock_info));
 		mvm->ptp_data.last_gp2 = 0;
-		cancel_delayed_work_sync(&mvm->ptp_data.dwork);
+		cancel_delayed_work_sync_dbg(&mvm->ptp_data.dwork);
 	}
 }

@@ -8,6 +8,7 @@
 #include "iwl-dbg-tlv.h"
 #include "fw/dbg.h"
 #include "fw/runtime.h"
+#include <linux/drv_dbg.h>
 
 /**
  * enum iwl_dbg_tlv_type - debug TLV types
@@ -380,7 +381,7 @@ void iwl_dbg_tlv_del_timers(struct iwl_trans *trans)
 	struct iwl_dbg_tlv_timer_node *node, *tmp;
 
 	list_for_each_entry_safe(node, tmp, timer_list, list) {
-		timer_shutdown_sync(&node->timer);
+		timer_shutdown_sync_dbg(&node->timer);
 		list_del(&node->list);
 		kfree(node);
 	}
@@ -963,7 +964,7 @@ static void iwl_dbg_tlv_periodic_trig_handler(struct timer_list *t)
 		if (!occur)
 			return;
 
-		mod_timer(t, jiffies + msecs_to_jiffies(collect_interval));
+		mod_timer_dbg(t, jiffies + msecs_to_jiffies(collect_interval));
 	}
 }
 
@@ -1010,7 +1011,7 @@ static void iwl_dbg_tlv_set_periodic_trigs(struct iwl_fw_runtime *fwrt)
 
 		timer_node->fwrt = fwrt;
 		timer_node->tlv = &node->tlv;
-		timer_setup(&timer_node->timer,
+		timer_setup_dbg(&timer_node->timer,
 			    iwl_dbg_tlv_periodic_trig_handler, 0);
 
 		list_add_tail(&timer_node->list,
@@ -1018,7 +1019,7 @@ static void iwl_dbg_tlv_set_periodic_trigs(struct iwl_fw_runtime *fwrt)
 
 		IWL_DEBUG_FW(fwrt, "WRT: Enabling periodic trigger\n");
 
-		mod_timer(&timer_node->timer,
+		mod_timer_dbg(&timer_node->timer,
 			  jiffies + msecs_to_jiffies(collect_interval));
 	}
 }

@@ -8,6 +8,7 @@
 #include "debugfs.h"
 #include "dbg.h"
 #include <linux/seq_file.h>
+#include <linux/drv_dbg.h>
 
 #define FWRT_DEBUGFS_OPEN_WRAPPER(name, buflen, argtype)		\
 struct dbgfs_##name##_data {						\
@@ -164,7 +165,7 @@ static void iwl_fw_timestamp_marker_wk(struct work_struct *work)
 
 	ret = iwl_fw_send_timestamp_marker_cmd(fwrt);
 	if (!ret && delay)
-		schedule_delayed_work(&fwrt->timestamp.wk,
+		schedule_delayed_work_dbg(&fwrt->timestamp.wk,
 				      round_jiffies_relative(delay));
 	else
 		IWL_INFO(fwrt,
@@ -182,7 +183,7 @@ void iwl_fw_trigger_timestamp(struct iwl_fw_runtime *fwrt, u32 delay)
 
 	fwrt->timestamp.delay = msecs_to_jiffies(delay * 1000);
 
-	schedule_delayed_work(&fwrt->timestamp.wk,
+	schedule_delayed_work_dbg(&fwrt->timestamp.wk,
 			      round_jiffies_relative(fwrt->timestamp.delay));
 }
 

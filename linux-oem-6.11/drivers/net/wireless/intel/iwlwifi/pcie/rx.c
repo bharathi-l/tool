@@ -13,6 +13,7 @@
 #include "internal.h"
 #include "iwl-op-mode.h"
 #include "iwl-context-info-gen3.h"
+#include <linux/drv_dbg.h>
 
 /******************************************************************************
  *
@@ -1094,7 +1095,7 @@ static int _iwl_pcie_rx_init(struct iwl_trans *trans)
 	}
 	def_rxq = trans_pcie->rxq;
 
-	cancel_work_sync(&rba->rx_alloc);
+	cancel_work_sync_dbg(&rba->rx_alloc);
 
 	spin_lock_bh(&rba->lock);
 	atomic_set(&rba->req_pending, 0);
@@ -1217,7 +1218,7 @@ void iwl_pcie_rx_free(struct iwl_trans *trans)
 		return;
 	}
 
-	cancel_work_sync(&rba->rx_alloc);
+	cancel_work_sync_dbg(&rba->rx_alloc);
 
 	iwl_pcie_free_rbs_pool(trans);
 
@@ -1290,7 +1291,7 @@ static void iwl_pcie_rx_reuse_rbd(struct iwl_trans *trans,
 		iwl_pcie_rx_move_to_allocator(rxq, rba);
 
 		atomic_inc(&rba->req_pending);
-		queue_work(rba->alloc_wq, &rba->rx_alloc);
+		queue_work_dbg(rba->alloc_wq, &rba->rx_alloc);
 	}
 }
 
@@ -1697,7 +1698,7 @@ static void iwl_pcie_irq_handle_error(struct iwl_trans *trans)
 	for (i = 0; i < trans->trans_cfg->base_params->num_of_queues; i++) {
 		if (!trans_pcie->txqs.txq[i])
 			continue;
-		del_timer(&trans_pcie->txqs.txq[i]->stuck_timer);
+		del_timer_dbg(&trans_pcie->txqs.txq[i]->stuck_timer);
 	}
 
 	/* The STATUS_FW_ERROR bit is set in this function. This must happen

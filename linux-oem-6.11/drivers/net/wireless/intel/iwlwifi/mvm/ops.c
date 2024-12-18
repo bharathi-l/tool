@@ -1164,7 +1164,7 @@ static void iwl_mvm_mei_sap_connected(void *priv)
 	struct iwl_mvm *mvm = priv;
 
 	if (!mvm->hw_registered)
-		schedule_work(&mvm->sap_connected_wk);
+		schedule_work_dbg(&mvm->sap_connected_wk);
 }
 
 static void iwl_mvm_mei_nic_stolen(void *priv)
@@ -1336,10 +1336,10 @@ iwl_op_mode_mvm_start(struct iwl_trans *trans, const struct iwl_cfg *cfg,
 	INIT_LIST_HEAD(&mvm->add_stream_txqs);
 	spin_lock_init(&mvm->add_stream_lock);
 
-	wiphy_work_init(&mvm->async_handlers_wiphy_wk,
+	wiphy_work_init_dbg(&mvm->async_handlers_wiphy_wk,
 			iwl_mvm_async_handlers_wiphy_wk);
 
-	wiphy_work_init(&mvm->trig_link_selection_wk,
+	wiphy_work_init_dbg(&mvm->trig_link_selection_wk,
 			iwl_mvm_trig_link_selection);
 
 	init_waitqueue_head(&mvm->rx_sync_waitq);
@@ -1539,7 +1539,7 @@ static void iwl_op_mode_mvm_stop(struct iwl_op_mode *op_mode)
 	 * After we unregister from mei, the worker can't be scheduled
 	 * anymore.
 	 */
-	cancel_work_sync(&mvm->sap_connected_wk);
+	cancel_work_sync_dbg(&mvm->sap_connected_wk);
 
 	iwl_mvm_leds_exit(mvm);
 
@@ -1578,7 +1578,7 @@ static void iwl_op_mode_mvm_stop(struct iwl_op_mode *op_mode)
 		kfree(mvm->nvm_sections[i].data);
 	kfree(mvm->acs_survey);
 
-	cancel_delayed_work_sync(&mvm->tcm.work);
+	cancel_delayed_work_sync_dbg(&mvm->tcm.work);
 
 	iwl_fw_runtime_free(&mvm->fwrt);
 	mutex_destroy(&mvm->mutex);
@@ -1696,7 +1696,6 @@ static inline void iwl_mvm_rx_check_trigger(struct iwl_mvm *mvm,
 }
 
 #ifdef HANDLERS_DBG_PRINT
-
 void debug_handler_print(const struct iwl_rx_handlers* handlers, size_t num_handlers) 
 {
 	for (size_t i = 0; i < num_handlers; ++i) {
@@ -1766,10 +1765,10 @@ static void iwl_mvm_rx_common(struct iwl_mvm *mvm,
 		list_add_tail(&entry->list, &mvm->async_handlers_list);
 		spin_unlock(&mvm->async_handlers_lock);
 		if (rx_h->context == RX_HANDLER_ASYNC_LOCKED_WIPHY)
-			wiphy_work_queue(mvm->hw->wiphy,
+			wiphy_work_queue_dbg(mvm->hw->wiphy,
 					 &mvm->async_handlers_wiphy_wk);
 		else
-			schedule_work(&mvm->async_handlers_wk);
+			schedule_work_dbg(&mvm->async_handlers_wk);
 		break;
 	}
 }
@@ -2026,7 +2025,7 @@ void iwl_mvm_nic_restart(struct iwl_mvm *mvm, bool fw_error)
 		}
 		reprobe->dev = get_device(mvm->trans->dev);
 		INIT_WORK(&reprobe->work, iwl_mvm_reprobe_wk);
-		schedule_work(&reprobe->work);
+		schedule_work_dbg(&reprobe->work);
 	} else if (test_bit(IWL_MVM_STATUS_HW_RESTART_REQUESTED,
 			    &mvm->status)) {
 		IWL_ERR(mvm, "HW restart already requested, but not started\n");

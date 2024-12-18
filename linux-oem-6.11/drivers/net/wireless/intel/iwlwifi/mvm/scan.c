@@ -443,7 +443,7 @@ void iwl_mvm_rx_lmac_scan_complete_notif(struct iwl_mvm *mvm,
 
 		mvm->scan_status &= ~IWL_MVM_SCAN_REGULAR;
 		ieee80211_scan_completed(mvm->hw, &info);
-		cancel_delayed_work(&mvm->scan_timeout_dwork);
+		cancel_delayed_work_dbg(&mvm->scan_timeout_dwork);
 		iwl_mvm_resume_tcm(mvm);
 	} else {
 		IWL_ERR(mvm,
@@ -3069,7 +3069,7 @@ static int _iwl_mvm_single_scan_start(struct iwl_mvm *mvm,
 
 	if (type == IWL_MVM_SCAN_REGULAR) {
 		mvm->scan_vif = iwl_mvm_vif_from_mac80211(vif);
-		schedule_delayed_work(&mvm->scan_timeout_dwork,
+		schedule_delayed_work_dbg(&mvm->scan_timeout_dwork,
 				      msecs_to_jiffies(SCAN_TIMEOUT));
 	}
 
@@ -3269,7 +3269,7 @@ void iwl_mvm_rx_umac_scan_complete_notif(struct iwl_mvm *mvm,
 
 		ieee80211_scan_completed(mvm->hw, &info);
 		mvm->scan_vif = NULL;
-		cancel_delayed_work(&mvm->scan_timeout_dwork);
+		cancel_delayed_work_dbg(&mvm->scan_timeout_dwork);
 		iwl_mvm_resume_tcm(mvm);
 	} else if (mvm->scan_uid_status[uid] == IWL_MVM_SCAN_SCHED) {
 		ieee80211_sched_scan_stopped(mvm->hw);
@@ -3295,7 +3295,7 @@ void iwl_mvm_rx_umac_scan_complete_notif(struct iwl_mvm *mvm,
 	mvm->scan_uid_status[uid] = 0;
 
 	if (select_links)
-		wiphy_work_queue(mvm->hw->wiphy, &mvm->trig_link_selection_wk);
+		wiphy_work_queue_dbg(mvm->hw->wiphy, &mvm->trig_link_selection_wk);
 }
 
 void iwl_mvm_rx_umac_scan_iter_complete_notif(struct iwl_mvm *mvm,
@@ -3448,7 +3448,7 @@ void iwl_mvm_report_scan_aborted(struct iwl_mvm *mvm)
 				.aborted = true,
 			};
 
-			cancel_delayed_work(&mvm->scan_timeout_dwork);
+			cancel_delayed_work_dbg(&mvm->scan_timeout_dwork);
 
 			ieee80211_scan_completed(mvm->hw, &info);
 			mvm->scan_uid_status[uid] = 0;
@@ -3501,7 +3501,7 @@ void iwl_mvm_report_scan_aborted(struct iwl_mvm *mvm)
 				.aborted = true,
 			};
 
-			cancel_delayed_work(&mvm->scan_timeout_dwork);
+			cancel_delayed_work_dbg(&mvm->scan_timeout_dwork);
 			ieee80211_scan_completed(mvm->hw, &info);
 		}
 
@@ -3548,7 +3548,7 @@ out:
 	mvm->scan_status &= ~type;
 
 	if (type == IWL_MVM_SCAN_REGULAR) {
-		cancel_delayed_work(&mvm->scan_timeout_dwork);
+		cancel_delayed_work_dbg(&mvm->scan_timeout_dwork);
 		if (notify) {
 			struct cfg80211_scan_info info = {
 				.aborted = true,

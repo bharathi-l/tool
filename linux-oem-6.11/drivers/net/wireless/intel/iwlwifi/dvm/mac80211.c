@@ -22,6 +22,7 @@
 #include <net/mac80211.h>
 
 #include <asm/div64.h>
+#include <linux/drv_dbg.h>
 
 #include "iwl-io.h"
 #include "iwl-trans.h"
@@ -317,7 +318,7 @@ static void iwlagn_mac_stop(struct ieee80211_hw *hw, bool suspend)
 
 	iwl_cancel_deferred_work(priv);
 
-	flush_workqueue(priv->workqueue);
+	flush_workqueue_dbg(priv->workqueue);
 
 	IWL_DEBUG_MAC80211(priv, "leave\n");
 }
@@ -1129,7 +1130,7 @@ static void iwlagn_mac_event_callback(struct ieee80211_hw *hw,
 		else if (event->u.rssi.data == RSSI_EVENT_HIGH)
 			priv->bt_enable_pspoll = false;
 
-		queue_work(priv->workqueue, &priv->bt_runtime_config);
+		queue_work_dbg(priv->workqueue, &priv->bt_runtime_config);
 	} else {
 		IWL_DEBUG_MAC80211(priv, "Advanced BT coex disabled,"
 				"ignoring RSSI callback\n");
@@ -1143,7 +1144,7 @@ static int iwlagn_mac_set_tim(struct ieee80211_hw *hw,
 {
 	struct iwl_priv *priv = IWL_MAC80211_GET_DVM(hw);
 
-	queue_work(priv->workqueue, &priv->beacon_update);
+	queue_work_dbg(priv->workqueue, &priv->beacon_update);
 
 	return 0;
 }

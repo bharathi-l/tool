@@ -8,6 +8,7 @@
 #include <linux/module.h>
 #include <linux/sched.h>
 #include <net/mac80211.h>
+#include <linux/drv_dbg.h>
 
 #include "iwl-io.h"
 #include "iwl-agn-hw.h"
@@ -429,7 +430,7 @@ static void iwlagn_bt_traffic_change_work(struct work_struct *work)
 	 * We can not send command to firmware while scanning. When the scan
 	 * complete we will schedule this work again. We do check with mutex
 	 * locked to prevent new scan request to arrive. We do not check
-	 * STATUS_SCANNING to avoid race when queue_work two times from
+	 * STATUS_SCANNING to avoid race when queue_work_dbg two times from
 	 * different notifications, but quit and not perform any work at all.
 	 */
 	if (test_bit(STATUS_SCAN_HW, &priv->status))
@@ -658,7 +659,7 @@ static void iwlagn_bt_coex_profile_notif(struct iwl_priv *priv,
 					IWL_BT_COEX_TRAFFIC_LOAD_NONE;
 			}
 			priv->bt_status = coex->bt_status;
-			queue_work(priv->workqueue,
+			queue_work_dbg(priv->workqueue,
 				   &priv->bt_traffic_change_work);
 		}
 	}
@@ -667,7 +668,7 @@ static void iwlagn_bt_coex_profile_notif(struct iwl_priv *priv,
 	/* check reduce power before change ack/cts kill mask */
 	if (iwlagn_fill_txpower_mode(priv, uart_msg) ||
 	    iwlagn_set_kill_msk(priv, uart_msg))
-		queue_work(priv->workqueue, &priv->bt_runtime_config);
+		queue_work_dbg(priv->workqueue, &priv->bt_runtime_config);
 
 
 	/* FIXME: based on notification, adjust the prio_boost */
@@ -689,7 +690,7 @@ void iwlagn_bt_setup_deferred_work(struct iwl_priv *priv)
 
 void iwlagn_bt_cancel_deferred_work(struct iwl_priv *priv)
 {
-	cancel_work_sync(&priv->bt_traffic_change_work);
+	cancel_work_sync_dbg(&priv->bt_traffic_change_work);
 }
 
 static bool is_single_rx_stream(struct iwl_priv *priv)

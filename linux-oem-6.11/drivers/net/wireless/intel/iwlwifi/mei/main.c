@@ -378,7 +378,7 @@ static int iwl_mei_send_check_shared_area(struct mei_cl_device *cldev)
 
 	mei->csa_throttled = true;
 
-	schedule_delayed_work(&mei->csa_throttle_end_wk,
+	schedule_delayed_work_dbg(&mei->csa_throttle_end_wk,
 			      msecs_to_jiffies(100));
 
 	return 0;
@@ -597,7 +597,7 @@ static rx_handler_result_t iwl_mei_rx_handler(struct sk_buff **pskb)
 	 * there.
 	 */
 	if (rx_for_csme)
-		schedule_work(&mei->send_csa_msg_wk);
+		schedule_work_dbg(&mei->send_csa_msg_wk);
 
 	if (res != RX_HANDLER_PASS) {
 		trace_iwlmei_sap_data(skb, IWL_SAP_RX_DATA_DROPPED_FROM_AIR);
@@ -804,7 +804,7 @@ static void iwl_mei_handle_amt_state(struct mei_cl_device *cldev,
 	else if (iwl_mei_cache.ops)
 		iwl_mei_cache.ops->rfkill(iwl_mei_cache.priv, false, false);
 
-	schedule_work(&mei->netdev_work);
+	schedule_work_dbg(&mei->netdev_work);
 
 out:
 	mutex_unlock(&iwl_mei_mutex);
@@ -847,7 +847,7 @@ static void iwl_mei_handle_csme_taking_ownership(struct mei_cl_device *cldev,
 	} else {
 		iwl_mei_send_sap_msg(cldev,
 				     SAP_MSG_NOTIF_CSME_OWNERSHIP_CONFIRMED);
-		schedule_delayed_work(&mei->ownership_dwork,
+		schedule_delayed_work_dbg(&mei->ownership_dwork,
 				      MEI_OWNERSHIP_RETAKE_TIMEOUT_MS);
 	}
 }
@@ -1464,7 +1464,7 @@ int iwl_mei_get_ownership(void)
 	ret = wait_event_timeout(mei->get_ownership_wq,
 				 mei->got_ownership, HZ / 2);
 	if (!ret) {
-		schedule_delayed_work(&mei->ownership_dwork,
+		schedule_delayed_work_dbg(&mei->ownership_dwork,
 				      MEI_OWNERSHIP_RETAKE_TIMEOUT_MS);
 		return -ETIMEDOUT;
 	}
@@ -1760,7 +1760,7 @@ void iwl_mei_device_state(bool up)
 	iwl_mei_send_sap_msg(mei->cldev,
 			     SAP_MSG_NOTIF_CSME_OWNERSHIP_CONFIRMED);
 	mei->csme_taking_ownership = false;
-	schedule_delayed_work(&mei->ownership_dwork,
+	schedule_delayed_work_dbg(&mei->ownership_dwork,
 			      MEI_OWNERSHIP_RETAKE_TIMEOUT_MS);
 out:
 	mutex_unlock(&iwl_mei_mutex);
@@ -2130,10 +2130,10 @@ static void iwl_mei_remove(struct mei_cl_device *cldev)
 	 * includes a call to synchronize_net() so that we know there won't be
 	 * any new Rx that will trigger the following workers.
 	 */
-	cancel_work_sync(&mei->send_csa_msg_wk);
-	cancel_delayed_work_sync(&mei->csa_throttle_end_wk);
-	cancel_work_sync(&mei->netdev_work);
-	cancel_delayed_work_sync(&mei->ownership_dwork);
+	cancel_work_sync_dbg(&mei->send_csa_msg_wk);
+	cancel_delayed_work_sync_dbg(&mei->csa_throttle_end_wk);
+	cancel_work_sync_dbg(&mei->netdev_work);
+	cancel_delayed_work_sync_dbg(&mei->ownership_dwork);
 
 	/*
 	 * If someone waits for the ownership, let him know that we are going

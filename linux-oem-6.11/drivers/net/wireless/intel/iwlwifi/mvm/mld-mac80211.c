@@ -3,6 +3,7 @@
  * Copyright (C) 2022-2024 Intel Corporation
  */
 #include "mvm.h"
+#include <linux/drv_dbg.h>
 
 static int iwl_mvm_mld_mac_add_interface(struct ieee80211_hw *hw,
 					 struct ieee80211_vif *vif)
@@ -954,7 +955,7 @@ static void iwl_mvm_mld_vif_cfg_changed_station(struct iwl_mvm *mvm,
 
 	if (changes & (BSS_CHANGED_MLD_VALID_LINKS | BSS_CHANGED_MLD_TTLM) &&
 	    ieee80211_vif_is_mld(vif) && mvmvif->authorized)
-		wiphy_delayed_work_queue(mvm->hw->wiphy,
+		wiphy_delayed_work_queue_dbg(mvm->hw->wiphy,
 					 &mvmvif->mlo_int_scan_wk, 0);
 }
 

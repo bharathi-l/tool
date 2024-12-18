@@ -225,7 +225,7 @@ static void iwl_mvm_rx_handle_tcm(struct iwl_mvm *mvm,
 	mac = mvmsta->mac_id_n_color & FW_CTXT_ID_MSK;
 
 	if (time_after(jiffies, mvm->tcm.ts + MVM_TCM_PERIOD))
-		schedule_delayed_work(&mvm->tcm.work, 0);
+		schedule_delayed_work_dbg(&mvm->tcm.work, 0);
 	mdata = &mvm->tcm.data[mac];
 	mdata->rx.pkts[ac]++;
 

@@ -969,7 +969,7 @@ void iwl_mvm_mac_wake_tx_queue(struct ieee80211_hw *hw,
 	    /* recheck under lock */
 	    !test_bit(IWL_MVM_TXQ_STATE_READY, &mvmtxq->state)) {
 		list_add_tail(&mvmtxq->list, &mvm->add_stream_txqs);
-		schedule_work(&mvm->add_stream_wk);
+		schedule_work_dbg(&mvm->add_stream_wk);
 	}
 	spin_unlock_bh(&mvm->add_stream_lock);
 	
@@ -1064,7 +1064,7 @@ int iwl_mvm_mac_ampdu_action(struct ieee80211_hw *hw,
 
 			mdata->opened_rx_ba_sessions = true;
 			mvmvif = iwl_mvm_vif_from_mac80211(vif);
-			cancel_delayed_work(&mvmvif->uapsd_nonagg_detected_wk);
+			cancel_delayed_work_dbg(&mvmvif->uapsd_nonagg_detected_wk);
 		}
 		if (!iwl_enable_rx_ampdu()) {
 			ret = -EINVAL;
@@ -1462,10 +1462,10 @@ void iwl_mvm_mac_stop(struct ieee80211_hw *hw, bool suspend)
 	iwl_mvm_scan_stop(mvm, IWL_MVM_SCAN_INT_MLO, false);
 	mutex_unlock(&mvm->mutex);
 
-	wiphy_work_cancel(mvm->hw->wiphy, &mvm->trig_link_selection_wk);
-	wiphy_work_flush(mvm->hw->wiphy, &mvm->async_handlers_wiphy_wk);
-	flush_work(&mvm->async_handlers_wk);
-	flush_work(&mvm->add_stream_wk);
+	wiphy_work_cancel_dbg(mvm->hw->wiphy, &mvm->trig_link_selection_wk);
+	wiphy_work_flush_dbg(mvm->hw->wiphy, &mvm->async_handlers_wiphy_wk);
+	flush_work_dbg(&mvm->async_handlers_wk);
+	flush_work_dbg(&mvm->add_stream_wk);
 
 	/*
 	 * Lock and clear the firmware running bit here already, so that
@@ -1477,14 +1477,14 @@ void iwl_mvm_mac_stop(struct ieee80211_hw *hw, bool suspend)
 	 */
 	clear_bit(IWL_MVM_STATUS_FIRMWARE_RUNNING, &mvm->status);
 
-	cancel_delayed_work_sync(&mvm->cs_tx_unblock_dwork);
-	cancel_delayed_work_sync(&mvm->scan_timeout_dwork);
+	cancel_delayed_work_sync_dbg(&mvm->cs_tx_unblock_dwork);
+	cancel_delayed_work_sync_dbg(&mvm->scan_timeout_dwork);
 
 	/*
 	 * The work item could be running or queued if the
 	 * ROC time event stops just as we get here.
 	 */
-	flush_work(&mvm->roc_done_wk);
+	flush_work_dbg(&mvm->roc_done_wk);
 
 	iwl_mvm_mei_set_sw_rfkill_state(mvm);
 
@@ -1496,8 +1496,8 @@ void iwl_mvm_mac_stop(struct ieee80211_hw *hw, bool suspend)
 	 * The worker might have been waiting for the mutex, let it run and
 	 * discover that its list is now empty.
 	 */
-	cancel_work_sync(&mvm->async_handlers_wk);
-	wiphy_work_cancel(hw->wiphy, &mvm->async_handlers_wiphy_wk);
+	cancel_work_sync_dbg(&mvm->async_handlers_wk);
+	wiphy_work_cancel_dbg(hw->wiphy, &mvm->async_handlers_wiphy_wk);
 	
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
@@ -1786,13 +1786,13 @@ void iwl_mvm_mac_init_mvmvif(struct iwl_mvm *mvm, struct iwl_mvm_vif *mvmvif)
 	INIT_DELAYED_WORK(&mvmvif->csa_work,
 			  iwl_mvm_channel_switch_disconnect_wk);
 
-	wiphy_delayed_work_init(&mvmvif->prevent_esr_done_wk,
+	wiphy_delayed_work_init_dbg(&mvmvif->prevent_esr_done_wk,
 				iwl_mvm_prevent_esr_done_wk);
 
-	wiphy_delayed_work_init(&mvmvif->mlo_int_scan_wk,
+	wiphy_delayed_work_init_dbg(&mvmvif->mlo_int_scan_wk,
 				iwl_mvm_mlo_int_scan_wk);
 
-	wiphy_work_init(&mvmvif->unblock_esr_tpt_wk,
+	wiphy_work_init_dbg(&mvmvif->unblock_esr_tpt_wk,
 			iwl_mvm_unblock_esr_tpt);
 }
 
@@ -1937,18 +1937,18 @@ void iwl_mvm_prepare_mac_removal(struct iwl_mvm *mvm,
 		 * We assume here that all the packets sent to the OFFCHANNEL
 		 * queue are sent in ROC session.
 		 */
-		flush_work(&mvm->roc_done_wk);
+		flush_work_dbg(&mvm->roc_done_wk);
 	}
 
-	wiphy_delayed_work_cancel(mvm->hw->wiphy,
+	wiphy_delayed_work_cancel_dbg(mvm->hw->wiphy,
 				  &mvmvif->prevent_esr_done_wk);
 
-	wiphy_delayed_work_cancel(mvm->hw->wiphy,
+	wiphy_delayed_work_cancel_dbg(mvm->hw->wiphy,
 				  &mvmvif->mlo_int_scan_wk);
 
-	wiphy_work_cancel(mvm->hw->wiphy, &mvmvif->unblock_esr_tpt_wk);
+	wiphy_work_cancel_dbg(mvm->hw->wiphy, &mvmvif->unblock_esr_tpt_wk);
 
-	cancel_delayed_work_sync(&mvmvif->csa_work);
+	cancel_delayed_work_sync_dbg(&mvmvif->csa_work);
 }
 
 static void iwl_mvm_mac_remove_interface(struct ieee80211_hw *hw,
@@ -4184,13 +4184,13 @@ iwl_mvm_sta_state_authorized_to_assoc(struct iwl_mvm *mvm,
 		/* disable beacon filtering */
 		iwl_mvm_disable_beacon_filter(mvm, vif);
 
-		wiphy_delayed_work_cancel(mvm->hw->wiphy,
+		wiphy_delayed_work_cancel_dbg(mvm->hw->wiphy,
 					  &mvmvif->prevent_esr_done_wk);
 
-		wiphy_delayed_work_cancel(mvm->hw->wiphy,
+		wiphy_delayed_work_cancel_dbg(mvm->hw->wiphy,
 					  &mvmvif->mlo_int_scan_wk);
 
-		wiphy_work_cancel(mvm->hw->wiphy, &mvmvif->unblock_esr_tpt_wk);
+		wiphy_work_cancel_dbg(mvm->hw->wiphy, &mvmvif->unblock_esr_tpt_wk);
 
 		/* No need for the periodic statistics anymore */
 		if (ieee80211_vif_is_mld(vif) && mvmvif->esr_active)
@@ -4233,7 +4233,7 @@ int iwl_mvm_mac_sta_state_common(struct ieee80211_hw *hw,
 	 */
 	if (old_state == IEEE80211_STA_NONE &&
 	    new_state == IEEE80211_STA_NOTEXIST) {
-		flush_work(&mvm->add_stream_wk);
+		flush_work_dbg(&mvm->add_stream_wk);
 
 		/*
 		 * No need to make sure deferred TX indication is off since the
@@ -5078,7 +5078,7 @@ int iwl_mvm_roc_common(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 	 * Flush the done work, just in case it's still pending, so that
 	 * the work it does can complete and we can accept new frames.
 	 */
-	flush_work(&mvm->roc_done_wk);
+	flush_work_dbg(&mvm->roc_done_wk);
 
 	if (!IS_ERR_OR_NULL(bss_vif)) {
 		ret = iwl_mvm_block_esr_sync(mvm, bss_vif,
@@ -5940,7 +5940,7 @@ int iwl_mvm_pre_channel_switch(struct iwl_mvm *mvm,
 
 		if (chsw->delay > IWL_MAX_CSA_BLOCK_TX &&
 		    hweight16(vif->valid_links) <= 1)
-			schedule_delayed_work(&mvmvif->csa_work, 0);
+			schedule_delayed_work_dbg(&mvmvif->csa_work, 0);
 
 		if (chsw->block_tx) {
 			/*
@@ -5950,7 +5950,7 @@ int iwl_mvm_pre_channel_switch(struct iwl_mvm *mvm,
 			if (!chsw->count ||
 			    chsw->count * vif->bss_conf.beacon_int >
 			    IWL_MAX_CSA_BLOCK_TX)
-				schedule_delayed_work(&mvmvif->csa_work,
+				schedule_delayed_work_dbg(&mvmvif->csa_work,
 						      msecs_to_jiffies(IWL_MAX_CSA_BLOCK_TX));
 		}
 
@@ -6144,7 +6144,7 @@ void iwl_mvm_mac_flush(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 	}
 
 	/* Make sure we're done with the deferred traffic before flushing */
-	flush_work(&mvm->add_stream_wk);
+	flush_work_dbg(&mvm->add_stream_wk);
 
 	mutex_lock(&mvm->mutex);
 

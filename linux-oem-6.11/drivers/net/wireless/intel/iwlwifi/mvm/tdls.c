@@ -9,6 +9,7 @@
 #include "time-event.h"
 #include "iwl-io.h"
 #include "iwl-prph.h"
+#include <linux/drv_dbg.h>
 
 #define TU_TO_US(x) (x * 1024)
 #define TU_TO_MS(x) (TU_TO_US(x) / 1000)
@@ -238,7 +239,7 @@ void iwl_mvm_rx_tdls_notif(struct iwl_mvm *mvm, struct iwl_rx_cmd_buffer *rxb)
 	 * Also convert TU to msec.
 	 */
 	delay = TU_TO_MS(vif->bss_conf.dtim_period * vif->bss_conf.beacon_int);
-	mod_delayed_work(system_wq, &mvm->tdls_cs.dwork,
+	mod_delayed_work_dbg(system_wq, &mvm->tdls_cs.dwork,
 			 msecs_to_jiffies(delay));
 
 	iwl_mvm_tdls_update_cs_state(mvm, IWL_MVM_TDLS_SW_ACTIVE);
@@ -495,7 +496,7 @@ void iwl_mvm_tdls_ch_switch_work(struct work_struct *work)
 
 	/* retry after a DTIM if we failed sending now */
 	delay = TU_TO_MS(vif->bss_conf.dtim_period * vif->bss_conf.beacon_int);
-	schedule_delayed_work(&mvm->tdls_cs.dwork, msecs_to_jiffies(delay));
+	schedule_delayed_work_dbg(&mvm->tdls_cs.dwork, msecs_to_jiffies(delay));
 }
 
 int
@@ -559,7 +560,7 @@ iwl_mvm_tdls_channel_switch(struct ieee80211_hw *hw,
 	 */
 	delay = 2 * TU_TO_MS(vif->bss_conf.dtim_period *
 			     vif->bss_conf.beacon_int);
-	mod_delayed_work(system_wq, &mvm->tdls_cs.dwork,
+	mod_delayed_work_dbg(system_wq, &mvm->tdls_cs.dwork,
 			 msecs_to_jiffies(delay));
 	
 	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
@@ -616,7 +617,7 @@ out:
 				vif->bss_conf.beacon_int));
 
 	/* flush the channel switch state */
-	flush_delayed_work(&mvm->tdls_cs.dwork);
+	flush_delayed_work_dbg(&mvm->tdls_cs.dwork);
 
 	IWL_DEBUG_TDLS(mvm, "TDLS ending channel switch with %pM\n", sta->addr);
 	
@@ -679,7 +680,7 @@ retry:
 	/* register a timeout in case we don't succeed in switching */
 	delay = vif->bss_conf.dtim_period * vif->bss_conf.beacon_int *
 		1024 / 1000;
-	mod_delayed_work(system_wq, &mvm->tdls_cs.dwork,
+	mod_delayed_work_dbg(system_wq, &mvm->tdls_cs.dwork,
 			 msecs_to_jiffies(delay));
 	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 }

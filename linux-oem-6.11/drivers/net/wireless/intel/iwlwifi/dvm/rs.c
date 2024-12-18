@@ -14,6 +14,7 @@
 #include <linux/delay.h>
 
 #include <linux/workqueue.h>
+#include <linux/drv_dbg.h>
 
 #include "dev.h"
 #include "agn.h"
@@ -835,7 +836,7 @@ static void rs_bt_update_lq(struct iwl_priv *priv, struct iwl_rxon_context *ctx,
 		rs_fill_link_cmd(priv, lq_sta, tbl->current_rate);
 		iwl_send_lq_cmd(priv, ctx, &lq_sta->lq, CMD_ASYNC, false);
 
-		queue_work(priv->workqueue, &priv->bt_full_concurrency);
+		queue_work_dbg(priv->workqueue, &priv->bt_full_concurrency);
 	}
 }
 

@@ -1162,7 +1162,7 @@ static void iwl_mvm_tx_airtime(struct iwl_mvm *mvm,
 		return;
 
 	if (time_after(jiffies, mvm->tcm.ts + MVM_TCM_PERIOD))
-		schedule_delayed_work(&mvm->tcm.work, 0);
+		schedule_delayed_work_dbg(&mvm->tcm.work, 0);
 
 	mdata->tx.airtime += airtime;
 }
@@ -1297,7 +1297,7 @@ static int iwl_mvm_tx_mpdu(struct iwl_mvm *mvm, struct sk_buff *skb,
 		if (unlikely(mvm->queue_info[txq_id].status ==
 			     IWL_MVM_QUEUE_SHARED &&
 			     iwl_mvm_txq_should_update(mvm, txq_id)))
-			schedule_work(&mvm->add_stream_wk);
+			schedule_work_dbg(&mvm->add_stream_wk);
 	}
 
 	IWL_DEBUG_TX(mvm, "TX to [%d|%d] Q:%d - seq: 0x%x len %d\n",
@@ -1368,6 +1368,7 @@ int iwl_mvm_tx_skb_sta(struct iwl_mvm *mvm, struct sk_buff *skb,
 	memcpy(&info, skb->cb, sizeof(info));
 
 	get_packet_type(skb);
+
 	if (!skb_is_gso(skb)) {
 		retfun = iwl_mvm_tx_mpdu(mvm, skb, &info, sta, NULL);
 		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
@@ -1449,6 +1450,7 @@ int iwl_mvm_tx_skb_sta(struct iwl_mvm *mvm, struct sk_buff *skb,
 			return 0;
 		}
 	}
+
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 	return 0;
 }

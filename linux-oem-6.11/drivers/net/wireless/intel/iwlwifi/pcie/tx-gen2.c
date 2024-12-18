@@ -808,7 +808,7 @@ int iwl_txq_gen2_tx(struct iwl_trans *trans, struct sk_buff *skb,
 
 	/* start timer if queue currently empty */
 	if (txq->read_ptr == txq->write_ptr && txq->wd_timeout)
-		mod_timer(&txq->stuck_timer, jiffies + txq->wd_timeout);
+		mod_timer_dbg(&txq->stuck_timer, jiffies + txq->wd_timeout);
 
 	/* Tell device the write index *just past* this latest filled TFD */
 	txq->write_ptr = iwl_txq_inc_wrap(trans, txq->write_ptr);
@@ -916,7 +916,7 @@ static void iwl_txq_gen2_free(struct iwl_trans *trans, int txq_id)
 			kfree_sensitive(txq->entries[i].cmd);
 			kfree_sensitive(txq->entries[i].free_buf);
 		}
-	del_timer_sync(&txq->stuck_timer);
+	del_timer_sync_dbg(&txq->stuck_timer);
 
 	iwl_txq_gen2_free_memory(trans, txq);
 
@@ -1428,7 +1428,7 @@ int iwl_pcie_gen2_enqueue_hcmd(struct iwl_trans *trans,
 
 	/* start timer if queue currently empty */
 	if (txq->read_ptr == txq->write_ptr && txq->wd_timeout)
-		mod_timer(&txq->stuck_timer, jiffies + txq->wd_timeout);
+		mod_timer_dbg(&txq->stuck_timer, jiffies + txq->wd_timeout);
 
 	spin_lock(&trans_pcie->reg_lock);
 	/* Increment and update queue's write index */

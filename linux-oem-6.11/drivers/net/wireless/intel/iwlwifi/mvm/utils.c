@@ -5,7 +5,6 @@
  * Copyright (C) 2015-2017 Intel Deutschland GmbH
  */
 #include <net/mac80211.h>
-#include <linux/drv_dbg.h>
 
 #include "iwl-debug.h"
 #include "iwl-io.h"
@@ -14,6 +13,7 @@
 #include "mvm.h"
 #include "fw/api/rs.h"
 #include "fw/img.h"
+#include <linux/drv_dbg.h>
 
 /*
  * Will return 0 even if the cmd failed when RFKILL is asserted unless
@@ -974,7 +974,7 @@ static void iwl_mvm_uapsd_agg_disconnect(struct iwl_mvm *mvm,
 	mvm->tcm.data[mvmvif->id].uapsd_nonagg_detect.detected = true;
 	IWL_INFO(mvm,
 		 "detected AP should do aggregation but isn't, likely due to U-APSD\n");
-	schedule_delayed_work(&mvmvif->uapsd_nonagg_detected_wk,
+	schedule_delayed_work_dbg(&mvmvif->uapsd_nonagg_detected_wk,
 			      15 * HZ);
 }
 
@@ -1168,7 +1168,7 @@ void iwl_mvm_recalc_tcm(struct iwl_mvm *mvm)
 		smp_mb();
 		mvm->tcm.ts = ts;
 		if (work_delay)
-			schedule_delayed_work(&mvm->tcm.work, work_delay);
+			schedule_delayed_work_dbg(&mvm->tcm.work, work_delay);
 	}
 	spin_unlock(&mvm->tcm.lock);
 
@@ -1190,7 +1190,7 @@ void iwl_mvm_pause_tcm(struct iwl_mvm *mvm, bool with_cancel)
 	mvm->tcm.paused = true;
 	spin_unlock_bh(&mvm->tcm.lock);
 	if (with_cancel)
-		cancel_delayed_work_sync(&mvm->tcm.work);
+		cancel_delayed_work_sync_dbg(&mvm->tcm.work);
 }
 
 void iwl_mvm_resume_tcm(struct iwl_mvm *mvm)
@@ -1221,9 +1221,9 @@ void iwl_mvm_resume_tcm(struct iwl_mvm *mvm)
 	 * re-evaluation to cover the case of no traffic.
 	 */
 	if (mvm->tcm.result.global_load > IWL_MVM_TRAFFIC_LOW)
-		schedule_delayed_work(&mvm->tcm.work, MVM_TCM_PERIOD);
+		schedule_delayed_work_dbg(&mvm->tcm.work, MVM_TCM_PERIOD);
 	else if (low_latency)
-		schedule_delayed_work(&mvm->tcm.work, MVM_LL_PERIOD);
+		schedule_delayed_work_dbg(&mvm->tcm.work, MVM_LL_PERIOD);
 
 	spin_unlock_bh(&mvm->tcm.lock);
 }
@@ -1240,7 +1240,7 @@ void iwl_mvm_tcm_rm_vif(struct iwl_mvm *mvm, struct ieee80211_vif *vif)
 {
 	struct iwl_mvm_vif *mvmvif = iwl_mvm_vif_from_mac80211(vif);
 
-	cancel_delayed_work_sync(&mvmvif->uapsd_nonagg_detected_wk);
+	cancel_delayed_work_sync_dbg(&mvmvif->uapsd_nonagg_detected_wk);
 }
 
 u32 iwl_mvm_get_systime(struct iwl_mvm *mvm)

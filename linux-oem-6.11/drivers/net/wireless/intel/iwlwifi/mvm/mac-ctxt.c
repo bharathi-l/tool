@@ -1866,7 +1866,7 @@ void iwl_mvm_channel_switch_start_notif(struct iwl_mvm *mvm,
 
 		IWL_DEBUG_INFO(mvm, "Channel Switch Started Notification\n");
 
-		schedule_delayed_work(&mvm->cs_tx_unblock_dwork,
+		schedule_delayed_work_dbg(&mvm->cs_tx_unblock_dwork,
 				      msecs_to_jiffies(IWL_MVM_CS_UNBLOCK_TX_TIMEOUT *
 						       csa_vif->bss_conf.beacon_int));
 
@@ -1890,7 +1890,7 @@ void iwl_mvm_channel_switch_start_notif(struct iwl_mvm *mvm,
 		}
 
 		iwl_mvm_csa_client_absent(mvm, vif);
-		cancel_delayed_work(&mvmvif->csa_work);
+		cancel_delayed_work_dbg(&mvmvif->csa_work);
 		ieee80211_chswitch_done(vif, true, mac_link_id);
 		break;
 	default:

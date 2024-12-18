@@ -429,13 +429,13 @@ static void iwlagn_rx_statistics(struct iwl_priv *priv,
 	 * reg_recalib_period seconds to ensure we get a
 	 * thermal update even if the uCode doesn't give
 	 * us one */
-	mod_timer(&priv->statistics_periodic, jiffies +
+	mod_timer_dbg(&priv->statistics_periodic, jiffies +
 		  msecs_to_jiffies(reg_recalib_period * 1000));
 
 	if (unlikely(!test_bit(STATUS_SCANNING, &priv->status)) &&
 	    (pkt->hdr.cmd == STATISTICS_NOTIFICATION)) {
 		iwlagn_rx_calc_noise(priv);
-		queue_work(priv->workqueue, &priv->run_time_calib_work);
+		queue_work_dbg(priv->workqueue, &priv->run_time_calib_work);
 	}
 	if (priv->lib->temperature && change)
 		priv->lib->temperature(priv);
