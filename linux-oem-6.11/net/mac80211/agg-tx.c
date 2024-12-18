@@ -376,8 +376,8 @@ int __ieee80211_stop_tx_ba_session(struct sta_info *sta, u16 tid,
 	ht_dbg(sta->sdata, "Tx BA session stop requested for %pM tid %u\n",
 	       sta->sta.addr, tid);
 
-	del_timer_sync(&tid_tx->addba_resp_timer);
-	del_timer_sync(&tid_tx->session_timer);
+	del_timer_sync_dbg(&tid_tx->addba_resp_timer);
+	del_timer_sync_dbg(&tid_tx->session_timer);
 
 	/*
 	 * After this packets are no longer handed right through
@@ -469,7 +469,7 @@ static void ieee80211_send_addba_with_timeout(struct sta_info *sta,
 	lockdep_assert_wiphy(sta->local->hw.wiphy);
 
 	/* activate the timer for the recipient's addBA response */
-	mod_timer(&tid_tx->addba_resp_timer, jiffies + ADDBA_RESP_INTERVAL);
+	mod_timer_dbg(&tid_tx->addba_resp_timer, jiffies + ADDBA_RESP_INTERVAL);
 	ht_dbg(sdata, "activated addBA response timer on %pM tid %d\n",
 	       sta->sta.addr, tid);
 
@@ -595,7 +595,7 @@ static void sta_tx_agg_session_timer_expired(struct timer_list *t)
 
 	timeout = tid_tx->last_tx + TU_TO_JIFFIES(tid_tx->timeout);
 	if (time_is_after_jiffies(timeout)) {
-		mod_timer(&tid_tx->session_timer, timeout);
+		mod_timer_dbg(&tid_tx->session_timer, timeout);
 		return;
 	}
 
@@ -730,10 +730,10 @@ int ieee80211_start_tx_ba_session(struct ieee80211_sta *pubsta, u16 tid,
 	tid_tx->tid = tid;
 
 	/* response timer */
-	timer_setup(&tid_tx->addba_resp_timer, sta_addba_resp_timer_expired, 0);
+	timer_setup_dbg(&tid_tx->addba_resp_timer, sta_addba_resp_timer_expired, 0);
 
 	/* tx timer */
-	timer_setup(&tid_tx->session_timer,
+	timer_setup_dbg(&tid_tx->session_timer,
 		    sta_tx_agg_session_timer_expired, TIMER_DEFERRABLE);
 
 	/* assign a dialog token */
@@ -746,7 +746,8 @@ int ieee80211_start_tx_ba_session(struct ieee80211_sta *pubsta, u16 tid,
 	 */
 	sta->ampdu_mlme.tid_start_tx[tid] = tid_tx;
 
-	wiphy_work_queue(local->hw.wiphy, &sta->ampdu_mlme.work);
+	
+	wiphy_work_queue_dbg(local->hw.wiphy, &sta->ampdu_mlme.work);
 
 	/* this flow continues off the work */
  err_unlock_sta:
@@ -865,7 +866,8 @@ void ieee80211_start_tx_ba_cb_irqsafe(struct ieee80211_vif *vif,
 		goto out;
 
 	set_bit(HT_AGG_STATE_START_CB, &tid_tx->state);
-	wiphy_work_queue(local->hw.wiphy, &sta->ampdu_mlme.work);
+	
+	wiphy_work_queue_dbg(local->hw.wiphy, &sta->ampdu_mlme.work);
  out:
 	rcu_read_unlock();
 }
@@ -905,7 +907,8 @@ int ieee80211_stop_tx_ba_session(struct ieee80211_sta *pubsta, u16 tid)
 	}
 
 	set_bit(HT_AGG_STATE_WANT_STOP, &tid_tx->state);
-	wiphy_work_queue(local->hw.wiphy, &sta->ampdu_mlme.work);
+	
+	wiphy_work_queue_dbg(local->hw.wiphy, &sta->ampdu_mlme.work);
 
  unlock:
 	spin_unlock_bh(&sta->lock);
@@ -965,7 +968,8 @@ void ieee80211_stop_tx_ba_cb_irqsafe(struct ieee80211_vif *vif,
 		goto out;
 
 	set_bit(HT_AGG_STATE_STOP_CB, &tid_tx->state);
-	wiphy_work_queue(local->hw.wiphy, &sta->ampdu_mlme.work);
+	
+	wiphy_work_queue_dbg(local->hw.wiphy, &sta->ampdu_mlme.work);
  out:
 	rcu_read_unlock();
 }
@@ -1004,7 +1008,7 @@ void ieee80211_process_addba_resp(struct ieee80211_local *local,
 		return;
 	}
 
-	del_timer_sync(&tid_tx->addba_resp_timer);
+	del_timer_sync_dbg(&tid_tx->addba_resp_timer);
 
 	ht_dbg(sta->sdata, "switched off addBA timer for %pM tid %d\n",
 	       sta->sta.addr, tid);
@@ -1048,7 +1052,7 @@ void ieee80211_process_addba_resp(struct ieee80211_local *local,
 			le16_to_cpu(mgmt->u.action.u.addba_resp.timeout);
 
 		if (tid_tx->timeout) {
-			mod_timer(&tid_tx->session_timer,
+			mod_timer_dbg(&tid_tx->session_timer,
 				  TU_TO_EXP_TIME(tid_tx->timeout));
 			tid_tx->last_tx = jiffies;
 		}

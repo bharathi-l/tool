@@ -335,7 +335,7 @@ void ieee80211_sta_tear_down_BA_sessions(struct sta_info *sta,
 	 * the BA session, so handle it to properly clean tid_tx data.
 	 */
 	if(reason == AGG_STOP_DESTROY_STA) {
-		wiphy_work_cancel(sta->local->hw.wiphy, &sta->ampdu_mlme.work);
+		wiphy_work_cancel_dbg(sta->local->hw.wiphy, &sta->ampdu_mlme.work);
 
 		for (i = 0; i < IEEE80211_NUM_TIDS; i++) {
 			struct tid_ampdu_tx *tid_tx =
@@ -357,6 +357,8 @@ void ieee80211_ba_session_work(struct wiphy *wiphy, struct wiphy_work *work)
 	struct tid_ampdu_tx *tid_tx;
 	bool blocked;
 	int tid;
+
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE] [ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 
 	lockdep_assert_wiphy(sta->local->hw.wiphy);
 
@@ -415,7 +417,9 @@ void ieee80211_ba_session_work(struct wiphy *wiphy, struct wiphy_work *work)
 				 */
 				synchronize_net();
 
-				wiphy_work_queue(sdata->local->hw.wiphy, work);
+				
+				wiphy_work_queue_dbg(sdata->local->hw.wiphy, work);
+				printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 				return;
 			}
 
@@ -452,6 +456,7 @@ void ieee80211_ba_session_work(struct wiphy *wiphy, struct wiphy_work *work)
 		if (test_and_clear_bit(HT_AGG_STATE_STOP_CB, &tid_tx->state))
 			ieee80211_stop_tx_ba_cb(sta, tid, tid_tx);
 	}
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
 
 void ieee80211_send_delba(struct ieee80211_sub_if_data *sdata,
@@ -614,7 +619,8 @@ void ieee80211_request_smps(struct ieee80211_vif *vif, unsigned int link_id,
 		goto out;
 
 	link->u.mgd.driver_smps_mode = smps_mode;
-	wiphy_work_queue(sdata->local->hw.wiphy,
+	
+	wiphy_work_queue_dbg(sdata->local->hw.wiphy,
 			 &link->u.mgd.request_smps_work);
 out:
 	rcu_read_unlock();

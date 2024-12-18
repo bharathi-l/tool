@@ -21,6 +21,7 @@
 #include "ieee80211_i.h"
 #include "driver-ops.h"
 #include "rate.h"
+#include <linux/drv_dbg.h>
 
 #define IEEE80211_OCB_HOUSEKEEPING_INTERVAL		(60 * HZ)
 #define IEEE80211_OCB_PEER_INACTIVITY_LIMIT		(240 * HZ)
@@ -78,7 +79,8 @@ void ieee80211_ocb_rx_no_sta(struct ieee80211_sub_if_data *sdata,
 	spin_lock(&ifocb->incomplete_lock);
 	list_add(&sta->list, &ifocb->incomplete_stations);
 	spin_unlock(&ifocb->incomplete_lock);
-	wiphy_work_queue(local->hw.wiphy, &sdata->work);
+	
+	wiphy_work_queue_dbg(local->hw.wiphy, &sdata->work);
 }
 
 static struct sta_info *ieee80211_ocb_finish_sta(struct sta_info *sta)
@@ -112,7 +114,7 @@ static void ieee80211_ocb_housekeeping(struct ieee80211_sub_if_data *sdata)
 
 	ieee80211_sta_expire(sdata, IEEE80211_OCB_PEER_INACTIVITY_LIMIT);
 
-	mod_timer(&ifocb->housekeeping_timer,
+	mod_timer_dbg(&ifocb->housekeeping_timer,
 		  round_jiffies(jiffies + IEEE80211_OCB_HOUSEKEEPING_INTERVAL));
 }
 
@@ -152,14 +154,15 @@ static void ieee80211_ocb_housekeeping_timer(struct timer_list *t)
 
 	set_bit(OCB_WORK_HOUSEKEEPING, &ifocb->wrkq_flags);
 
-	wiphy_work_queue(local->hw.wiphy, &sdata->work);
+	
+	wiphy_work_queue_dbg(local->hw.wiphy, &sdata->work);
 }
 
 void ieee80211_ocb_setup_sdata(struct ieee80211_sub_if_data *sdata)
 {
 	struct ieee80211_if_ocb *ifocb = &sdata->u.ocb;
 
-	timer_setup(&ifocb->housekeeping_timer,
+	timer_setup_dbg(&ifocb->housekeeping_timer,
 		    ieee80211_ocb_housekeeping_timer, 0);
 	INIT_LIST_HEAD(&ifocb->incomplete_stations);
 	spin_lock_init(&ifocb->incomplete_lock);
@@ -193,7 +196,8 @@ int ieee80211_ocb_join(struct ieee80211_sub_if_data *sdata,
 	ifocb->joined = true;
 
 	set_bit(OCB_WORK_HOUSEKEEPING, &ifocb->wrkq_flags);
-	wiphy_work_queue(local->hw.wiphy, &sdata->work);
+	
+	wiphy_work_queue_dbg(local->hw.wiphy, &sdata->work);
 
 	netif_carrier_on(sdata->dev);
 	return 0;
@@ -230,7 +234,7 @@ int ieee80211_ocb_leave(struct ieee80211_sub_if_data *sdata)
 
 	skb_queue_purge(&sdata->skb_queue);
 
-	del_timer_sync(&sdata->u.ocb.housekeeping_timer);
+	del_timer_sync_dbg(&sdata->u.ocb.housekeeping_timer);
 	/* If the timer fired while we waited for it, it will have
 	 * requeued the work. Now the work will be running again
 	 * but will not rearm the timer again because it checks

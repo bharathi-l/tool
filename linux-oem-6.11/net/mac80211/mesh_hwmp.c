@@ -10,6 +10,7 @@
 #include <asm/unaligned.h>
 #include "wme.h"
 #include "mesh.h"
+#include <linux/drv_dbg.h>
 
 #define TEST_FRAME_LEN	8192
 #define MAX_METRIC	0xffffffff
@@ -1027,17 +1028,20 @@ static void mesh_queue_preq(struct mesh_path *mpath, u8 flags)
 	++ifmsh->preq_queue_len;
 	spin_unlock_bh(&ifmsh->mesh_preq_queue_lock);
 
-	if (time_after(jiffies, ifmsh->last_preq + min_preq_int_jiff(sdata)))
-		wiphy_work_queue(sdata->local->hw.wiphy, &sdata->work);
+	if (time_after(jiffies, ifmsh->last_preq + min_preq_int_jiff(sdata))) {
+		
+		wiphy_work_queue_dbg(sdata->local->hw.wiphy, &sdata->work);
+	}
 
 	else if (time_before(jiffies, ifmsh->last_preq)) {
 		/* avoid long wait if did not send preqs for a long time
 		 * and jiffies wrapped around
 		 */
 		ifmsh->last_preq = jiffies - min_preq_int_jiff(sdata) - 1;
-		wiphy_work_queue(sdata->local->hw.wiphy, &sdata->work);
+		
+		wiphy_work_queue_dbg(sdata->local->hw.wiphy, &sdata->work);
 	} else
-		mod_timer(&ifmsh->mesh_path_timer, ifmsh->last_preq +
+		mod_timer_dbg(&ifmsh->mesh_path_timer, ifmsh->last_preq +
 						min_preq_int_jiff(sdata));
 }
 
@@ -1126,7 +1130,7 @@ void mesh_path_start_discovery(struct ieee80211_sub_if_data *sdata)
 
 	spin_lock_bh(&mpath->state_lock);
 	if (!(mpath->flags & MESH_PATH_DELETED))
-		mod_timer(&mpath->timer, jiffies + mpath->discovery_timeout);
+		mod_timer_dbg(&mpath->timer, jiffies + mpath->discovery_timeout);
 	spin_unlock_bh(&mpath->state_lock);
 
 enddiscovery:

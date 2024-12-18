@@ -232,7 +232,8 @@ static void __ieee80211_queue_skb_to_iface(struct ieee80211_sub_if_data *sdata,
 	}
 
 	skb_queue_tail(&sdata->skb_queue, skb);
-	wiphy_work_queue(sdata->local->hw.wiphy, &sdata->work);
+	
+	wiphy_work_queue_dbg(sdata->local->hw.wiphy, &sdata->work);
 	if (sta)
 		sta->deflink.rx_stats.packets++;
 }
@@ -1240,11 +1241,11 @@ static void ieee80211_sta_reorder_release(struct ieee80211_sub_if_data *sdata,
  set_release_timer:
 
 		if (!tid_agg_rx->removed)
-			mod_timer(&tid_agg_rx->reorder_timer,
+			mod_timer_dbg(&tid_agg_rx->reorder_timer,
 				  tid_agg_rx->reorder_time[j] + 1 +
 				  HT_RX_REORDER_BUF_TIMEOUT);
 	} else {
-		del_timer(&tid_agg_rx->reorder_timer);
+		del_timer_dbg(&tid_agg_rx->reorder_timer);
 	}
 }
 
@@ -3252,7 +3253,7 @@ ieee80211_rx_h_data(struct ieee80211_rx_data *rx)
 		    ((struct ethhdr *)rx->skb->data)->h_dest) &&
 	    (!local->scanning &&
 	     !test_bit(SDATA_STATE_OFFCHANNEL, &sdata->state)))
-		mod_timer(&local->dynamic_ps_timer, jiffies +
+		mod_timer_dbg(&local->dynamic_ps_timer, jiffies +
 			  msecs_to_jiffies(local->hw.conf.dynamic_ps_timeout));
 
 	ieee80211_deliver_skb(rx);
@@ -3306,7 +3307,7 @@ ieee80211_rx_h_ctrl(struct ieee80211_rx_data *rx, struct sk_buff_head *frames)
 
 		/* reset session timer */
 		if (tid_agg_rx->timeout)
-			mod_timer(&tid_agg_rx->session_timer,
+			mod_timer_dbg(&tid_agg_rx->session_timer,
 				  TU_TO_EXP_TIME(tid_agg_rx->timeout));
 
 		spin_lock(&tid_agg_rx->reorder_lock);
@@ -5545,7 +5546,7 @@ void ieee80211_rx_irqsafe(struct ieee80211_hw *hw, struct sk_buff *skb)
 
 	skb->pkt_type = IEEE80211_RX_MSG;
 	skb_queue_tail(&local->skb_queue, skb);
-	tasklet_schedule(&local->tasklet);
+	tasklet_schedule_dbg(&local->tasklet);
 	
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }

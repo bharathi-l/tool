@@ -462,7 +462,7 @@ static void __ieee80211_wake_queue(struct ieee80211_hw *hw, int queue,
 		return;
 
 	if (!skb_queue_empty(&local->pending[queue]))
-		tasklet_schedule(&local->tx_pending_tasklet);
+		tasklet_schedule_dbg(&local->tx_pending_tasklet);
 
 	/*
 	 * Calling _ieee80211_wake_txqs here can be a problem because it may
@@ -472,7 +472,7 @@ static void __ieee80211_wake_queue(struct ieee80211_hw *hw, int queue,
 	 * __ieee80211_wake_queue call it right before releasing the lock.
 	 */
 	if (reason == IEEE80211_QUEUE_STOP_REASON_DRIVER)
-		tasklet_schedule(&local->wake_txqs_tasklet);
+		tasklet_schedule_dbg(&local->wake_txqs_tasklet);
 	else
 		_ieee80211_wake_txqs(local, flags);
 }
@@ -901,7 +901,7 @@ void ieee80211_queue_work(struct ieee80211_hw *hw, struct work_struct *work)
 	if (!ieee80211_can_queue_work(local))
 		return;
 
-	queue_work(local->workqueue, work);
+	queue_work_dbg(local->workqueue, work);
 }
 EXPORT_SYMBOL(ieee80211_queue_work);
 
@@ -914,7 +914,7 @@ void ieee80211_queue_delayed_work(struct ieee80211_hw *hw,
 	if (!ieee80211_can_queue_work(local))
 		return;
 
-	queue_delayed_work(local->workqueue, dwork, delay);
+	queue_delayed_work_dbg(local->workqueue, dwork, delay);
 }
 EXPORT_SYMBOL(ieee80211_queue_delayed_work);
 
@@ -1582,10 +1582,10 @@ void ieee80211_stop_device(struct ieee80211_local *local, bool suspend)
 	ieee80211_led_radio(local, false);
 	ieee80211_mod_tpt_led_trig(local, 0, IEEE80211_TPT_LEDTRIG_FL_RADIO);
 
-	wiphy_work_cancel(local->hw.wiphy, &local->reconfig_filter);
+	wiphy_work_cancel_dbg(local->hw.wiphy, &local->reconfig_filter);
 
-	flush_workqueue(local->workqueue);
-	wiphy_work_flush(local->hw.wiphy, NULL);
+	flush_workqueue_dbg(local->workqueue);
+	wiphy_work_flush_dbg(local->hw.wiphy, NULL);
 	drv_stop(local, suspend);
 }
 
@@ -1607,8 +1607,8 @@ static void ieee80211_flush_completed_scan(struct ieee80211_local *local,
 		 */
 		if (aborted)
 			set_bit(SCAN_ABORTED, &local->scanning);
-		wiphy_delayed_work_queue(local->hw.wiphy, &local->scan_work, 0);
-		wiphy_delayed_work_flush(local->hw.wiphy, &local->scan_work);
+		wiphy_delayed_work_queue_dbg(local->hw.wiphy, &local->scan_work, 0);
+		wiphy_delayed_work_flush_dbg(local->hw.wiphy, &local->scan_work);
 	}
 }
 
@@ -1818,7 +1818,7 @@ int ieee80211_reconfig(struct ieee80211_local *local)
 	 * so we can't deadlock in this case.
 	 */
 	if (suspended && local->in_reconfig && !reconfig_due_to_wowlan)
-		cancel_work_sync(&local->restart_work);
+		cancel_work_sync_dbg(&local->restart_work);
 
 	local->started = false;
 
@@ -2122,9 +2122,10 @@ int ieee80211_reconfig(struct ieee80211_local *local)
 		 * If a link switch was scheduled before the restart, and ran
 		 * before reconfig, it will do nothing, so re-schedule.
 		 */
-		if (sdata->desired_active_links)
-			wiphy_work_queue(sdata->local->hw.wiphy,
+		if (sdata->desired_active_links) {
+			wiphy_work_queue_dbg(sdata->local->hw.wiphy,
 					 &sdata->activate_links_work);
+		}
 	}
 
 	/* Reconfigure sched scan if it was interrupted by FW restart */
@@ -2190,8 +2191,9 @@ int ieee80211_reconfig(struct ieee80211_local *local)
 		ieee80211_reconfig_roc(local);
 
 		/* Requeue all works */
-		list_for_each_entry(sdata, &local->interfaces, list)
-			wiphy_work_queue(local->hw.wiphy, &sdata->work);
+		list_for_each_entry(sdata, &local->interfaces, list) {
+			wiphy_work_queue_dbg(local->hw.wiphy, &sdata->work);
+		}
 	}
 
 	ieee80211_wake_queues_by_reason(hw, IEEE80211_MAX_QUEUE_MAP,
@@ -2228,7 +2230,7 @@ int ieee80211_reconfig(struct ieee80211_local *local)
 			ieee80211_sta_restart(sdata);
 	}
 
-	mod_timer(&local->sta_cleanup, jiffies + 1);
+	mod_timer_dbg(&local->sta_cleanup, jiffies + 1);
 #else
 	WARN_ON(1);
 #endif
@@ -3467,7 +3469,7 @@ void ieee80211_dfs_cac_cancel(struct ieee80211_local *local)
 	lockdep_assert_wiphy(local->hw.wiphy);
 
 	list_for_each_entry(sdata, &local->interfaces, list) {
-		wiphy_delayed_work_cancel(local->hw.wiphy,
+		wiphy_delayed_work_cancel_dbg(local->hw.wiphy,
 					  &sdata->dfs_cac_timer_work);
 
 		if (sdata->wdev.cac_started) {
@@ -3490,6 +3492,8 @@ void ieee80211_dfs_radar_detected_work(struct wiphy *wiphy,
 	struct ieee80211_chanctx *ctx;
 	int num_chanctx = 0;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
+
 	lockdep_assert_wiphy(local->hw.wiphy);
 
 	list_for_each_entry(ctx, &local->chanctx_list, list) {
@@ -3507,6 +3511,8 @@ void ieee80211_dfs_radar_detected_work(struct wiphy *wiphy,
 		WARN_ON(1);
 	else
 		cfg80211_radar_event(local->hw.wiphy, &chandef, GFP_KERNEL);
+		
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
 
 void ieee80211_radar_detected(struct ieee80211_hw *hw)
@@ -3515,7 +3521,7 @@ void ieee80211_radar_detected(struct ieee80211_hw *hw)
 
 	trace_api_radar_detected(local);
 
-	wiphy_work_queue(hw->wiphy, &local->radar_detected_work);
+	wiphy_work_queue_dbg(hw->wiphy, &local->radar_detected_work);
 }
 EXPORT_SYMBOL(ieee80211_radar_detected);
 

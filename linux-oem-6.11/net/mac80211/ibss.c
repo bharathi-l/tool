@@ -370,7 +370,7 @@ static void __ieee80211_sta_join_ibss(struct ieee80211_sub_if_data *sdata,
 	ieee80211_bss_info_change_notify(sdata, bss_change);
 
 	ifibss->state = IEEE80211_IBSS_MLME_JOINED;
-	mod_timer(&ifibss->timer,
+	mod_timer_dbg(&ifibss->timer,
 		  round_jiffies(jiffies + IEEE80211_IBSS_MERGE_INTERVAL));
 
 	bss_meta.chan = chan;
@@ -549,7 +549,7 @@ void ieee80211_ibss_stop(struct ieee80211_sub_if_data *sdata)
 {
 	struct ieee80211_if_ibss *ifibss = &sdata->u.ibss;
 
-	wiphy_work_cancel(sdata->local->hw.wiphy,
+	wiphy_work_cancel_dbg(sdata->local->hw.wiphy,
 			  &ifibss->csa_connection_drop_work);
 }
 
@@ -723,13 +723,18 @@ static void ieee80211_csa_connection_drop_work(struct wiphy *wiphy,
 	struct ieee80211_sub_if_data *sdata =
 		container_of(work, struct ieee80211_sub_if_data,
 			     u.ibss.csa_connection_drop_work);
+		
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 
 	ieee80211_ibss_disconnect(sdata);
 	synchronize_rcu();
 	skb_queue_purge(&sdata->skb_queue);
 
 	/* trigger a scan to find another IBSS network to join */
-	wiphy_work_queue(sdata->local->hw.wiphy, &sdata->work);
+	
+	wiphy_work_queue_dbg(sdata->local->hw.wiphy, &sdata->work);
+		
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
 
 static void ieee80211_ibss_csa_mark_radar(struct ieee80211_sub_if_data *sdata)
@@ -882,7 +887,8 @@ ieee80211_ibss_process_chanswitch(struct ieee80211_sub_if_data *sdata,
 	return true;
 disconnect:
 	ibss_dbg(sdata, "Can't handle channel switch, disconnect\n");
-	wiphy_work_queue(sdata->local->hw.wiphy,
+	
+	wiphy_work_queue_dbg(sdata->local->hw.wiphy,
 			 &ifibss->csa_connection_drop_work);
 
 	ieee80211_ibss_csa_mark_radar(sdata);
@@ -1221,7 +1227,8 @@ void ieee80211_ibss_rx_no_sta(struct ieee80211_sub_if_data *sdata,
 	spin_lock(&ifibss->incomplete_lock);
 	list_add(&sta->list, &ifibss->incomplete_stations);
 	spin_unlock(&ifibss->incomplete_lock);
-	wiphy_work_queue(local->hw.wiphy, &sdata->work);
+	
+	wiphy_work_queue_dbg(local->hw.wiphy, &sdata->work);
 }
 
 static void ieee80211_ibss_sta_expire(struct ieee80211_sub_if_data *sdata)
@@ -1269,7 +1276,7 @@ static void ieee80211_sta_merge_ibss(struct ieee80211_sub_if_data *sdata)
 
 	lockdep_assert_wiphy(sdata->local->hw.wiphy);
 
-	mod_timer(&ifibss->timer,
+	mod_timer_dbg(&ifibss->timer,
 		  round_jiffies(jiffies + IEEE80211_IBSS_MERGE_INTERVAL));
 
 	ieee80211_ibss_sta_expire(sdata);
@@ -1483,7 +1490,7 @@ static void ieee80211_sta_find_ibss(struct ieee80211_sub_if_data *sdata)
 			       IEEE80211_IBSS_JOIN_TIMEOUT))
 			ieee80211_sta_create_ibss(sdata);
 
-		mod_timer(&ifibss->timer,
+		mod_timer_dbg(&ifibss->timer,
 			  round_jiffies(jiffies + interval));
 	}
 }
@@ -1684,17 +1691,18 @@ static void ieee80211_ibss_timer(struct timer_list *t)
 	struct ieee80211_sub_if_data *sdata =
 		from_timer(sdata, t, u.ibss.timer);
 
-	wiphy_work_queue(sdata->local->hw.wiphy, &sdata->work);
+	
+	wiphy_work_queue_dbg(sdata->local->hw.wiphy, &sdata->work);
 }
 
 void ieee80211_ibss_setup_sdata(struct ieee80211_sub_if_data *sdata)
 {
 	struct ieee80211_if_ibss *ifibss = &sdata->u.ibss;
 
-	timer_setup(&ifibss->timer, ieee80211_ibss_timer, 0);
+	timer_setup_dbg(&ifibss->timer, ieee80211_ibss_timer, 0);
 	INIT_LIST_HEAD(&ifibss->incomplete_stations);
 	spin_lock_init(&ifibss->incomplete_lock);
-	wiphy_work_init(&ifibss->csa_connection_drop_work,
+	wiphy_work_init_dbg(&ifibss->csa_connection_drop_work,
 			ieee80211_csa_connection_drop_work);
 }
 
@@ -1819,7 +1827,8 @@ int ieee80211_ibss_join(struct ieee80211_sub_if_data *sdata,
 	sdata->deflink.needed_rx_chains = local->rx_chains;
 	sdata->control_port_over_nl80211 = params->control_port_over_nl80211;
 
-	wiphy_work_queue(local->hw.wiphy, &sdata->work);
+	
+	wiphy_work_queue_dbg(local->hw.wiphy, &sdata->work);
 
 	return 0;
 }
@@ -1845,7 +1854,7 @@ int ieee80211_ibss_leave(struct ieee80211_sub_if_data *sdata)
 
 	skb_queue_purge(&sdata->skb_queue);
 
-	del_timer_sync(&sdata->u.ibss.timer);
+	del_timer_sync_dbg(&sdata->u.ibss.timer);
 
 	return 0;
 }

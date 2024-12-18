@@ -31,11 +31,11 @@ static void ieee80211_offchannel_ps_enable(struct ieee80211_sub_if_data *sdata)
 
 	/* FIXME: what to do when local->pspolling is true? */
 
-	del_timer_sync(&local->dynamic_ps_timer);
-	del_timer_sync(&ifmgd->bcn_mon_timer);
-	del_timer_sync(&ifmgd->conn_mon_timer);
+	del_timer_sync_dbg(&local->dynamic_ps_timer);
+	del_timer_sync_dbg(&ifmgd->bcn_mon_timer);
+	del_timer_sync_dbg(&ifmgd->conn_mon_timer);
 
-	wiphy_work_cancel(local->hw.wiphy, &local->dynamic_ps_enable_work);
+	wiphy_work_cancel_dbg(local->hw.wiphy, &local->dynamic_ps_enable_work);
 
 	if (local->hw.conf.flags & IEEE80211_CONF_PS) {
 		offchannel_ps_enabled = true;
@@ -73,7 +73,7 @@ static void ieee80211_offchannel_ps_disable(struct ieee80211_sub_if_data *sdata)
 		 * the buffered packets (if any).
 		 */
 		ieee80211_send_nullfunc(local, sdata, false);
-		mod_timer(&local->dynamic_ps_timer, jiffies +
+		mod_timer_dbg(&local->dynamic_ps_timer, jiffies +
 			  msecs_to_jiffies(local->hw.conf.dynamic_ps_timeout));
 	}
 
@@ -231,7 +231,7 @@ static bool ieee80211_recalc_sw_work(struct ieee80211_local *local,
 	if (dur == LONG_MAX)
 		return false;
 
-	wiphy_delayed_work_queue(local->hw.wiphy, &local->roc_work, dur);
+	wiphy_delayed_work_queue_dbg(local->hw.wiphy, &local->roc_work, dur);
 	return true;
 }
 
@@ -265,6 +265,8 @@ static void ieee80211_hw_roc_start(struct wiphy *wiphy, struct wiphy_work *work)
 		container_of(work, struct ieee80211_local, hw_roc_start);
 	struct ieee80211_roc_work *roc;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
+
 	lockdep_assert_wiphy(local->hw.wiphy);
 
 	list_for_each_entry(roc, &local->roc_list, list) {
@@ -274,6 +276,7 @@ static void ieee80211_hw_roc_start(struct wiphy *wiphy, struct wiphy_work *work)
 		roc->hw_begun = true;
 		ieee80211_handle_roc_started(roc, local->hw_roc_start_time);
 	}
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
 
 void ieee80211_ready_on_channel(struct ieee80211_hw *hw)
@@ -284,7 +287,8 @@ void ieee80211_ready_on_channel(struct ieee80211_hw *hw)
 
 	trace_api_ready_on_channel(local);
 
-	wiphy_work_queue(hw->wiphy, &local->hw_roc_start);
+	
+	wiphy_work_queue_dbg(hw->wiphy, &local->hw_roc_start);
 }
 EXPORT_SYMBOL_GPL(ieee80211_ready_on_channel);
 
@@ -337,7 +341,8 @@ static void _ieee80211_start_next_roc(struct ieee80211_local *local)
 				tmp->started = true;
 				tmp->abort = true;
 			}
-			wiphy_work_queue(local->hw.wiphy, &local->hw_roc_done);
+			
+			wiphy_work_queue_dbg(local->hw.wiphy, &local->hw_roc_done);
 			return;
 		}
 
@@ -370,7 +375,7 @@ static void _ieee80211_start_next_roc(struct ieee80211_local *local)
 			ieee80211_hw_conf_chan(local);
 		}
 
-		wiphy_delayed_work_queue(local->hw.wiphy, &local->roc_work,
+		wiphy_delayed_work_queue_dbg(local->hw.wiphy, &local->roc_work,
 					 msecs_to_jiffies(min_dur));
 
 		/* tell userspace or send frame(s) */
@@ -409,7 +414,7 @@ void ieee80211_start_next_roc(struct ieee80211_local *local)
 		_ieee80211_start_next_roc(local);
 	} else {
 		/* delay it a bit */
-		wiphy_delayed_work_queue(local->hw.wiphy, &local->roc_work,
+		wiphy_delayed_work_queue_dbg(local->hw.wiphy, &local->roc_work,
 					 round_jiffies_relative(HZ / 2));
 	}
 }
@@ -427,8 +432,8 @@ void ieee80211_reconfig_roc(struct ieee80211_local *local)
 		return;
 
 	/* flush work so nothing from the driver is still pending */
-	wiphy_work_flush(local->hw.wiphy, &local->hw_roc_start);
-	wiphy_work_flush(local->hw.wiphy, &local->hw_roc_done);
+	wiphy_work_flush_dbg(local->hw.wiphy, &local->hw_roc_start);
+	wiphy_work_flush_dbg(local->hw.wiphy, &local->hw_roc_done);
 
 	list_for_each_entry_safe(roc, tmp, &local->roc_list, list) {
 		if (!roc->started)
@@ -501,12 +506,14 @@ static void ieee80211_hw_roc_done(struct wiphy *wiphy, struct wiphy_work *work)
 	struct ieee80211_local *local =
 		container_of(work, struct ieee80211_local, hw_roc_done);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 	lockdep_assert_wiphy(local->hw.wiphy);
 
 	ieee80211_end_finished_rocs(local, jiffies);
 
 	/* if there's another roc, start it now */
 	ieee80211_start_next_roc(local);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
 
 void ieee80211_remain_on_channel_expired(struct ieee80211_hw *hw)
@@ -515,7 +522,8 @@ void ieee80211_remain_on_channel_expired(struct ieee80211_hw *hw)
 
 	trace_api_remain_on_channel_expired(local);
 
-	wiphy_work_queue(hw->wiphy, &local->hw_roc_done);
+	
+	wiphy_work_queue_dbg(hw->wiphy, &local->hw_roc_done);
 }
 EXPORT_SYMBOL_GPL(ieee80211_remain_on_channel_expired);
 
@@ -619,7 +627,7 @@ static int ieee80211_start_roc_work(struct ieee80211_local *local,
 		/* if not HW assist, just queue & schedule work */
 		if (!local->ops->remain_on_channel) {
 			list_add_tail(&roc->list, &local->roc_list);
-			wiphy_delayed_work_queue(local->hw.wiphy,
+			wiphy_delayed_work_queue_dbg(local->hw.wiphy,
 						 &local->roc_work, 0);
 		} else {
 			/* otherwise actually kick it off here
@@ -730,7 +738,7 @@ static int ieee80211_cancel_roc(struct ieee80211_local *local,
 	if (!cookie)
 		return -ENOENT;
 
-	wiphy_work_flush(local->hw.wiphy, &local->hw_roc_start);
+	wiphy_work_flush_dbg(local->hw.wiphy, &local->hw_roc_start);
 
 	list_for_each_entry_safe(roc, tmp, &local->roc_list, list) {
 		if (!mgmt_tx && roc->cookie != cookie)
@@ -772,7 +780,7 @@ static int ieee80211_cancel_roc(struct ieee80211_local *local,
 		 *  from drv_cancel_remain_on_channel, it has completed all
 		 *  the processing of related notifications.
 		 */
-		wiphy_work_cancel(local->hw.wiphy, &local->hw_roc_done);
+		wiphy_work_cancel_dbg(local->hw.wiphy, &local->hw_roc_done);
 
 		/* TODO:
 		 * if multiple items were combined here then we really shouldn't
@@ -794,7 +802,7 @@ static int ieee80211_cancel_roc(struct ieee80211_local *local,
 	} else {
 		/* go through work struct to return to the operating channel */
 		found->abort = true;
-		wiphy_delayed_work_queue(local->hw.wiphy, &local->roc_work, 0);
+		wiphy_delayed_work_queue_dbg(local->hw.wiphy, &local->roc_work, 0);
 	}
 
  out_unlock:
@@ -1074,9 +1082,9 @@ int ieee80211_mgmt_tx_cancel_wait(struct wiphy *wiphy,
 
 void ieee80211_roc_setup(struct ieee80211_local *local)
 {
-	wiphy_work_init(&local->hw_roc_start, ieee80211_hw_roc_start);
-	wiphy_work_init(&local->hw_roc_done, ieee80211_hw_roc_done);
-	wiphy_delayed_work_init(&local->roc_work, ieee80211_roc_work);
+	wiphy_work_init_dbg(&local->hw_roc_start, ieee80211_hw_roc_start);
+	wiphy_work_init_dbg(&local->hw_roc_done, ieee80211_hw_roc_done);
+	wiphy_delayed_work_init_dbg(&local->roc_work, ieee80211_roc_work);
 	INIT_LIST_HEAD(&local->roc_list);
 }
 

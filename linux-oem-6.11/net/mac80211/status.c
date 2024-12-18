@@ -37,7 +37,7 @@ void ieee80211_tx_status_irqsafe(struct ieee80211_hw *hw,
 		tmp--;
 		I802_DEBUG_INC(local->tx_status_drop);
 	}
-	tasklet_schedule(&local->tasklet);
+	tasklet_schedule_dbg(&local->tasklet);
 }
 EXPORT_SYMBOL(ieee80211_tx_status_irqsafe);
 
@@ -148,7 +148,7 @@ static void ieee80211_handle_filtered_frame(struct ieee80211_local *local,
 		sta_info_recalc_tim(sta);
 
 		if (!timer_pending(&local->sta_cleanup))
-			mod_timer(&local->sta_cleanup,
+			mod_timer_dbg(&local->sta_cleanup,
 				  round_jiffies(jiffies +
 						STA_INFO_CLEANUP_INTERVAL));
 		return;
@@ -693,7 +693,8 @@ static void ieee80211_handle_smps_status(struct ieee80211_sub_if_data *sdata,
 	 * associated yet.
 	 */
 	link->smps_mode = smps_mode;
-	wiphy_work_queue(sdata->local->hw.wiphy, &link->u.mgd.recalc_smps);
+	
+	wiphy_work_queue_dbg(sdata->local->hw.wiphy, &link->u.mgd.recalc_smps);
 }
 
 static void
@@ -709,7 +710,7 @@ ieee80211_handle_teardown_ttlm_status(struct ieee80211_sub_if_data *sdata,
 	if (sdata->vif.type != NL80211_IFTYPE_STATION)
 		return;
 
-	wiphy_work_queue(sdata->local->hw.wiphy,
+	wiphy_work_queue_dbg(sdata->local->hw.wiphy,
 			 &sdata->u.mgd.teardown_ttlm_work);
 }
 
@@ -762,7 +763,7 @@ static void ieee80211_report_used_skb(struct ieee80211_local *local,
 					if (qskb) {
 						skb_queue_tail(&sdata->status_queue,
 							       qskb);
-						wiphy_work_queue(local->hw.wiphy,
+						wiphy_work_queue_dbg(local->hw.wiphy,
 								 &sdata->work);
 					}
 				}
@@ -1086,7 +1087,7 @@ static void __ieee80211_tx_status(struct ieee80211_hw *hw,
 		if (info->flags & IEEE80211_TX_STAT_ACK)
 			local->ps_sdata->u.mgd.flags |=
 					IEEE80211_STA_NULLFUNC_ACKED;
-		mod_timer(&local->dynamic_ps_timer,
+		mod_timer_dbg(&local->dynamic_ps_timer,
 			  jiffies + msecs_to_jiffies(10));
 	}
 

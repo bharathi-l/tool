@@ -111,7 +111,7 @@ static void run_again(struct ieee80211_sub_if_data *sdata,
 
 	if (!timer_pending(&sdata->u.mgd.timer) ||
 	    time_before(timeout, sdata->u.mgd.timer.expires))
-		mod_timer(&sdata->u.mgd.timer, timeout);
+		mod_timer_dbg(&sdata->u.mgd.timer, timeout);
 }
 
 void ieee80211_sta_reset_beacon_monitor(struct ieee80211_sub_if_data *sdata)
@@ -122,7 +122,7 @@ void ieee80211_sta_reset_beacon_monitor(struct ieee80211_sub_if_data *sdata)
 	if (ieee80211_hw_check(&sdata->local->hw, CONNECTION_MONITOR))
 		return;
 
-	mod_timer(&sdata->u.mgd.bcn_mon_timer,
+	mod_timer_dbg(&sdata->u.mgd.bcn_mon_timer,
 		  round_jiffies_up(jiffies + sdata->u.mgd.beacon_timeout));
 }
 
@@ -139,7 +139,7 @@ void ieee80211_sta_reset_conn_monitor(struct ieee80211_sub_if_data *sdata)
 	if (ieee80211_hw_check(&sdata->local->hw, CONNECTION_MONITOR))
 		return;
 
-	mod_timer(&ifmgd->conn_mon_timer,
+	mod_timer_dbg(&ifmgd->conn_mon_timer,
 		  round_jiffies_up(jiffies + IEEE80211_CONNECTION_IDLE_TIME));
 }
 
@@ -2135,7 +2135,8 @@ static void ieee80211_csa_switch_work(struct wiphy *wiphy,
 			link_info(link,
 				  "failed to use reserved channel context, disconnecting (err=%d)\n",
 				  ret);
-			wiphy_work_queue(sdata->local->hw.wiphy,
+			
+			wiphy_work_queue_dbg(sdata->local->hw.wiphy,
 					 &ifmgd->csa_connection_drop_work);
 		}
 		return;
@@ -2145,7 +2146,8 @@ static void ieee80211_csa_switch_work(struct wiphy *wiphy,
 					 &link->csa.chanreq)) {
 		link_info(link,
 			  "failed to finalize channel switch, disconnecting\n");
-		wiphy_work_queue(sdata->local->hw.wiphy,
+		
+		wiphy_work_queue_dbg(sdata->local->hw.wiphy,
 				 &ifmgd->csa_connection_drop_work);
 		return;
 	}
@@ -2190,7 +2192,8 @@ static void ieee80211_chswitch_post_beacon(struct ieee80211_link_data *link)
 	if (ret) {
 		link_info(link,
 			  "driver post channel switch failed, disconnecting\n");
-		wiphy_work_queue(sdata->local->hw.wiphy,
+		
+		wiphy_work_queue_dbg(sdata->local->hw.wiphy,
 				 &ifmgd->csa_connection_drop_work);
 		return;
 	}
@@ -2212,7 +2215,8 @@ void ieee80211_chswitch_done(struct ieee80211_vif *vif, bool success,
 		sdata_info(sdata,
 			   "driver channel switch failed (link %d), disconnecting\n",
 			   link_id);
-		wiphy_work_queue(sdata->local->hw.wiphy,
+		
+		wiphy_work_queue_dbg(sdata->local->hw.wiphy,
 				 &sdata->u.mgd.csa_connection_drop_work);
 	} else {
 		struct ieee80211_link_data *link =
@@ -2223,7 +2227,7 @@ void ieee80211_chswitch_done(struct ieee80211_vif *vif, bool success,
 			return;
 		}
 
-		wiphy_delayed_work_queue(sdata->local->hw.wiphy,
+		wiphy_delayed_work_queue_dbg(sdata->local->hw.wiphy,
 					 &link->u.mgd.csa.switch_work, 0);
 	}
 
@@ -2294,7 +2298,8 @@ ieee80211_sta_csa_rnr_iter(void *_data, u8 type,
 	if (!ieee80211_operating_class_to_band(info->op_class, &band)) {
 		link_info(link,
 			  "AP now has invalid operating class in RNR, disconnect\n");
-		wiphy_work_queue(sdata->local->hw.wiphy,
+		
+		wiphy_work_queue_dbg(sdata->local->hw.wiphy,
 				 &ifmgd->csa_connection_drop_work);
 		return RNR_ITER_BREAK;
 	}
@@ -2340,7 +2345,8 @@ ieee80211_sta_other_link_csa_disappeared(struct ieee80211_link_data *link,
 	if (!data.chan) {
 		link_info(link,
 			  "couldn't find (valid) channel in RNR for CSA, disconnect\n");
-		wiphy_work_queue(sdata->local->hw.wiphy,
+		
+		wiphy_work_queue_dbg(sdata->local->hw.wiphy,
 				 &ifmgd->csa_connection_drop_work);
 		return;
 	}
@@ -2629,7 +2635,7 @@ ieee80211_sta_process_chanswitch(struct ieee80211_link_data *link,
 	}
 
 	/* channel switch handled in software */
-	wiphy_delayed_work_queue(local->hw.wiphy,
+	wiphy_delayed_work_queue_dbg(local->hw.wiphy,
 				 &link->u.mgd.csa.switch_work,
 				 link->u.mgd.csa.time - now);
 	return;
@@ -2646,7 +2652,8 @@ ieee80211_sta_process_chanswitch(struct ieee80211_link_data *link,
 	sdata->csa_blocked_queues =
 		csa_ie.mode && !ieee80211_hw_check(&local->hw, HANDLES_QUIET_CSA);
 
-	wiphy_work_queue(sdata->local->hw.wiphy,
+	
+	wiphy_work_queue_dbg(sdata->local->hw.wiphy,
 			 &ifmgd->csa_connection_drop_work);
 }
 
@@ -2818,7 +2825,7 @@ static void ieee80211_enable_ps(struct ieee80211_local *local,
 
 	if (conf->dynamic_ps_timeout > 0 &&
 	    !ieee80211_hw_check(&local->hw, SUPPORTS_DYNAMIC_PS)) {
-		mod_timer(&local->dynamic_ps_timer, jiffies +
+		mod_timer_dbg(&local->dynamic_ps_timer, jiffies +
 			  msecs_to_jiffies(conf->dynamic_ps_timeout));
 	} else {
 		if (ieee80211_hw_check(&local->hw, PS_NULLFUNC_STACK))
@@ -2842,8 +2849,8 @@ static void ieee80211_change_ps(struct ieee80211_local *local)
 	} else if (conf->flags & IEEE80211_CONF_PS) {
 		conf->flags &= ~IEEE80211_CONF_PS;
 		ieee80211_hw_config(local, IEEE80211_CONF_CHANGE_PS);
-		del_timer_sync(&local->dynamic_ps_timer);
-		wiphy_work_cancel(local->hw.wiphy,
+		del_timer_sync_dbg(&local->dynamic_ps_timer);
+		wiphy_work_cancel_dbg(local->hw.wiphy,
 				  &local->dynamic_ps_enable_work);
 	}
 }
@@ -2947,6 +2954,8 @@ void ieee80211_dynamic_ps_disable_work(struct wiphy *wiphy,
 	struct ieee80211_local *local =
 		container_of(work, struct ieee80211_local,
 			     dynamic_ps_disable_work);
+		
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 
 	if (local->hw.conf.flags & IEEE80211_CONF_PS) {
 		local->hw.conf.flags &= ~IEEE80211_CONF_PS;
@@ -2957,6 +2966,8 @@ void ieee80211_dynamic_ps_disable_work(struct wiphy *wiphy,
 					IEEE80211_MAX_QUEUE_MAP,
 					IEEE80211_QUEUE_STOP_REASON_PS,
 					false);
+		
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
 
 void ieee80211_dynamic_ps_enable_work(struct wiphy *wiphy,
@@ -2970,21 +2981,27 @@ void ieee80211_dynamic_ps_enable_work(struct wiphy *wiphy,
 	unsigned long flags;
 	int q;
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 	/* can only happen when PS was just disabled anyway */
-	if (!sdata)
+	if (!sdata) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 		return;
+	}
 
 	ifmgd = &sdata->u.mgd;
 
-	if (local->hw.conf.flags & IEEE80211_CONF_PS)
+	if (local->hw.conf.flags & IEEE80211_CONF_PS) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 		return;
+	}
 
 	if (local->hw.conf.dynamic_ps_timeout > 0) {
 		/* don't enter PS if TX frames are pending */
 		if (drv_tx_frames_pending(local)) {
-			mod_timer(&local->dynamic_ps_timer, jiffies +
+			mod_timer_dbg(&local->dynamic_ps_timer, jiffies +
 				  msecs_to_jiffies(
 				  local->hw.conf.dynamic_ps_timeout));
+			printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 			return;
 		}
 
@@ -2998,9 +3015,10 @@ void ieee80211_dynamic_ps_enable_work(struct wiphy *wiphy,
 			if (local->queue_stop_reasons[q]) {
 				spin_unlock_irqrestore(&local->queue_stop_reason_lock,
 						       flags);
-				mod_timer(&local->dynamic_ps_timer, jiffies +
+				mod_timer_dbg(&local->dynamic_ps_timer, jiffies +
 					  msecs_to_jiffies(
 					  local->hw.conf.dynamic_ps_timeout));
+				printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 				return;
 			}
 		}
@@ -3010,7 +3028,7 @@ void ieee80211_dynamic_ps_enable_work(struct wiphy *wiphy,
 	if (ieee80211_hw_check(&local->hw, PS_NULLFUNC_STACK) &&
 	    !(ifmgd->flags & IEEE80211_STA_NULLFUNC_ACKED)) {
 		if (drv_tx_frames_pending(local)) {
-			mod_timer(&local->dynamic_ps_timer, jiffies +
+			mod_timer_dbg(&local->dynamic_ps_timer, jiffies +
 				  msecs_to_jiffies(
 				  local->hw.conf.dynamic_ps_timeout));
 		} else {
@@ -3027,13 +3045,15 @@ void ieee80211_dynamic_ps_enable_work(struct wiphy *wiphy,
 		local->hw.conf.flags |= IEEE80211_CONF_PS;
 		ieee80211_hw_config(local, IEEE80211_CONF_CHANGE_PS);
 	}
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
 
 void ieee80211_dynamic_ps_timer(struct timer_list *t)
 {
 	struct ieee80211_local *local = from_timer(local, t, dynamic_ps_timer);
 
-	wiphy_work_queue(local->hw.wiphy, &local->dynamic_ps_enable_work);
+	
+	wiphy_work_queue_dbg(local->hw.wiphy, &local->dynamic_ps_enable_work);
 }
 
 void ieee80211_dfs_cac_timer_work(struct wiphy *wiphy, struct wiphy_work *work)
@@ -3120,7 +3140,7 @@ __ieee80211_sta_handle_tspec_ac_params(struct ieee80211_sub_if_data *sdata)
 					 ac);
 			tx_tspec->action = TX_TSPEC_ACTION_NONE;
 			ret = true;
-			wiphy_delayed_work_queue(local->hw.wiphy,
+			wiphy_delayed_work_queue_dbg(local->hw.wiphy,
 						 &ifmgd->tx_tspec_wk,
 						 tx_tspec->time_slice_start +
 						 HZ - now + 1);
@@ -3632,8 +3652,8 @@ static void ieee80211_set_disassoc(struct ieee80211_sub_if_data *sdata,
 
 	sdata->deflink.ap_power_level = IEEE80211_UNSET_POWER_LEVEL;
 
-	del_timer_sync(&local->dynamic_ps_timer);
-	wiphy_work_cancel(local->hw.wiphy, &local->dynamic_ps_enable_work);
+	del_timer_sync_dbg(&local->dynamic_ps_timer);
+	wiphy_work_cancel_dbg(local->hw.wiphy, &local->dynamic_ps_enable_work);
 
 	/* Disable ARP filtering */
 	if (sdata->vif.cfg.arp_addr_cnt)
@@ -3652,9 +3672,9 @@ static void ieee80211_set_disassoc(struct ieee80211_sub_if_data *sdata,
 	/* disassociated - set to defaults now */
 	ieee80211_set_wmm_default(&sdata->deflink, false, false);
 
-	del_timer_sync(&sdata->u.mgd.conn_mon_timer);
-	del_timer_sync(&sdata->u.mgd.bcn_mon_timer);
-	del_timer_sync(&sdata->u.mgd.timer);
+	del_timer_sync_dbg(&sdata->u.mgd.conn_mon_timer);
+	del_timer_sync_dbg(&sdata->u.mgd.bcn_mon_timer);
+	del_timer_sync_dbg(&sdata->u.mgd.timer);
 
 	sdata->vif.bss_conf.dtim_period = 0;
 	sdata->vif.bss_conf.beacon_rate = NULL;
@@ -3682,7 +3702,7 @@ static void ieee80211_set_disassoc(struct ieee80211_sub_if_data *sdata,
 
 	/* existing TX TSPEC sessions no longer exist */
 	memset(ifmgd->tx_tspec, 0, sizeof(ifmgd->tx_tspec));
-	wiphy_delayed_work_cancel(local->hw.wiphy, &ifmgd->tx_tspec_wk);
+	wiphy_delayed_work_cancel_dbg(local->hw.wiphy, &ifmgd->tx_tspec_wk);
 
 	sdata->vif.bss_conf.power_type = IEEE80211_REG_UNSET_AP;
 	sdata->vif.bss_conf.pwr_reduction = 0;
@@ -3694,17 +3714,17 @@ static void ieee80211_set_disassoc(struct ieee80211_sub_if_data *sdata,
 
 	memset(&sdata->u.mgd.ttlm_info, 0,
 	       sizeof(sdata->u.mgd.ttlm_info));
-	wiphy_delayed_work_cancel(sdata->local->hw.wiphy, &ifmgd->ttlm_work);
+	wiphy_delayed_work_cancel_dbg(sdata->local->hw.wiphy, &ifmgd->ttlm_work);
 
 	memset(&sdata->vif.neg_ttlm, 0, sizeof(sdata->vif.neg_ttlm));
-	wiphy_delayed_work_cancel(sdata->local->hw.wiphy,
+	wiphy_delayed_work_cancel_dbg(sdata->local->hw.wiphy,
 				  &ifmgd->neg_ttlm_timeout_work);
 
 	sdata->u.mgd.removed_links = 0;
-	wiphy_delayed_work_cancel(sdata->local->hw.wiphy,
+	wiphy_delayed_work_cancel_dbg(sdata->local->hw.wiphy,
 				  &sdata->u.mgd.ml_reconf_work);
 
-	wiphy_work_cancel(sdata->local->hw.wiphy,
+	wiphy_work_cancel_dbg(sdata->local->hw.wiphy,
 			  &ifmgd->teardown_ttlm_work);
 
 	ieee80211_vif_set_links(sdata, 0, 0);
@@ -3736,7 +3756,7 @@ static void ieee80211_reset_ap_probe(struct ieee80211_sub_if_data *sdata)
 	 */
 	ieee80211_sta_reset_beacon_monitor(sdata);
 
-	mod_timer(&ifmgd->conn_mon_timer,
+	mod_timer_dbg(&ifmgd->conn_mon_timer,
 		  round_jiffies_up(jiffies +
 				   IEEE80211_CONNECTION_IDLE_TIME));
 }
@@ -3767,7 +3787,7 @@ static void ieee80211_sta_tx_wmm_ac_notify(struct ieee80211_sub_if_data *sdata,
 
 		if (tx_tspec->downgraded) {
 			tx_tspec->action = TX_TSPEC_ACTION_STOP_DOWNGRADE;
-			wiphy_delayed_work_queue(sdata->local->hw.wiphy,
+			wiphy_delayed_work_queue_dbg(sdata->local->hw.wiphy,
 						 &ifmgd->tx_tspec_wk, 0);
 		}
 	}
@@ -3780,7 +3800,7 @@ static void ieee80211_sta_tx_wmm_ac_notify(struct ieee80211_sub_if_data *sdata,
 	if (tx_tspec->consumed_tx_time >= tx_tspec->admitted_time) {
 		tx_tspec->downgraded = true;
 		tx_tspec->action = TX_TSPEC_ACTION_DOWNGRADE;
-		wiphy_delayed_work_queue(sdata->local->hw.wiphy,
+		wiphy_delayed_work_queue_dbg(sdata->local->hw.wiphy,
 					 &ifmgd->tx_tspec_wk, 0);
 	}
 }
@@ -3798,7 +3818,8 @@ void ieee80211_sta_tx_notify(struct ieee80211_sub_if_data *sdata,
 		sdata->u.mgd.probe_send_count = 0;
 	else
 		sdata->u.mgd.nullfunc_failed = true;
-	wiphy_work_queue(sdata->local->hw.wiphy, &sdata->work);
+	
+	wiphy_work_queue_dbg(sdata->local->hw.wiphy, &sdata->work);
 }
 
 static void ieee80211_mlme_send_probe_req(struct ieee80211_sub_if_data *sdata,
@@ -4090,7 +4111,11 @@ static void ieee80211_csa_connection_drop_work(struct wiphy *wiphy,
 		container_of(work, struct ieee80211_sub_if_data,
 			     u.mgd.csa_connection_drop_work);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
+
 	__ieee80211_disconnect(sdata);
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
 
 void ieee80211_beacon_loss(struct ieee80211_vif *vif)
@@ -4101,7 +4126,8 @@ void ieee80211_beacon_loss(struct ieee80211_vif *vif)
 	trace_api_beacon_loss(sdata);
 
 	sdata->u.mgd.connection_loss = false;
-	wiphy_work_queue(hw->wiphy, &sdata->u.mgd.beacon_connection_loss_work);
+	
+	wiphy_work_queue_dbg(hw->wiphy, &sdata->u.mgd.beacon_connection_loss_work);
 }
 EXPORT_SYMBOL(ieee80211_beacon_loss);
 
@@ -4113,7 +4139,8 @@ void ieee80211_connection_loss(struct ieee80211_vif *vif)
 	trace_api_connection_loss(sdata);
 
 	sdata->u.mgd.connection_loss = true;
-	wiphy_work_queue(hw->wiphy, &sdata->u.mgd.beacon_connection_loss_work);
+	
+	wiphy_work_queue_dbg(hw->wiphy, &sdata->u.mgd.beacon_connection_loss_work);
 }
 EXPORT_SYMBOL(ieee80211_connection_loss);
 
@@ -4129,7 +4156,8 @@ void ieee80211_disconnect(struct ieee80211_vif *vif, bool reconnect)
 
 	sdata->u.mgd.driver_disconnect = true;
 	sdata->u.mgd.reconnect = reconnect;
-	wiphy_work_queue(hw->wiphy, &sdata->u.mgd.beacon_connection_loss_work);
+	
+	wiphy_work_queue_dbg(hw->wiphy, &sdata->u.mgd.beacon_connection_loss_work);
 }
 EXPORT_SYMBOL(ieee80211_disconnect);
 
@@ -4146,7 +4174,7 @@ static void ieee80211_destroy_auth_data(struct ieee80211_sub_if_data *sdata,
 		 * running is the timeout for the authentication response which
 		 * which is not relevant anymore.
 		 */
-		del_timer_sync(&sdata->u.mgd.timer);
+		del_timer_sync_dbg(&sdata->u.mgd.timer);
 		sta_info_destroy_addr(sdata, auth_data->ap_addr);
 
 		/* other links are destroyed */
@@ -4184,7 +4212,7 @@ static void ieee80211_destroy_assoc_data(struct ieee80211_sub_if_data *sdata,
 		 * running is the timeout for the association response which
 		 * which is not relevant anymore.
 		 */
-		del_timer_sync(&sdata->u.mgd.timer);
+		del_timer_sync_dbg(&sdata->u.mgd.timer);
 		sta_info_destroy_addr(sdata, assoc_data->ap_addr);
 
 		eth_zero_addr(sdata->deflink.u.mgd.bssid);
@@ -6252,7 +6280,7 @@ static void ieee80211_ml_reconfiguration(struct ieee80211_sub_if_data *sdata,
 		/* In case the removal was cancelled, abort it */
 		if (sdata->u.mgd.removed_links) {
 			sdata->u.mgd.removed_links = 0;
-			wiphy_delayed_work_cancel(sdata->local->hw.wiphy,
+			wiphy_delayed_work_cancel_dbg(sdata->local->hw.wiphy,
 						  &sdata->u.mgd.ml_reconf_work);
 		}
 		return;
@@ -6282,7 +6310,7 @@ static void ieee80211_ml_reconfiguration(struct ieee80211_sub_if_data *sdata,
 	}
 
 	sdata->u.mgd.removed_links = removed_links;
-	wiphy_delayed_work_queue(sdata->local->hw.wiphy,
+	wiphy_delayed_work_queue_dbg(sdata->local->hw.wiphy,
 				 &sdata->u.mgd.ml_reconf_work,
 				 TU_TO_JIFFIES(delay));
 }
@@ -6471,7 +6499,7 @@ static void ieee80211_process_adv_ttlm(struct ieee80211_sub_if_data *sdata,
 			/* if a planned TID-to-link mapping was cancelled -
 			 * abort it
 			 */
-			wiphy_delayed_work_cancel(sdata->local->hw.wiphy,
+			wiphy_delayed_work_cancel_dbg(sdata->local->hw.wiphy,
 						  &sdata->u.mgd.ttlm_work);
 		} else if (sdata->u.mgd.ttlm_info.active) {
 			/* if no TID-to-link element, set to default mapping in
@@ -6540,9 +6568,9 @@ static void ieee80211_process_adv_ttlm(struct ieee80211_sub_if_data *sdata,
 				delay_jiffies = 0;
 
 			sdata->u.mgd.ttlm_info = ttlm_info;
-			wiphy_delayed_work_cancel(sdata->local->hw.wiphy,
+			wiphy_delayed_work_cancel_dbg(sdata->local->hw.wiphy,
 						  &sdata->u.mgd.ttlm_work);
-			wiphy_delayed_work_queue(sdata->local->hw.wiphy,
+			wiphy_delayed_work_queue_dbg(sdata->local->hw.wiphy,
 						 &sdata->u.mgd.ttlm_work,
 						 delay_jiffies);
 			return;
@@ -7146,9 +7174,9 @@ int ieee80211_req_neg_ttlm(struct ieee80211_sub_if_data *sdata,
 	sdata->u.mgd.dialog_token_alloc++;
 	ieee80211_send_neg_ttlm_req(sdata, &sdata->vif.neg_ttlm,
 				    sdata->u.mgd.dialog_token_alloc);
-	wiphy_delayed_work_cancel(sdata->local->hw.wiphy,
+	wiphy_delayed_work_cancel_dbg(sdata->local->hw.wiphy,
 				  &sdata->u.mgd.neg_ttlm_timeout_work);
-	wiphy_delayed_work_queue(sdata->local->hw.wiphy,
+	wiphy_delayed_work_queue_dbg(sdata->local->hw.wiphy,
 				 &sdata->u.mgd.neg_ttlm_timeout_work,
 				 IEEE80211_NEG_TTLM_REQ_TIMEOUT);
 	return 0;
@@ -7357,7 +7385,7 @@ void ieee80211_process_neg_ttlm_res(struct ieee80211_sub_if_data *sdata,
 	    sdata->u.mgd.dialog_token_alloc)
 		return;
 
-	wiphy_delayed_work_cancel(sdata->local->hw.wiphy,
+	wiphy_delayed_work_cancel_dbg(sdata->local->hw.wiphy,
 				  &sdata->u.mgd.neg_ttlm_timeout_work);
 
 	/* MLD station sends a TID to link mapping request, mainly to handle
@@ -7573,7 +7601,8 @@ static void ieee80211_sta_timer(struct timer_list *t)
 	struct ieee80211_sub_if_data *sdata =
 		from_timer(sdata, t, u.mgd.timer);
 
-	wiphy_work_queue(sdata->local->hw.wiphy, &sdata->work);
+	
+	wiphy_work_queue_dbg(sdata->local->hw.wiphy, &sdata->work);
 }
 
 void ieee80211_sta_connection_lost(struct ieee80211_sub_if_data *sdata,
@@ -7718,7 +7747,8 @@ void ieee80211_mgd_conn_tx_status(struct ieee80211_sub_if_data *sdata,
 	sdata->u.mgd.status_acked = acked;
 	sdata->u.mgd.status_received = true;
 
-	wiphy_work_queue(local->hw.wiphy, &sdata->work);
+	
+	wiphy_work_queue_dbg(local->hw.wiphy, &sdata->work);
 }
 
 void ieee80211_sta_work(struct ieee80211_sub_if_data *sdata)
@@ -7889,7 +7919,8 @@ static void ieee80211_sta_bcn_mon_timer(struct timer_list *t)
 		return;
 
 	sdata->u.mgd.connection_loss = false;
-	wiphy_work_queue(sdata->local->hw.wiphy,
+	
+	wiphy_work_queue_dbg(sdata->local->hw.wiphy,
 			 &sdata->u.mgd.beacon_connection_loss_work);
 }
 
@@ -7922,11 +7953,12 @@ static void ieee80211_sta_conn_mon_timer(struct timer_list *t)
 	 * the later date, but do not actually probe at this time.
 	 */
 	if (time_is_after_jiffies(timeout)) {
-		mod_timer(&ifmgd->conn_mon_timer, round_jiffies_up(timeout));
+		mod_timer_dbg(&ifmgd->conn_mon_timer, round_jiffies_up(timeout));
 		return;
 	}
 
-	wiphy_work_queue(local->hw.wiphy, &sdata->u.mgd.monitor_work);
+	
+	wiphy_work_queue_dbg(local->hw.wiphy, &sdata->u.mgd.monitor_work);
 }
 
 static void ieee80211_sta_monitor_work(struct wiphy *wiphy,
@@ -7945,9 +7977,11 @@ static void ieee80211_restart_sta_timer(struct ieee80211_sub_if_data *sdata)
 		__ieee80211_stop_poll(sdata);
 
 		/* let's probe the connection once */
-		if (!ieee80211_hw_check(&sdata->local->hw, CONNECTION_MONITOR))
-			wiphy_work_queue(sdata->local->hw.wiphy,
+		if (!ieee80211_hw_check(&sdata->local->hw, CONNECTION_MONITOR)) {
+			
+			wiphy_work_queue_dbg(sdata->local->hw.wiphy,
 					 &sdata->u.mgd.monitor_work);
+		}
 	}
 }
 
@@ -8046,9 +8080,13 @@ static void ieee80211_request_smps_mgd_work(struct wiphy *wiphy,
 	struct ieee80211_link_data *link =
 		container_of(work, struct ieee80211_link_data,
 			     u.mgd.request_smps_work);
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 
 	__ieee80211_request_smps_mgd(link->sdata, link,
 				     link->u.mgd.driver_smps_mode);
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
 
 /* interface setup */
@@ -8056,25 +8094,25 @@ void ieee80211_sta_setup_sdata(struct ieee80211_sub_if_data *sdata)
 {
 	struct ieee80211_if_managed *ifmgd = &sdata->u.mgd;
 
-	wiphy_work_init(&ifmgd->monitor_work, ieee80211_sta_monitor_work);
-	wiphy_work_init(&ifmgd->beacon_connection_loss_work,
+	wiphy_work_init_dbg(&ifmgd->monitor_work, ieee80211_sta_monitor_work);
+	wiphy_work_init_dbg(&ifmgd->beacon_connection_loss_work,
 			ieee80211_beacon_connection_loss_work);
-	wiphy_work_init(&ifmgd->csa_connection_drop_work,
+	wiphy_work_init_dbg(&ifmgd->csa_connection_drop_work,
 			ieee80211_csa_connection_drop_work);
-	wiphy_delayed_work_init(&ifmgd->tdls_peer_del_work,
+	wiphy_delayed_work_init_dbg(&ifmgd->tdls_peer_del_work,
 				ieee80211_tdls_peer_del_work);
-	wiphy_delayed_work_init(&ifmgd->ml_reconf_work,
+	wiphy_delayed_work_init_dbg(&ifmgd->ml_reconf_work,
 				ieee80211_ml_reconf_work);
-	timer_setup(&ifmgd->timer, ieee80211_sta_timer, 0);
-	timer_setup(&ifmgd->bcn_mon_timer, ieee80211_sta_bcn_mon_timer, 0);
-	timer_setup(&ifmgd->conn_mon_timer, ieee80211_sta_conn_mon_timer, 0);
-	wiphy_delayed_work_init(&ifmgd->tx_tspec_wk,
+	timer_setup_dbg(&ifmgd->timer, ieee80211_sta_timer, 0);
+	timer_setup_dbg(&ifmgd->bcn_mon_timer, ieee80211_sta_bcn_mon_timer, 0);
+	timer_setup_dbg(&ifmgd->conn_mon_timer, ieee80211_sta_conn_mon_timer, 0);
+	wiphy_delayed_work_init_dbg(&ifmgd->tx_tspec_wk,
 				ieee80211_sta_handle_tspec_ac_params_wk);
-	wiphy_delayed_work_init(&ifmgd->ttlm_work,
+	wiphy_delayed_work_init_dbg(&ifmgd->ttlm_work,
 				ieee80211_tid_to_link_map_work);
-	wiphy_delayed_work_init(&ifmgd->neg_ttlm_timeout_work,
+	wiphy_delayed_work_init_dbg(&ifmgd->neg_ttlm_timeout_work,
 				ieee80211_neg_ttlm_timeout_work);
-	wiphy_work_init(&ifmgd->teardown_ttlm_work,
+	wiphy_work_init_dbg(&ifmgd->teardown_ttlm_work,
 			ieee80211_teardown_ttlm_work);
 
 	ifmgd->flags = 0;
@@ -8094,8 +8132,12 @@ static void ieee80211_recalc_smps_work(struct wiphy *wiphy,
 	struct ieee80211_link_data *link =
 		container_of(work, struct ieee80211_link_data,
 			     u.mgd.recalc_smps);
+		
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 
 	ieee80211_recalc_smps(link->sdata, link);
+		
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
 
 void ieee80211_mgd_setup_link(struct ieee80211_link_data *link)
@@ -8108,16 +8150,16 @@ void ieee80211_mgd_setup_link(struct ieee80211_link_data *link)
 	link->conf->bssid = link->u.mgd.bssid;
 	link->smps_mode = IEEE80211_SMPS_OFF;
 
-	wiphy_work_init(&link->u.mgd.request_smps_work,
+	wiphy_work_init_dbg(&link->u.mgd.request_smps_work,
 			ieee80211_request_smps_mgd_work);
-	wiphy_work_init(&link->u.mgd.recalc_smps,
+	wiphy_work_init_dbg(&link->u.mgd.recalc_smps,
 			ieee80211_recalc_smps_work);
 	if (local->hw.wiphy->features & NL80211_FEATURE_DYNAMIC_SMPS)
 		link->u.mgd.req_smps = IEEE80211_SMPS_AUTOMATIC;
 	else
 		link->u.mgd.req_smps = IEEE80211_SMPS_OFF;
 
-	wiphy_delayed_work_init(&link->u.mgd.csa.switch_work,
+	wiphy_delayed_work_init_dbg(&link->u.mgd.csa.switch_work,
 				ieee80211_csa_switch_work);
 
 	ieee80211_clear_tpe(&link->conf->tpe);
@@ -9244,11 +9286,11 @@ int ieee80211_mgd_disassoc(struct ieee80211_sub_if_data *sdata,
 
 void ieee80211_mgd_stop_link(struct ieee80211_link_data *link)
 {
-	wiphy_work_cancel(link->sdata->local->hw.wiphy,
+	wiphy_work_cancel_dbg(link->sdata->local->hw.wiphy,
 			  &link->u.mgd.request_smps_work);
-	wiphy_work_cancel(link->sdata->local->hw.wiphy,
+	wiphy_work_cancel_dbg(link->sdata->local->hw.wiphy,
 			  &link->u.mgd.recalc_smps);
-	wiphy_delayed_work_cancel(link->sdata->local->hw.wiphy,
+	wiphy_delayed_work_cancel_dbg(link->sdata->local->hw.wiphy,
 				  &link->u.mgd.csa.switch_work);
 }
 
@@ -9261,13 +9303,13 @@ void ieee80211_mgd_stop(struct ieee80211_sub_if_data *sdata)
 	 * they will not do anything but might not have been
 	 * cancelled when disconnecting.
 	 */
-	wiphy_work_cancel(sdata->local->hw.wiphy,
+	wiphy_work_cancel_dbg(sdata->local->hw.wiphy,
 			  &ifmgd->monitor_work);
-	wiphy_work_cancel(sdata->local->hw.wiphy,
+	wiphy_work_cancel_dbg(sdata->local->hw.wiphy,
 			  &ifmgd->beacon_connection_loss_work);
-	wiphy_work_cancel(sdata->local->hw.wiphy,
+	wiphy_work_cancel_dbg(sdata->local->hw.wiphy,
 			  &ifmgd->csa_connection_drop_work);
-	wiphy_delayed_work_cancel(sdata->local->hw.wiphy,
+	wiphy_delayed_work_cancel_dbg(sdata->local->hw.wiphy,
 				  &ifmgd->tdls_peer_del_work);
 
 	if (ifmgd->assoc_data)
@@ -9285,7 +9327,7 @@ void ieee80211_mgd_stop(struct ieee80211_sub_if_data *sdata)
 	ifmgd->assoc_req_ies = NULL;
 	ifmgd->assoc_req_ies_len = 0;
 	spin_unlock_bh(&ifmgd->teardown_lock);
-	del_timer_sync(&ifmgd->timer);
+	del_timer_sync_dbg(&ifmgd->timer);
 }
 
 void ieee80211_cqm_rssi_notify(struct ieee80211_vif *vif,

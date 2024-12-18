@@ -295,7 +295,7 @@ void ieee80211_scan_rx(struct ieee80211_local *local, struct sk_buff *skb)
 		 * to active scan
 		 */
 		set_bit(SCAN_BEACON_DONE, &local->scanning);
-		wiphy_delayed_work_queue(local->hw.wiphy, &local->scan_work, 0);
+		wiphy_delayed_work_queue_dbg(local->hw.wiphy, &local->scan_work, 0);
 	}
 
 	channel = ieee80211_get_channel_khz(local->hw.wiphy,
@@ -513,8 +513,9 @@ static void __ieee80211_scan_completed(struct ieee80211_hw *hw, bool aborted)
 	 * just be a no-op for the particular interface.
 	 */
 	list_for_each_entry_rcu(sdata, &local->interfaces, list) {
-		if (ieee80211_sdata_running(sdata))
-			wiphy_work_queue(sdata->local->hw.wiphy, &sdata->work);
+		if (ieee80211_sdata_running(sdata)) {
+			wiphy_work_queue_dbg(sdata->local->hw.wiphy, &sdata->work);
+		}
 	}
 
 	if (was_scanning)
@@ -534,7 +535,7 @@ void ieee80211_scan_completed(struct ieee80211_hw *hw,
 
 	memcpy(&local->scan_info, info, sizeof(*info));
 
-	wiphy_delayed_work_queue(local->hw.wiphy, &local->scan_work, 0);
+	wiphy_delayed_work_queue_dbg(local->hw.wiphy, &local->scan_work, 0);
 }
 EXPORT_SYMBOL(ieee80211_scan_completed);
 
@@ -574,7 +575,7 @@ static int ieee80211_start_sw_scan(struct ieee80211_local *local,
 	/* We need to set power level at maximum rate for scanning. */
 	ieee80211_hw_conf_chan(local);
 
-	wiphy_delayed_work_queue(local->hw.wiphy, &local->scan_work, 0);
+	wiphy_delayed_work_queue_dbg(local->hw.wiphy, &local->scan_work, 0);
 
 	return 0;
 }
@@ -629,7 +630,7 @@ void ieee80211_run_deferred_scan(struct ieee80211_local *local)
 					lockdep_is_held(&local->hw.wiphy->mtx))))
 		return;
 
-	wiphy_delayed_work_queue(local->hw.wiphy, &local->scan_work,
+	wiphy_delayed_work_queue_dbg(local->hw.wiphy, &local->scan_work,
 				 round_jiffies_relative(0));
 }
 
@@ -840,7 +841,7 @@ static int __ieee80211_start_scan(struct ieee80211_sub_if_data *sdata,
 		}
 
 		/* Now, just wait a bit and we are all done! */
-		wiphy_delayed_work_queue(local->hw.wiphy, &local->scan_work,
+		wiphy_delayed_work_queue_dbg(local->hw.wiphy, &local->scan_work,
 					 next_delay);
 		return 0;
 	} else {
@@ -1162,7 +1163,7 @@ void ieee80211_scan_work(struct wiphy *wiphy, struct wiphy_work *work)
 		}
 	} while (next_delay == 0);
 
-	wiphy_delayed_work_queue(local->hw.wiphy, &local->scan_work,
+	wiphy_delayed_work_queue_dbg(local->hw.wiphy, &local->scan_work,
 				 next_delay);
 	return;
 
@@ -1296,7 +1297,7 @@ void ieee80211_scan_cancel(struct ieee80211_local *local)
 		return;
 	}
 
-	wiphy_delayed_work_cancel(local->hw.wiphy, &local->scan_work);
+	wiphy_delayed_work_cancel_dbg(local->hw.wiphy, &local->scan_work);
 	/* and clean up */
 	memset(&local->scan_info, 0, sizeof(local->scan_info));
 	__ieee80211_scan_completed(&local->hw, true);
@@ -1433,8 +1434,11 @@ void ieee80211_sched_scan_stopped_work(struct wiphy *wiphy,
 	struct ieee80211_local *local =
 		container_of(work, struct ieee80211_local,
 			     sched_scan_stopped_work);
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 
 	ieee80211_sched_scan_end(local);
+		
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
 
 void ieee80211_sched_scan_stopped(struct ieee80211_hw *hw)
@@ -1451,6 +1455,7 @@ void ieee80211_sched_scan_stopped(struct ieee80211_hw *hw)
 	if (local->in_reconfig)
 		return;
 
-	wiphy_work_queue(hw->wiphy, &local->sched_scan_stopped_work);
+	
+	wiphy_work_queue_dbg(hw->wiphy, &local->sched_scan_stopped_work);
 }
 EXPORT_SYMBOL(ieee80211_sched_scan_stopped);

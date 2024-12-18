@@ -1197,7 +1197,7 @@ ieee80211_tdls_mgmt_setup(struct wiphy *wiphy, struct net_device *dev,
 		return ret;
 	}
 
-	wiphy_delayed_work_queue(sdata->local->hw.wiphy,
+	wiphy_delayed_work_queue_dbg(sdata->local->hw.wiphy,
 				 &sdata->u.mgd.tdls_peer_del_work,
 				 TDLS_PEER_SETUP_TIMEOUT);
 	return 0;
@@ -1491,7 +1491,7 @@ int ieee80211_tdls_oper(struct wiphy *wiphy, struct net_device *dev,
 		 * Note that this only forces the tasklet to flush pendings -
 		 * not to stop the tasklet from rescheduling itself.
 		 */
-		tasklet_kill(&local->tx_pending_tasklet);
+		tasklet_kill_dbg(&local->tx_pending_tasklet);
 		/* flush a potentially queued teardown packet */
 		ieee80211_flush_queues(local, sdata, false);
 
@@ -1511,12 +1511,12 @@ int ieee80211_tdls_oper(struct wiphy *wiphy, struct net_device *dev,
 	}
 
 	if (ether_addr_equal(sdata->u.mgd.tdls_peer, peer)) {
-		wiphy_delayed_work_cancel(sdata->local->hw.wiphy,
+		wiphy_delayed_work_cancel_dbg(sdata->local->hw.wiphy,
 					  &sdata->u.mgd.tdls_peer_del_work);
 		eth_zero_addr(sdata->u.mgd.tdls_peer);
 	}
 
-	wiphy_work_queue(sdata->local->hw.wiphy,
+	wiphy_work_queue_dbg(sdata->local->hw.wiphy,
 			 &sdata->deflink.u.mgd.request_smps_work);
 
 	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);

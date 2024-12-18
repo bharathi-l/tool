@@ -9,6 +9,7 @@
 #include "driver-ops.h"
 #include "debugfs_sta.h"
 #include "debugfs_netdev.h"
+#include <linux/drv_dbg.h>
 
 int drv_start(struct ieee80211_local *local)
 {
@@ -46,8 +47,8 @@ void drv_stop(struct ieee80211_local *local, bool suspend)
 	trace_drv_return_void(local);
 
 	/* sync away all work on the tasklet before clearing started */
-	tasklet_disable(&local->tasklet);
-	tasklet_enable(&local->tasklet);
+	tasklet_disable_dbg(&local->tasklet);
+	tasklet_enable_dbg(&local->tasklet);
 
 	barrier();
 

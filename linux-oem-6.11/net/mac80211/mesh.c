@@ -12,6 +12,7 @@
 #include "mesh.h"
 #include "wme.h"
 #include "driver-ops.h"
+#include <linux/drv_dbg.h>
 
 static int mesh_allocated;
 static struct kmem_cache *rm_cache;
@@ -45,7 +46,8 @@ static void ieee80211_mesh_housekeeping_timer(struct timer_list *t)
 
 	set_bit(MESH_WORK_HOUSEKEEPING, &ifmsh->wrkq_flags);
 
-	wiphy_work_queue(local->hw.wiphy, &sdata->work);
+	
+	wiphy_work_queue_dbg(local->hw.wiphy, &sdata->work);
 }
 
 /**
@@ -685,7 +687,8 @@ static void ieee80211_mesh_path_timer(struct timer_list *t)
 	struct ieee80211_sub_if_data *sdata =
 		from_timer(sdata, t, u.mesh.mesh_path_timer);
 
-	wiphy_work_queue(sdata->local->hw.wiphy, &sdata->work);
+	
+	wiphy_work_queue_dbg(sdata->local->hw.wiphy, &sdata->work);
 }
 
 static void ieee80211_mesh_path_root_timer(struct timer_list *t)
@@ -696,7 +699,8 @@ static void ieee80211_mesh_path_root_timer(struct timer_list *t)
 
 	set_bit(MESH_WORK_ROOT, &ifmsh->wrkq_flags);
 
-	wiphy_work_queue(sdata->local->hw.wiphy, &sdata->work);
+	
+	wiphy_work_queue_dbg(sdata->local->hw.wiphy, &sdata->work);
 }
 
 void ieee80211_mesh_root_setup(struct ieee80211_if_mesh *ifmsh)
@@ -706,7 +710,7 @@ void ieee80211_mesh_root_setup(struct ieee80211_if_mesh *ifmsh)
 	else {
 		clear_bit(MESH_WORK_ROOT, &ifmsh->wrkq_flags);
 		/* stop running timer */
-		del_timer_sync(&ifmsh->mesh_path_root_timer);
+		del_timer_sync_dbg(&ifmsh->mesh_path_root_timer);
 	}
 }
 
@@ -922,7 +926,7 @@ static void ieee80211_mesh_housekeeping(struct ieee80211_sub_if_data *sdata)
 
 	mesh_fast_tx_gc(sdata);
 
-	mod_timer(&ifmsh->housekeeping_timer,
+	mod_timer_dbg(&ifmsh->housekeeping_timer,
 		  round_jiffies(jiffies +
 				IEEE80211_MESH_HOUSEKEEPING_INTERVAL));
 }
@@ -939,7 +943,7 @@ static void ieee80211_mesh_rootpath(struct ieee80211_sub_if_data *sdata)
 	else
 		interval = ifmsh->mshcfg.dot11MeshHWMProotInterval;
 
-	mod_timer(&ifmsh->mesh_path_root_timer,
+	mod_timer_dbg(&ifmsh->mesh_path_root_timer,
 		  round_jiffies(TU_TO_EXP_TIME(interval)));
 }
 
@@ -1167,7 +1171,8 @@ void ieee80211_mbss_info_change_notify(struct ieee80211_sub_if_data *sdata,
 	for_each_set_bit(bit, &bits, sizeof(changed) * BITS_PER_BYTE)
 		set_bit(bit, ifmsh->mbss_changed);
 	set_bit(MESH_WORK_MBSS_CHANGED, &ifmsh->wrkq_flags);
-	wiphy_work_queue(sdata->local->hw.wiphy, &sdata->work);
+	
+	wiphy_work_queue_dbg(sdata->local->hw.wiphy, &sdata->work);
 }
 
 int ieee80211_start_mesh(struct ieee80211_sub_if_data *sdata)
@@ -1192,7 +1197,8 @@ int ieee80211_start_mesh(struct ieee80211_sub_if_data *sdata)
 	ifmsh->sync_offset_clockdrift_max = 0;
 	set_bit(MESH_WORK_HOUSEKEEPING, &ifmsh->wrkq_flags);
 	ieee80211_mesh_root_setup(ifmsh);
-	wiphy_work_queue(local->hw.wiphy, &sdata->work);
+	
+	wiphy_work_queue_dbg(local->hw.wiphy, &sdata->work);
 	sdata->vif.bss_conf.ht_operation_mode =
 				ifmsh->mshcfg.ht_opmode;
 	sdata->vif.bss_conf.enable_beacon = true;
@@ -1241,9 +1247,9 @@ void ieee80211_stop_mesh(struct ieee80211_sub_if_data *sdata)
 	local->total_ps_buffered -= skb_queue_len(&ifmsh->ps.bc_buf);
 	skb_queue_purge(&ifmsh->ps.bc_buf);
 
-	del_timer_sync(&sdata->u.mesh.housekeeping_timer);
-	del_timer_sync(&sdata->u.mesh.mesh_path_root_timer);
-	del_timer_sync(&sdata->u.mesh.mesh_path_timer);
+	del_timer_sync_dbg(&sdata->u.mesh.housekeeping_timer);
+	del_timer_sync_dbg(&sdata->u.mesh.mesh_path_root_timer);
+	del_timer_sync_dbg(&sdata->u.mesh.mesh_path_timer);
 
 	/* clear any mesh work (for next join) we may have accrued */
 	ifmsh->wrkq_flags = 0;
@@ -1767,7 +1773,7 @@ void ieee80211_mesh_init_sdata(struct ieee80211_sub_if_data *sdata)
 	struct ieee80211_if_mesh *ifmsh = &sdata->u.mesh;
 	static u8 zero_addr[ETH_ALEN] = {};
 
-	timer_setup(&ifmsh->housekeeping_timer,
+	timer_setup_dbg(&ifmsh->housekeeping_timer,
 		    ieee80211_mesh_housekeeping_timer, 0);
 
 	ifmsh->accepting_plinks = true;
@@ -1783,8 +1789,8 @@ void ieee80211_mesh_init_sdata(struct ieee80211_sub_if_data *sdata)
 
 	mesh_pathtbl_init(sdata);
 
-	timer_setup(&ifmsh->mesh_path_timer, ieee80211_mesh_path_timer, 0);
-	timer_setup(&ifmsh->mesh_path_root_timer,
+	timer_setup_dbg(&ifmsh->mesh_path_timer, ieee80211_mesh_path_timer, 0);
+	timer_setup_dbg(&ifmsh->mesh_path_root_timer,
 		    ieee80211_mesh_path_root_timer, 0);
 	INIT_LIST_HEAD(&ifmsh->preq_queue.list);
 	skb_queue_head_init(&ifmsh->ps.bc_buf);

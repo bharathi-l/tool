@@ -16,6 +16,7 @@
 #include "ieee80211_i.h"
 #include "mesh.h"
 #include <linux/rhashtable.h>
+#include <linux/drv_dbg.h>
 
 static void mesh_path_free_rcu(struct mesh_table *tbl, struct mesh_path *mpath);
 
@@ -417,7 +418,7 @@ struct mesh_path *mesh_path_new(struct ieee80211_sub_if_data *sdata,
 	skb_queue_head_init(&new_mpath->frame_queue);
 	new_mpath->exp_time = jiffies;
 	spin_lock_init(&new_mpath->state_lock);
-	timer_setup(&new_mpath->timer, mesh_path_timer, 0);
+	timer_setup_dbg(&new_mpath->timer, mesh_path_timer, 0);
 
 	return new_mpath;
 }
@@ -801,7 +802,7 @@ static void mesh_path_free_rcu(struct mesh_table *tbl,
 	mpath->flags |= MESH_PATH_RESOLVING | MESH_PATH_DELETED;
 	mesh_gate_del(tbl, mpath);
 	spin_unlock_bh(&mpath->state_lock);
-	timer_shutdown_sync(&mpath->timer);
+	timer_shutdown_sync_dbg(&mpath->timer);
 	atomic_dec(&sdata->u.mesh.mpaths);
 	atomic_dec(&tbl->entries);
 	mesh_path_flush_pending(mpath);

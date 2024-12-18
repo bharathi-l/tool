@@ -168,7 +168,7 @@ static void __cleanup_single_sta(struct sta_info *sta)
 	if (ieee80211_vif_is_mesh(&sdata->vif))
 		mesh_sta_cleanup(sta);
 
-	cancel_work_sync(&sta->drv_deliver_wk);
+	cancel_work_sync_dbg(&sta->drv_deliver_wk);
 
 	/*
 	 * Destroy aggregation state here. It would be nice to wait for the
@@ -565,7 +565,7 @@ __sta_info_alloc(struct ieee80211_sub_if_data *sdata,
 	spin_lock_init(&sta->lock);
 	spin_lock_init(&sta->ps_lock);
 	INIT_WORK(&sta->drv_deliver_wk, sta_deliver_ps_frames);
-	wiphy_work_init(&sta->ampdu_mlme.work, ieee80211_ba_session_work);
+	wiphy_work_init_dbg(&sta->ampdu_mlme.work, ieee80211_ba_session_work);
 #ifdef CONFIG_MAC80211_MESH
 	if (ieee80211_vif_is_mesh(&sdata->vif)) {
 		sta->mesh = kzalloc(sizeof(*sta->mesh), gfp);
@@ -574,7 +574,7 @@ __sta_info_alloc(struct ieee80211_sub_if_data *sdata,
 		sta->mesh->plink_sta = sta;
 		spin_lock_init(&sta->mesh->plink_lock);
 		if (!sdata->u.mesh.user_mpm)
-			timer_setup(&sta->mesh->plink_timer, mesh_plink_timer,
+			timer_setup_dbg(&sta->mesh->plink_timer, mesh_plink_timer,
 				    0);
 		sta->mesh->nonpeer_pm = NL80211_MESH_POWER_ACTIVE;
 	}
@@ -1534,7 +1534,7 @@ static void sta_info_cleanup(struct timer_list *t)
 	if (!timer_needed)
 		return;
 
-	mod_timer(&local->sta_cleanup,
+	mod_timer_dbg(&local->sta_cleanup,
 		  round_jiffies(jiffies + STA_INFO_CLEANUP_INTERVAL));
 }
 
@@ -1555,13 +1555,13 @@ int sta_info_init(struct ieee80211_local *local)
 	spin_lock_init(&local->tim_lock);
 	INIT_LIST_HEAD(&local->sta_list);
 
-	timer_setup(&local->sta_cleanup, sta_info_cleanup, 0);
+	timer_setup_dbg(&local->sta_cleanup, sta_info_cleanup, 0);
 	return 0;
 }
 
 void sta_info_stop(struct ieee80211_local *local)
 {
-	del_timer_sync(&local->sta_cleanup);
+	del_timer_sync_dbg(&local->sta_cleanup);
 	rhltable_destroy(&local->sta_hash);
 	rhltable_destroy(&local->link_sta_hash);
 }

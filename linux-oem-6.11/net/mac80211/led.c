@@ -8,6 +8,7 @@
 #include <linux/slab.h>
 #include <linux/export.h>
 #include "led.h"
+#include <linux/drv_dbg.h>
 
 void ieee80211_led_assoc(struct ieee80211_local *local, bool associated)
 {
@@ -265,7 +266,7 @@ static void tpt_trig_timer(struct timer_list *t)
 	if (!tpt_trig->running)
 		return;
 
-	mod_timer(&tpt_trig->timer, round_jiffies(jiffies + HZ));
+	mod_timer_dbg(&tpt_trig->timer, round_jiffies(jiffies + HZ));
 
 	tpt = tpt_trig_traffic(local, tpt_trig);
 
@@ -311,7 +312,7 @@ __ieee80211_create_tpt_led_trigger(struct ieee80211_hw *hw,
 	tpt_trig->want = flags;
 	tpt_trig->local = local;
 
-	timer_setup(&tpt_trig->timer, tpt_trig_timer, 0);
+	timer_setup_dbg(&tpt_trig->timer, tpt_trig_timer, 0);
 
 	local->tpt_led_trigger = tpt_trig;
 
@@ -331,7 +332,7 @@ static void ieee80211_start_tpt_led_trig(struct ieee80211_local *local)
 	tpt_trig->running = true;
 
 	tpt_trig_timer(&tpt_trig->timer);
-	mod_timer(&tpt_trig->timer, round_jiffies(jiffies + HZ));
+	mod_timer_dbg(&tpt_trig->timer, round_jiffies(jiffies + HZ));
 }
 
 static void ieee80211_stop_tpt_led_trig(struct ieee80211_local *local)
@@ -342,7 +343,7 @@ static void ieee80211_stop_tpt_led_trig(struct ieee80211_local *local)
 		return;
 
 	tpt_trig->running = false;
-	del_timer_sync(&tpt_trig->timer);
+	del_timer_sync_dbg(&tpt_trig->timer);
 
 	led_trigger_event(&local->tpt_led, LED_OFF);
 }

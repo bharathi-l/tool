@@ -10,6 +10,7 @@
 #include "mesh.h"
 #include "driver-ops.h"
 #include "led.h"
+#include <linux/drv_dbg.h>
 
 static void ieee80211_sched_scan_cancel(struct ieee80211_local *local)
 {
@@ -66,17 +67,17 @@ int __ieee80211_suspend(struct ieee80211_hw *hw, struct cfg80211_wowlan *wowlan)
 	/* make quiescing visible to timers everywhere */
 	mb();
 
-	flush_workqueue(local->workqueue);
+	flush_workqueue_dbg(local->workqueue);
 
 	/* Don't try to run timers while suspended. */
-	del_timer_sync(&local->sta_cleanup);
+	del_timer_sync_dbg(&local->sta_cleanup);
 
 	 /*
 	 * Note that this particular timer doesn't need to be
 	 * restarted at resume.
 	 */
-	wiphy_work_cancel(local->hw.wiphy, &local->dynamic_ps_enable_work);
-	del_timer_sync(&local->dynamic_ps_timer);
+	wiphy_work_cancel_dbg(local->hw.wiphy, &local->dynamic_ps_enable_work);
+	del_timer_sync_dbg(&local->dynamic_ps_timer);
 
 	local->wowlan = wowlan;
 	if (local->wowlan) {
@@ -159,7 +160,7 @@ int __ieee80211_suspend(struct ieee80211_hw *hw, struct cfg80211_wowlan *wowlan)
 			break;
 		}
 
-		wiphy_delayed_work_flush(local->hw.wiphy,
+		wiphy_delayed_work_flush_dbg(local->hw.wiphy,
 					 &sdata->dec_tailroom_needed_wk);
 		drv_remove_interface(local, sdata);
 	}

@@ -91,7 +91,11 @@ static void ieee80211_reconfig_filter(struct wiphy *wiphy,
 	struct ieee80211_local *local =
 		container_of(work, struct ieee80211_local, reconfig_filter);
 
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE] [ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
+
 	ieee80211_configure_filter(local);
+		
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
 
 static u32 ieee80211_calc_hw_conf_chan(struct ieee80211_local *local,
@@ -467,12 +471,12 @@ static void ieee80211_restart_work(struct work_struct *work)
 	struct ieee80211_sub_if_data *sdata;
 	int ret;
 
-	flush_workqueue(local->workqueue);
+	flush_workqueue_dbg(local->workqueue);
 
 	rtnl_lock();
 	/* we might do interface manipulations, so need both */
 	wiphy_lock(local->hw.wiphy);
-	wiphy_work_flush(local->hw.wiphy, NULL);
+	wiphy_work_flush_dbg(local->hw.wiphy, NULL);
 
 	WARN(test_bit(SCAN_HW_SCANNING, &local->scanning),
 	     "%s called with hardware scan in progress\n", __func__);
@@ -494,21 +498,21 @@ static void ieee80211_restart_work(struct work_struct *work)
 			 * The exception is ieee80211_chswitch_done.
 			 * Then we can have a race...
 			 */
-			wiphy_work_cancel(local->hw.wiphy,
+			wiphy_work_cancel_dbg(local->hw.wiphy,
 					  &sdata->u.mgd.csa_connection_drop_work);
 			if (sdata->vif.bss_conf.csa_active)
 				ieee80211_sta_connection_lost(sdata,
 							      WLAN_REASON_UNSPECIFIED,
 							      false);
 		}
-		wiphy_delayed_work_flush(local->hw.wiphy,
+		wiphy_delayed_work_flush_dbg(local->hw.wiphy,
 					 &sdata->dec_tailroom_needed_wk);
 	}
 	ieee80211_scan_cancel(local);
 
 	/* make sure any new ROC will consider local->in_reconfig */
-	wiphy_delayed_work_flush(local->hw.wiphy, &local->roc_work);
-	wiphy_work_flush(local->hw.wiphy, &local->hw_roc_done);
+	wiphy_delayed_work_flush_dbg(local->hw.wiphy, &local->roc_work);
+	wiphy_work_flush_dbg(local->hw.wiphy, &local->hw_roc_done);
 
 	/* wait for all packet processing to be done */
 	synchronize_net();
@@ -542,8 +546,8 @@ void ieee80211_restart_hw(struct ieee80211_hw *hw)
 	 */
 	local->in_reconfig = true;
 	barrier();
-
-	queue_work(system_freezable_wq, &local->restart_work);
+	
+	queue_work_dbg(system_freezable_wq, &local->restart_work);
 }
 EXPORT_SYMBOL(ieee80211_restart_hw);
 
@@ -971,22 +975,22 @@ struct ieee80211_hw *ieee80211_alloc_hw_nm(size_t priv_data_len,
 
 	INIT_LIST_HEAD(&local->chanctx_list);
 
-	wiphy_delayed_work_init(&local->scan_work, ieee80211_scan_work);
+	wiphy_delayed_work_init_dbg(&local->scan_work, ieee80211_scan_work);
 
 	INIT_WORK(&local->restart_work, ieee80211_restart_work);
 
-	wiphy_work_init(&local->radar_detected_work,
+	wiphy_work_init_dbg(&local->radar_detected_work,
 			ieee80211_dfs_radar_detected_work);
 
-	wiphy_work_init(&local->reconfig_filter, ieee80211_reconfig_filter);
+	wiphy_work_init_dbg(&local->reconfig_filter, ieee80211_reconfig_filter);
 
-	wiphy_work_init(&local->dynamic_ps_enable_work,
+	wiphy_work_init_dbg(&local->dynamic_ps_enable_work,
 			ieee80211_dynamic_ps_enable_work);
-	wiphy_work_init(&local->dynamic_ps_disable_work,
+	wiphy_work_init_dbg(&local->dynamic_ps_disable_work,
 			ieee80211_dynamic_ps_disable_work);
-	timer_setup(&local->dynamic_ps_timer, ieee80211_dynamic_ps_timer, 0);
+	timer_setup_dbg(&local->dynamic_ps_timer, ieee80211_dynamic_ps_timer, 0);
 
-	wiphy_work_init(&local->sched_scan_stopped_work,
+	wiphy_work_init_dbg(&local->sched_scan_stopped_work,
 			ieee80211_sched_scan_stopped_work);
 
 	spin_lock_init(&local->ack_status_lock);
@@ -996,9 +1000,9 @@ struct ieee80211_hw *ieee80211_alloc_hw_nm(size_t priv_data_len,
 		skb_queue_head_init(&local->pending[i]);
 		atomic_set(&local->agg_queue_stop[i], 0);
 	}
-	tasklet_setup(&local->tx_pending_tasklet, ieee80211_tx_pending);
-	tasklet_setup(&local->wake_txqs_tasklet, ieee80211_wake_txqs);
-	tasklet_setup(&local->tasklet, ieee80211_tasklet_handler);
+	tasklet_setup_dbg(&local->tx_pending_tasklet, ieee80211_tx_pending);
+	tasklet_setup_dbg(&local->wake_txqs_tasklet, ieee80211_wake_txqs);
+	tasklet_setup_dbg(&local->tasklet, ieee80211_tasklet_handler);
 
 	skb_queue_head_init(&local->skb_queue);
 	skb_queue_head_init(&local->skb_queue_unreliable);
@@ -1476,7 +1480,7 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 		hw->queues = IEEE80211_MAX_QUEUES;
 
 	local->workqueue =
-		alloc_ordered_workqueue("%s", 0, wiphy_name(local->hw.wiphy));
+		alloc_ordered_workqueue_dbg("%s", 0, wiphy_name(local->hw.wiphy));
 	if (!local->workqueue) {
 		result = -ENOMEM;
 		goto fail_workqueue;
@@ -1636,7 +1640,7 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 	ieee80211_txq_teardown_flows(local);
  fail_flows:
 	ieee80211_led_exit(local);
-	destroy_workqueue(local->workqueue);
+	destroy_workqueue_dbg(local->workqueue);
  fail_workqueue:
 	if (local->wiphy_ciphers_allocated) {
 		kfree(local->hw.wiphy->cipher_suites);
@@ -1651,8 +1655,8 @@ void ieee80211_unregister_hw(struct ieee80211_hw *hw)
 {
 	struct ieee80211_local *local = hw_to_local(hw);
 
-	tasklet_kill(&local->tx_pending_tasklet);
-	tasklet_kill(&local->tasklet);
+	tasklet_kill_dbg(&local->tx_pending_tasklet);
+	tasklet_kill_dbg(&local->tasklet);
 
 #ifdef CONFIG_INET
 	unregister_inetaddr_notifier(&local->ifa_notifier);
@@ -1673,14 +1677,14 @@ void ieee80211_unregister_hw(struct ieee80211_hw *hw)
 	ieee80211_txq_teardown_flows(local);
 
 	wiphy_lock(local->hw.wiphy);
-	wiphy_delayed_work_cancel(local->hw.wiphy, &local->roc_work);
-	wiphy_work_cancel(local->hw.wiphy, &local->reconfig_filter);
-	wiphy_work_cancel(local->hw.wiphy, &local->sched_scan_stopped_work);
-	wiphy_work_cancel(local->hw.wiphy, &local->radar_detected_work);
+	wiphy_delayed_work_cancel_dbg(local->hw.wiphy, &local->roc_work);
+	wiphy_work_cancel_dbg(local->hw.wiphy, &local->reconfig_filter);
+	wiphy_work_cancel_dbg(local->hw.wiphy, &local->sched_scan_stopped_work);
+	wiphy_work_cancel_dbg(local->hw.wiphy, &local->radar_detected_work);
 	wiphy_unlock(local->hw.wiphy);
 	rtnl_unlock();
 
-	cancel_work_sync(&local->restart_work);
+	cancel_work_sync_dbg(&local->restart_work);
 
 	ieee80211_clear_tx_pending(local);
 	rate_control_deinitialize(local);
@@ -1692,7 +1696,7 @@ void ieee80211_unregister_hw(struct ieee80211_hw *hw)
 	skb_queue_purge(&local->skb_queue_unreliable);
 
 	wiphy_unregister(local->hw.wiphy);
-	destroy_workqueue(local->workqueue);
+	destroy_workqueue_dbg(local->workqueue);
 	ieee80211_led_exit(local);
 	kfree(local->int_scan_req);
 }

@@ -11,6 +11,7 @@
 #include "driver-ops.h"
 #include "key.h"
 #include "debugfs_netdev.h"
+#include <linux/drv_dbg.h>
 
 void ieee80211_link_setup(struct ieee80211_link_data *link)
 {
@@ -37,9 +38,9 @@ void ieee80211_link_init(struct ieee80211_sub_if_data *sdata,
 	link_conf->link_id = link_id;
 	link_conf->vif = &sdata->vif;
 
-	wiphy_work_init(&link->csa.finalize_work,
+	wiphy_work_init_dbg(&link->csa.finalize_work,
 			ieee80211_csa_finalize_work);
-	wiphy_work_init(&link->color_change_finalize_work,
+	wiphy_work_init_dbg(&link->color_change_finalize_work,
 			ieee80211_color_change_finalize_work);
 	INIT_DELAYED_WORK(&link->color_collision_detect_work,
 			  ieee80211_color_collision_detection_work);
@@ -70,10 +71,10 @@ void ieee80211_link_stop(struct ieee80211_link_data *link)
 	if (link->sdata->vif.type == NL80211_IFTYPE_STATION)
 		ieee80211_mgd_stop_link(link);
 
-	cancel_delayed_work_sync(&link->color_collision_detect_work);
-	wiphy_work_cancel(link->sdata->local->hw.wiphy,
+	cancel_delayed_work_sync_dbg(&link->color_collision_detect_work);
+	wiphy_work_cancel_dbg(link->sdata->local->hw.wiphy,
 			  &link->color_change_finalize_work);
-	wiphy_work_cancel(link->sdata->local->hw.wiphy,
+	wiphy_work_cancel_dbg(link->sdata->local->hw.wiphy,
 			  &link->csa.finalize_work);
 	ieee80211_link_release_channel(link);
 }
@@ -367,7 +368,7 @@ static int _ieee80211_set_active_links(struct ieee80211_sub_if_data *sdata,
 		 * from there.
 		 */
 		if (link->conf->csa_active)
-			wiphy_delayed_work_queue(local->hw.wiphy,
+			wiphy_delayed_work_queue_dbg(local->hw.wiphy,
 						 &link->u.mgd.csa.switch_work,
 						 link->u.mgd.csa.time -
 						 jiffies);
@@ -525,6 +526,7 @@ void ieee80211_set_active_links_async(struct ieee80211_vif *vif,
 		return;
 
 	sdata->desired_active_links = active_links;
-	wiphy_work_queue(sdata->local->hw.wiphy, &sdata->activate_links_work);
+	
+	wiphy_work_queue_dbg(sdata->local->hw.wiphy, &sdata->activate_links_work);
 }
 EXPORT_SYMBOL_GPL(ieee80211_set_active_links_async);

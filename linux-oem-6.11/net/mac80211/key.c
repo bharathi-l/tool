@@ -26,7 +26,7 @@
 #include "aes_cmac.h"
 #include "aes_gmac.h"
 #include "aes_gcm.h"
-
+#include <linux/drv_dbg.h>
 
 /**
  * DOC: Key handling basics
@@ -771,7 +771,7 @@ static void __ieee80211_key_destroy(struct ieee80211_key *key,
 		if (delay_tailroom) {
 			/* see ieee80211_delayed_tailroom_dec */
 			sdata->crypto_tx_tailroom_pending_dec++;
-			wiphy_delayed_work_queue(sdata->local->hw.wiphy,
+			wiphy_delayed_work_queue_dbg(sdata->local->hw.wiphy,
 						 &sdata->dec_tailroom_needed_wk,
 						 HZ / 2);
 		} else {
@@ -1127,7 +1127,7 @@ void ieee80211_free_keys(struct ieee80211_sub_if_data *sdata,
 	struct ieee80211_key *key, *tmp;
 	LIST_HEAD(keys);
 
-	wiphy_delayed_work_cancel(local->hw.wiphy,
+	wiphy_delayed_work_cancel_dbg(local->hw.wiphy,
 				  &sdata->dec_tailroom_needed_wk);
 
 	lockdep_assert_wiphy(local->hw.wiphy);

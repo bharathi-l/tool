@@ -104,13 +104,13 @@ void __ieee80211_stop_rx_ba_session(struct sta_info *sta, u16 tid,
 	if (!tid_rx)
 		return;
 
-	del_timer_sync(&tid_rx->session_timer);
+	del_timer_sync_dbg(&tid_rx->session_timer);
 
 	/* make sure ieee80211_sta_reorder_release() doesn't re-arm the timer */
 	spin_lock_bh(&tid_rx->reorder_lock);
 	tid_rx->removed = true;
 	spin_unlock_bh(&tid_rx->reorder_lock);
-	del_timer_sync(&tid_rx->reorder_timer);
+	del_timer_sync_dbg(&tid_rx->reorder_timer);
 
 	call_rcu(&tid_rx->rcu_head, ieee80211_free_tid_rx);
 }
@@ -133,7 +133,7 @@ void ieee80211_stop_rx_ba_session(struct ieee80211_vif *vif, u16 ba_rx_bitmap,
 		if (ba_rx_bitmap & BIT(i))
 			set_bit(i, sta->ampdu_mlme.tid_rx_stop_requested);
 
-	wiphy_work_queue(sta->local->hw.wiphy, &sta->ampdu_mlme.work);
+	wiphy_work_queue_dbg(sta->local->hw.wiphy, &sta->ampdu_mlme.work);
 	rcu_read_unlock();
 }
 EXPORT_SYMBOL(ieee80211_stop_rx_ba_session);
@@ -151,7 +151,7 @@ static void sta_rx_agg_session_timer_expired(struct timer_list *t)
 
 	timeout = tid_rx->last_rx + TU_TO_JIFFIES(tid_rx->timeout);
 	if (time_is_after_jiffies(timeout)) {
-		mod_timer(&tid_rx->session_timer, timeout);
+		mod_timer_dbg(&tid_rx->session_timer, timeout);
 		return;
 	}
 
@@ -159,7 +159,8 @@ static void sta_rx_agg_session_timer_expired(struct timer_list *t)
 	       sta->sta.addr, tid);
 
 	set_bit(tid, sta->ampdu_mlme.tid_rx_timer_expired);
-	wiphy_work_queue(sta->local->hw.wiphy, &sta->ampdu_mlme.work);
+	
+	wiphy_work_queue_dbg(sta->local->hw.wiphy, &sta->ampdu_mlme.work);
 }
 
 static void sta_rx_agg_reorder_timer_expired(struct timer_list *t)
@@ -372,11 +373,11 @@ void __ieee80211_start_rx_ba_session(struct sta_info *sta,
 	spin_lock_init(&tid_agg_rx->reorder_lock);
 
 	/* rx timer */
-	timer_setup(&tid_agg_rx->session_timer,
+	timer_setup_dbg(&tid_agg_rx->session_timer,
 		    sta_rx_agg_session_timer_expired, TIMER_DEFERRABLE);
 
 	/* rx reorder timer */
-	timer_setup(&tid_agg_rx->reorder_timer,
+	timer_setup_dbg(&tid_agg_rx->reorder_timer,
 		    sta_rx_agg_reorder_timer_expired, 0);
 
 	/* prepare reordering buffer */
@@ -421,7 +422,7 @@ void __ieee80211_start_rx_ba_session(struct sta_info *sta,
 	rcu_assign_pointer(sta->ampdu_mlme.tid_rx[tid], tid_agg_rx);
 
 	if (timeout) {
-		mod_timer(&tid_agg_rx->session_timer, TU_TO_EXP_TIME(timeout));
+		mod_timer_dbg(&tid_agg_rx->session_timer, TU_TO_EXP_TIME(timeout));
 		tid_agg_rx->last_rx = jiffies;
 	}
 
@@ -495,7 +496,8 @@ void ieee80211_manage_rx_ba_offl(struct ieee80211_vif *vif,
 		goto unlock;
 
 	set_bit(tid, sta->ampdu_mlme.tid_rx_manage_offl);
-	wiphy_work_queue(sta->local->hw.wiphy, &sta->ampdu_mlme.work);
+	
+	wiphy_work_queue_dbg(sta->local->hw.wiphy, &sta->ampdu_mlme.work);
  unlock:
 	rcu_read_unlock();
 }
@@ -513,7 +515,8 @@ void ieee80211_rx_ba_timer_expired(struct ieee80211_vif *vif,
 		goto unlock;
 
 	set_bit(tid, sta->ampdu_mlme.tid_rx_timer_expired);
-	wiphy_work_queue(sta->local->hw.wiphy, &sta->ampdu_mlme.work);
+	
+	wiphy_work_queue_dbg(sta->local->hw.wiphy, &sta->ampdu_mlme.work);
 
  unlock:
 	rcu_read_unlock();

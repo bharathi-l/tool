@@ -545,8 +545,8 @@ static void ieee80211_do_stop(struct ieee80211_sub_if_data *sdata, bool going_do
 		netif_addr_unlock_bh(sdata->dev);
 	}
 
-	del_timer_sync(&local->dynamic_ps_timer);
-	wiphy_work_cancel(local->hw.wiphy, &local->dynamic_ps_enable_work);
+	del_timer_sync_dbg(&local->dynamic_ps_timer);
+	wiphy_work_cancel_dbg(local->hw.wiphy, &local->dynamic_ps_enable_work);
 
 	WARN(ieee80211_vif_is_mld(&sdata->vif),
 	     "destroying interface with valid links 0x%04x\n",
@@ -557,10 +557,10 @@ static void ieee80211_do_stop(struct ieee80211_sub_if_data *sdata, bool going_do
 		sdata->deflink.u.mgd.csa.waiting_bcn = false;
 	ieee80211_vif_unblock_queues_csa(sdata);
 
-	wiphy_work_cancel(local->hw.wiphy, &sdata->deflink.csa.finalize_work);
-	wiphy_work_cancel(local->hw.wiphy,
+	wiphy_work_cancel_dbg(local->hw.wiphy, &sdata->deflink.csa.finalize_work);
+	wiphy_work_cancel_dbg(local->hw.wiphy,
 			  &sdata->deflink.color_change_finalize_work);
-	wiphy_delayed_work_cancel(local->hw.wiphy,
+	wiphy_delayed_work_cancel_dbg(local->hw.wiphy,
 				  &sdata->dfs_cac_timer_work);
 
 	if (sdata->wdev.cac_started) {
@@ -631,7 +631,7 @@ static void ieee80211_do_stop(struct ieee80211_sub_if_data *sdata, bool going_do
 		RCU_INIT_POINTER(local->p2p_sdata, NULL);
 		fallthrough;
 	default:
-		wiphy_work_cancel(sdata->local->hw.wiphy, &sdata->work);
+		wiphy_work_cancel_dbg(sdata->local->hw.wiphy, &sdata->work);
 		/*
 		 * When we get here, the interface is marked down.
 		 * Free the remaining keys, if there are any
@@ -711,7 +711,7 @@ static void ieee80211_do_stop(struct ieee80211_sub_if_data *sdata, bool going_do
 	ieee80211_recalc_ps(local);
 
 	if (cancel_scan)
-		wiphy_delayed_work_flush(local->hw.wiphy, &local->scan_work);
+		wiphy_delayed_work_flush_dbg(local->hw.wiphy, &local->scan_work);
 
 	if (local->open_count == 0) {
 		ieee80211_stop_device(local, false);
@@ -773,7 +773,7 @@ static int ieee80211_stop(struct net_device *dev)
 	}
 
 	wiphy_lock(sdata->local->hw.wiphy);
-	wiphy_work_cancel(sdata->local->hw.wiphy, &sdata->activate_links_work);
+	wiphy_work_cancel_dbg(sdata->local->hw.wiphy, &sdata->activate_links_work);
 
 	ieee80211_do_stop(sdata, true);
 	wiphy_unlock(sdata->local->hw.wiphy);
@@ -804,7 +804,8 @@ static void ieee80211_set_multicast_list(struct net_device *dev)
 	spin_lock_bh(&local->filter_lock);
 	__hw_addr_sync(&local->mc_list, &dev->mc, dev->addr_len);
 	spin_unlock_bh(&local->filter_lock);
-	wiphy_work_queue(local->hw.wiphy, &local->reconfig_filter);
+	
+	wiphy_work_queue_dbg(local->hw.wiphy, &local->reconfig_filter);
 	
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
@@ -1194,7 +1195,7 @@ int ieee80211_add_virtual_monitor(struct ieee80211_local *local)
 
 	skb_queue_head_init(&sdata->skb_queue);
 	skb_queue_head_init(&sdata->status_queue);
-	wiphy_work_init(&sdata->work, ieee80211_iface_work);
+	wiphy_work_init_dbg(&sdata->work, ieee80211_iface_work);
 
 	return 0;
 }
@@ -1647,15 +1648,23 @@ static void ieee80211_iface_work(struct wiphy *wiphy, struct wiphy_work *work)
 		container_of(work, struct ieee80211_sub_if_data, work);
 	struct ieee80211_local *local = sdata->local;
 	struct sk_buff *skb;
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE] [ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 
-	if (!ieee80211_sdata_running(sdata))
+	if (!ieee80211_sdata_running(sdata)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 		return;
+	}
 
-	if (test_bit(SCAN_SW_SCANNING, &local->scanning))
+	if (test_bit(SCAN_SW_SCANNING, &local->scanning)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 		return;
+	}
 
-	if (!ieee80211_can_run_worker(local))
+	if (!ieee80211_can_run_worker(local)) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 		return;
+	}
 
 	/* first process frames */
 	while ((skb = skb_dequeue(&sdata->skb_queue))) {
@@ -1701,6 +1710,8 @@ static void ieee80211_iface_work(struct wiphy *wiphy, struct wiphy_work *work)
 	default:
 		break;
 	}
+	
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
 
 static void ieee80211_activate_links_work(struct wiphy *wiphy,
@@ -1711,11 +1722,17 @@ static void ieee80211_activate_links_work(struct wiphy *wiphy,
 			     activate_links_work);
 	struct ieee80211_local *local = wiphy_priv(wiphy);
 
-	if (local->in_reconfig)
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
+
+	if (local->in_reconfig) {
+		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 		return;
+	}
 
 	ieee80211_set_active_links(&sdata->vif, sdata->desired_active_links);
 	sdata->desired_active_links = 0;
+		
+	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXCEUTED_WORK_QUEUE_EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 }
 
 /*
@@ -1753,10 +1770,10 @@ static void ieee80211_setup_sdata(struct ieee80211_sub_if_data *sdata,
 
 	skb_queue_head_init(&sdata->skb_queue);
 	skb_queue_head_init(&sdata->status_queue);
-	wiphy_work_init(&sdata->work, ieee80211_iface_work);
-	wiphy_work_init(&sdata->activate_links_work,
+	wiphy_work_init_dbg(&sdata->work, ieee80211_iface_work);
+	wiphy_work_init_dbg(&sdata->activate_links_work,
 			ieee80211_activate_links_work);
-	wiphy_delayed_work_init(&sdata->dfs_cac_timer_work,
+	wiphy_delayed_work_init_dbg(&sdata->dfs_cac_timer_work,
 				ieee80211_dfs_cac_timer_work);
 
 	switch (type) {
@@ -2161,7 +2178,7 @@ int ieee80211_if_add(struct ieee80211_local *local, const char *name,
 
 	INIT_LIST_HEAD(&sdata->key_list);
 
-	wiphy_delayed_work_init(&sdata->dec_tailroom_needed_wk,
+	wiphy_delayed_work_init_dbg(&sdata->dec_tailroom_needed_wk,
 				ieee80211_delayed_tailroom_dec);
 
 	for (i = 0; i < NUM_NL80211_BANDS; i++) {

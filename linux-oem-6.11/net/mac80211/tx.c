@@ -260,7 +260,8 @@ ieee80211_tx_h_dynamic_ps(struct ieee80211_tx_data *tx)
 						IEEE80211_QUEUE_STOP_REASON_PS,
 						false);
 		ifmgd->flags &= ~IEEE80211_STA_NULLFUNC_ACKED;
-		wiphy_work_queue(local->hw.wiphy,
+		
+		wiphy_work_queue_dbg(local->hw.wiphy,
 				 &local->dynamic_ps_disable_work);
 	}
 
@@ -268,7 +269,7 @@ ieee80211_tx_h_dynamic_ps(struct ieee80211_tx_data *tx)
 	if (!ifmgd->associated)
 		return TX_CONTINUE;
 
-	mod_timer(&local->dynamic_ps_timer, jiffies +
+	mod_timer_dbg(&local->dynamic_ps_timer, jiffies +
 		  msecs_to_jiffies(local->hw.conf.dynamic_ps_timeout));
 
 	return TX_CONTINUE;
@@ -524,7 +525,7 @@ ieee80211_tx_h_unicast_ps_buf(struct ieee80211_tx_data *tx)
 		spin_unlock(&sta->ps_lock);
 
 		if (!timer_pending(&local->sta_cleanup))
-			mod_timer(&local->sta_cleanup,
+			mod_timer_dbg(&local->sta_cleanup,
 				  round_jiffies(jiffies +
 						STA_INFO_CLEANUP_INTERVAL));
 
