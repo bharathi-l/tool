@@ -164,13 +164,14 @@ static void iwl_fw_timestamp_marker_wk(struct work_struct *work)
 	unsigned long delay = fwrt->timestamp.delay;
 
 	ret = iwl_fw_send_timestamp_marker_cmd(fwrt);
-	if (!ret && delay)
+	if (!ret && delay) {
 		schedule_delayed_work_dbg(&fwrt->timestamp.wk,
 				      round_jiffies_relative(delay));
-	else
+	} else {
 		IWL_INFO(fwrt,
 			 "stopping timestamp_marker, ret: %d, delay: %u\n",
 			 ret, jiffies_to_msecs(delay) / 1000);
+	}
 }
 
 void iwl_fw_trigger_timestamp(struct iwl_fw_runtime *fwrt, u32 delay)

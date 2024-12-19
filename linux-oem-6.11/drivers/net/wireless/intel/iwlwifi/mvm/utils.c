@@ -1220,10 +1220,11 @@ void iwl_mvm_resume_tcm(struct iwl_mvm *mvm)
 	 * if the current load is not low or low latency is active, force
 	 * re-evaluation to cover the case of no traffic.
 	 */
-	if (mvm->tcm.result.global_load > IWL_MVM_TRAFFIC_LOW)
+	if (mvm->tcm.result.global_load > IWL_MVM_TRAFFIC_LOW) {
 		schedule_delayed_work_dbg(&mvm->tcm.work, MVM_TCM_PERIOD);
-	else if (low_latency)
+	} else if (low_latency) {
 		schedule_delayed_work_dbg(&mvm->tcm.work, MVM_LL_PERIOD);
+	}
 
 	spin_unlock_bh(&mvm->tcm.lock);
 }

@@ -1054,10 +1054,11 @@ static void iwl_txq_progress(struct iwl_txq *txq)
 	 * if empty delete timer, otherwise move timer forward
 	 * since we're making progress on this queue
 	 */
-	if (txq->read_ptr == txq->write_ptr)
+	if (txq->read_ptr == txq->write_ptr) {
 		del_timer_dbg(&txq->stuck_timer);
-	else
+	} else {
 		mod_timer_dbg(&txq->stuck_timer, jiffies + txq->wd_timeout);
+	}
 }
 
 static inline bool iwl_txq_used(const struct iwl_txq *q, int i,
@@ -2279,11 +2280,12 @@ int iwl_trans_pcie_tx(struct iwl_trans *trans, struct sk_buff *skb,
 		 * be armed with the right value when the station will
 		 * wake up.
 		 */
-		if (!txq->frozen)
+		if (!txq->frozen) {
 			mod_timer_dbg(&txq->stuck_timer,
 				  jiffies + txq->wd_timeout);
-		else
+		} else {
 			txq->frozen_expiry_remainder = txq->wd_timeout;
+		}
 	}
 
 	/* Tell device the write index *just past* this latest filled TFD */

@@ -1764,11 +1764,12 @@ static void iwl_mvm_rx_common(struct iwl_mvm *mvm,
 		spin_lock(&mvm->async_handlers_lock);
 		list_add_tail(&entry->list, &mvm->async_handlers_list);
 		spin_unlock(&mvm->async_handlers_lock);
-		if (rx_h->context == RX_HANDLER_ASYNC_LOCKED_WIPHY)
+		if (rx_h->context == RX_HANDLER_ASYNC_LOCKED_WIPHY) {
 			wiphy_work_queue_dbg(mvm->hw->wiphy,
 					 &mvm->async_handlers_wiphy_wk);
-		else
+		} else {
 			schedule_work_dbg(&mvm->async_handlers_wk);
+		}
 		break;
 	}
 }
