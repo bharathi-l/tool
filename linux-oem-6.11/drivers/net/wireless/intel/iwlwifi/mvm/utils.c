@@ -1144,12 +1144,12 @@ void iwl_mvm_recalc_tcm(struct iwl_mvm *mvm)
 		time_after(ts, mvm->tcm.uapsd_nonagg_ts +
 			       msecs_to_jiffies(IWL_MVM_UAPSD_NONAGG_PERIOD));
 
-	spin_lock(&mvm->tcm.lock);
+	spin_lock_dbg(&mvm->tcm.lock);
 	if (mvm->tcm.paused || !time_after(ts, mvm->tcm.ts + MVM_TCM_PERIOD)) {
-		spin_unlock(&mvm->tcm.lock);
+		spin_unlock_dbg(&mvm->tcm.lock);
 		return;
 	}
-	spin_unlock(&mvm->tcm.lock);
+	spin_unlock_dbg(&mvm->tcm.lock);
 
 	if (handle_uapsd && iwl_mvm_has_new_rx_api(mvm)) {
 		guard(mvm)(mvm);
@@ -1157,7 +1157,7 @@ void iwl_mvm_recalc_tcm(struct iwl_mvm *mvm)
 			handle_uapsd = false;
 	}
 
-	spin_lock(&mvm->tcm.lock);
+	spin_lock_dbg(&mvm->tcm.lock);
 	/* re-check if somebody else won the recheck race */
 	if (!mvm->tcm.paused && time_after(ts, mvm->tcm.ts + MVM_TCM_PERIOD)) {
 		/* calculate statistics */
@@ -1170,7 +1170,7 @@ void iwl_mvm_recalc_tcm(struct iwl_mvm *mvm)
 		if (work_delay)
 			schedule_delayed_work_dbg(&mvm->tcm.work, work_delay);
 	}
-	spin_unlock(&mvm->tcm.lock);
+	spin_unlock_dbg(&mvm->tcm.lock);
 
 	iwl_mvm_tcm_results(mvm);
 }
@@ -1186,9 +1186,9 @@ void iwl_mvm_tcm_work(struct work_struct *work)
 
 void iwl_mvm_pause_tcm(struct iwl_mvm *mvm, bool with_cancel)
 {
-	spin_lock_bh(&mvm->tcm.lock);
+	spin_lock_bh_dbg(&mvm->tcm.lock);
 	mvm->tcm.paused = true;
-	spin_unlock_bh(&mvm->tcm.lock);
+	spin_unlock_bh_dbg(&mvm->tcm.lock);
 	if (with_cancel)
 		cancel_delayed_work_sync_dbg(&mvm->tcm.work);
 }
@@ -1198,7 +1198,7 @@ void iwl_mvm_resume_tcm(struct iwl_mvm *mvm)
 	int mac;
 	bool low_latency = false;
 
-	spin_lock_bh(&mvm->tcm.lock);
+	spin_lock_bh_dbg(&mvm->tcm.lock);
 	mvm->tcm.ts = jiffies;
 	mvm->tcm.ll_ts = jiffies;
 	for (mac = 0; mac < NUM_MAC_INDEX_DRIVER; mac++) {
@@ -1226,7 +1226,7 @@ void iwl_mvm_resume_tcm(struct iwl_mvm *mvm)
 		schedule_delayed_work_dbg(&mvm->tcm.work, MVM_LL_PERIOD);
 	}
 
-	spin_unlock_bh(&mvm->tcm.lock);
+	spin_unlock_bh_dbg(&mvm->tcm.lock);
 }
 
 void iwl_mvm_tcm_add_vif(struct iwl_mvm *mvm, struct ieee80211_vif *vif)

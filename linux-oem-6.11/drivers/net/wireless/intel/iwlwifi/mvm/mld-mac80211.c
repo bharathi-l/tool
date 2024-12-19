@@ -217,11 +217,11 @@ static void iwl_mvm_restart_mpdu_count(struct iwl_mvm *mvm,
 		return;
 
 	for (int q = 0; q < mvm->trans->num_rx_queues; q++) {
-		spin_lock_bh(&mvmsta->mpdu_counters[q].lock);
+		spin_lock_bh_dbg(&mvmsta->mpdu_counters[q].lock);
 		memset(mvmsta->mpdu_counters[q].per_link, 0,
 		       sizeof(mvmsta->mpdu_counters[q].per_link));
 		mvmsta->mpdu_counters[q].window_start = jiffies;
-		spin_unlock_bh(&mvmsta->mpdu_counters[q].lock);
+		spin_unlock_bh_dbg(&mvmsta->mpdu_counters[q].lock);
 	}
 
 	IWL_DEBUG_STATS(mvm, "MPDU counters are cleared\n");
@@ -516,7 +516,7 @@ static void iwl_mvm_mld_unassign_vif_chanctx(struct ieee80211_hw *hw,
 	struct iwl_mvm_vif *mvmvif = iwl_mvm_vif_from_mac80211(vif);
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	__iwl_mvm_mld_unassign_vif_chanctx(mvm, vif, link_conf, ctx, false);
 	/* in the non-MLD case, remove/re-add the link to clean up FW state */
 	if (!ieee80211_vif_is_mld(vif) && !mvmvif->ap_sta &&
@@ -524,7 +524,7 @@ static void iwl_mvm_mld_unassign_vif_chanctx(struct ieee80211_hw *hw,
 		iwl_mvm_remove_link(mvm, vif, link_conf);
 		iwl_mvm_add_link(mvm, vif, link_conf);
 	}
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	/* update EMLSR mode */
 	if (ieee80211_vif_type_p2p(vif) != NL80211_IFTYPE_STATION)
@@ -1187,7 +1187,7 @@ iwl_mvm_mld_change_vif_links(struct ieee80211_hw *hw,
 				IEEE80211_SMPS_AUTOMATIC;
 	}
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	if (old_links == 0) {
 		err = iwl_mvm_disable_link(mvm, vif, &vif->bss_conf);
@@ -1238,7 +1238,7 @@ iwl_mvm_mld_change_vif_links(struct ieee80211_hw *hw,
 
 out_err:
 	/* we really don't have a good way to roll back here ... */
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 free:
 	for (i = 0; i < IEEE80211_MLD_MAX_NUM_LINKS; i++)
@@ -1325,7 +1325,7 @@ iwl_mvm_mld_mac_pre_channel_switch(struct ieee80211_hw *hw,
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 	int ret;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	if (mvmvif->esr_active) {
 		u8 primary = iwl_mvm_get_primary_link(vif);
 		int selected;
@@ -1337,7 +1337,7 @@ iwl_mvm_mld_mac_pre_channel_switch(struct ieee80211_hw *hw,
 			selected = primary;
 
 		iwl_mvm_exit_esr(mvm, vif, IWL_MVM_ESR_EXIT_CSA, selected);
-		mutex_unlock(&mvm->mutex);
+		mutex_unlock_dbg(&mvm->mutex);
 
 		/*
 		 * If we've not kept the link active that's doing the CSA
@@ -1346,11 +1346,11 @@ iwl_mvm_mld_mac_pre_channel_switch(struct ieee80211_hw *hw,
 		if (selected != chsw->link_id)
 			return 0;
 
-		mutex_lock(&mvm->mutex);
+		mutex_lock_dbg(&mvm->mutex);
 	}
 
 	ret = iwl_mvm_pre_channel_switch(mvm, vif, chsw);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret;
 }

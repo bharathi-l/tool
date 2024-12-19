@@ -27,7 +27,7 @@ void iwl_mvm_set_rekey_data(struct ieee80211_hw *hw,
 
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	mvmvif->rekey_data.kek_len = data->kek_len;
 	mvmvif->rekey_data.kck_len = data->kck_len;
@@ -38,7 +38,7 @@ void iwl_mvm_set_rekey_data(struct ieee80211_hw *hw,
 		cpu_to_le64(be64_to_cpup((const __be64 *)data->replay_ctr));
 	mvmvif->rekey_data.valid = true;
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 	
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
@@ -164,7 +164,7 @@ static void iwl_mvm_wowlan_program_keys(struct ieee80211_hw *hw,
 			wkc.wep_key.key_offset = data->wep_key_idx;
 		}
 
-		mutex_lock(&mvm->mutex);
+		mutex_lock_dbg(&mvm->mutex);
 		printk("%s %d : iwl_mvm_send_cmd : WEP_KEY\n", __func__, __LINE__);
 		
 		ret = iwl_mvm_send_cmd_pdu(mvm, WEP_KEY, 0, sizeof(wkc), &wkc);
@@ -174,7 +174,7 @@ static void iwl_mvm_wowlan_program_keys(struct ieee80211_hw *hw,
 		mvm->ptk_icvlen = key->icv_len;
 		mvm->gtk_ivlen = key->iv_len;
 		mvm->gtk_icvlen = key->icv_len;
-		mutex_unlock(&mvm->mutex);
+		mutex_unlock_dbg(&mvm->mutex);
 
 		/* don't upload key again */
 		return;
@@ -201,7 +201,7 @@ static void iwl_mvm_wowlan_program_keys(struct ieee80211_hw *hw,
 		break;
 	}
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	/*
 	 * The D3 firmware hardcodes the key offset 0 as the key it
 	 * uses to transmit packets to the AP, i.e. the PTK.
@@ -215,13 +215,13 @@ static void iwl_mvm_wowlan_program_keys(struct ieee80211_hw *hw,
 		 * firmware only supports TSC/RSC for a single key,
 		 * so if there are multiple keep overwriting them
 		 * with new ones -- this relies on mac80211 doing
-		 * list_add_tail().
+		 * list_add_tail_dbg().
 		 */
 		mvm->gtk_ivlen = key->iv_len;
 		mvm->gtk_icvlen = key->icv_len;
 		ret = iwl_mvm_set_sta_key(mvm, vif, sta, key, 1);
 	}
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 	data->error = ret != 0;
 }
 
@@ -1304,7 +1304,7 @@ static int __iwl_mvm_suspend(struct ieee80211_hw *hw,
 	if (ret)
 		return ret;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	set_bit(IWL_MVM_STATUS_IN_D3, &mvm->status);
 
@@ -1418,7 +1418,7 @@ static int __iwl_mvm_suspend(struct ieee80211_hw *hw,
 		clear_bit(IWL_MVM_STATUS_IN_D3, &mvm->status);
 	}
  out_noreset:
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret;
 }
@@ -2814,7 +2814,7 @@ static bool iwl_mvm_query_wakeup_reasons(struct iwl_mvm *mvm,
 
 	keep = iwl_mvm_setup_connection_keep(mvm, vif, status);
 out_unlock:
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 	return keep;
 }
 
@@ -3042,7 +3042,7 @@ out_report_nd:
 out:
 	iwl_mvm_free_nd(mvm);
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 	ieee80211_report_wowlan_wakeup(vif, wakeup_report, GFP_KERNEL);
 
 	if (net_detect) {
@@ -3477,7 +3477,7 @@ static int __iwl_mvm_resume(struct iwl_mvm *mvm, bool test)
 	bool resume_notif_based = iwl_mvm_d3_resume_notif_based(mvm);
 	bool keep = false;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	/* Apparently, the device went away and device_powered_off() was called,
 	 * don't even try to read the rt_status, the device is currently
@@ -3565,7 +3565,7 @@ query_wakeup_reasons:
 	goto out;
 
 err:
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 out:
 	if (d3_data.status)
 		kfree(d3_data.status->wake_packet);

@@ -573,9 +573,9 @@ static ssize_t iwl_dbgfs_sleep_level_override_write(struct file *file,
 
 	priv->power_data.debug_sleep_level_override = value;
 
-	mutex_lock(&priv->mutex);
+	mutex_lock_dbg(&priv->mutex);
 	iwl_power_update_mode(priv, true);
-	mutex_unlock(&priv->mutex);
+	mutex_unlock_dbg(&priv->mutex);
 
 	return count;
 }
@@ -693,7 +693,7 @@ static ssize_t iwl_dbgfs_ucode_rx_stats_read(struct file *file,
 	 * the last statistics notification from uCode
 	 * might not reflect the current uCode activity
 	 */
-	spin_lock_bh(&priv->statistics.lock);
+	spin_lock_bh_dbg(&priv->statistics.lock);
 	ofdm = &priv->statistics.rx_ofdm;
 	cck = &priv->statistics.rx_cck;
 	general = &priv->statistics.rx_non_phy;
@@ -1090,7 +1090,7 @@ static ssize_t iwl_dbgfs_ucode_rx_stats_read(struct file *file,
 			 accum_ht->unsupport_mcs,
 			 delta_ht->unsupport_mcs, max_ht->unsupport_mcs);
 
-	spin_unlock_bh(&priv->statistics.lock);
+	spin_unlock_bh_dbg(&priv->statistics.lock);
 
 	ret = simple_read_from_buffer(user_buf, count, ppos, buf, pos);
 	kfree(buf);
@@ -1119,7 +1119,7 @@ static ssize_t iwl_dbgfs_ucode_tx_stats_read(struct file *file,
 	 * the last statistics notification from uCode
 	 * might not reflect the current uCode activity
 	 */
-	spin_lock_bh(&priv->statistics.lock);
+	spin_lock_bh_dbg(&priv->statistics.lock);
 
 	tx = &priv->statistics.tx;
 	accum_tx = &priv->accum_stats.tx;
@@ -1287,7 +1287,7 @@ static ssize_t iwl_dbgfs_ucode_tx_stats_read(struct file *file,
 					tx->tx_power.ant_c);
 	}
 
-	spin_unlock_bh(&priv->statistics.lock);
+	spin_unlock_bh_dbg(&priv->statistics.lock);
 
 	ret = simple_read_from_buffer(user_buf, count, ppos, buf, pos);
 	kfree(buf);
@@ -1320,7 +1320,7 @@ static ssize_t iwl_dbgfs_ucode_general_stats_read(struct file *file,
 	 * might not reflect the current uCode activity
 	 */
 
-	spin_lock_bh(&priv->statistics.lock);
+	spin_lock_bh_dbg(&priv->statistics.lock);
 
 	general = &priv->statistics.common;
 	dbg = &priv->statistics.common.dbg;
@@ -1407,7 +1407,7 @@ static ssize_t iwl_dbgfs_ucode_general_stats_read(struct file *file,
 			 delta_general->num_of_sos_states,
 			 max_general->num_of_sos_states);
 
-	spin_unlock_bh(&priv->statistics.lock);
+	spin_unlock_bh_dbg(&priv->statistics.lock);
 
 	ret = simple_read_from_buffer(user_buf, count, ppos, buf, pos);
 	kfree(buf);
@@ -1432,9 +1432,9 @@ static ssize_t iwl_dbgfs_ucode_bt_stats_read(struct file *file,
 		return -EINVAL;
 
 	/* make request to uCode to retrieve statistics information */
-	mutex_lock(&priv->mutex);
+	mutex_lock_dbg(&priv->mutex);
 	ret = iwl_send_statistics_request(priv, 0, false);
-	mutex_unlock(&priv->mutex);
+	mutex_unlock_dbg(&priv->mutex);
 
 	if (ret)
 		return -EAGAIN;
@@ -1448,7 +1448,7 @@ static ssize_t iwl_dbgfs_ucode_bt_stats_read(struct file *file,
 	 * might not reflect the current uCode activity
 	 */
 
-	spin_lock_bh(&priv->statistics.lock);
+	spin_lock_bh_dbg(&priv->statistics.lock);
 
 	bt = &priv->statistics.bt_activity;
 	accum_bt = &priv->accum_stats.bt_activity;
@@ -1495,7 +1495,7 @@ static ssize_t iwl_dbgfs_ucode_bt_stats_read(struct file *file,
 			 le32_to_cpu(priv->statistics.num_bt_kills),
 			 priv->statistics.accum_num_bt_kills);
 
-	spin_unlock_bh(&priv->statistics.lock);
+	spin_unlock_bh_dbg(&priv->statistics.lock);
 
 	ret = simple_read_from_buffer(user_buf, count, ppos, buf, pos);
 	kfree(buf);
@@ -1819,9 +1819,9 @@ static ssize_t iwl_dbgfs_clear_ucode_statistics_write(struct file *file,
 		return -EFAULT;
 
 	/* make request to uCode to retrieve statistics information */
-	mutex_lock(&priv->mutex);
+	mutex_lock_dbg(&priv->mutex);
 	iwl_send_statistics_request(priv, 0, true);
-	mutex_unlock(&priv->mutex);
+	mutex_unlock_dbg(&priv->mutex);
 
 	return count;
 }
@@ -2268,12 +2268,12 @@ static ssize_t iwl_dbgfs_fw_restart_write(struct file *file,
 
 	iwlwifi_mod_params.fw_restart = true;
 
-	mutex_lock(&priv->mutex);
+	mutex_lock_dbg(&priv->mutex);
 
 	/* take the return value to make compiler happy - it will fail anyway */
 	ret = iwl_dvm_send_cmd_pdu(priv, REPLY_ERROR, 0, 0, NULL);
 
-	mutex_unlock(&priv->mutex);
+	mutex_unlock_dbg(&priv->mutex);
 
 	iwlwifi_mod_params.fw_restart = fw_restart;
 

@@ -9,6 +9,7 @@
 #include "iwl-context-info-gen3.h"
 #include "internal.h"
 #include "fw/dbg.h"
+#include <linux/drv_dbg.h>
 
 #define FW_RESET_TIMEOUT (HZ / 5)
 
@@ -218,12 +219,12 @@ void iwl_trans_pcie_gen2_stop_device(struct iwl_trans *trans)
 			       IWL_FW_INI_TIME_POINT_HOST_DEVICE_DISABLE,
 			       NULL);
 
-	mutex_lock(&trans_pcie->mutex);
+	mutex_lock_dbg(&trans_pcie->mutex);
 	trans_pcie->opmode_down = true;
 	was_in_rfkill = test_bit(STATUS_RFKILL_OPMODE, &trans->status);
 	_iwl_trans_pcie_gen2_stop_device(trans);
 	iwl_trans_pcie_handle_stop_rfkill(trans, was_in_rfkill);
-	mutex_unlock(&trans_pcie->mutex);
+	mutex_unlock_dbg(&trans_pcie->mutex);
 }
 
 static int iwl_pcie_gen2_nic_init(struct iwl_trans *trans)
@@ -234,9 +235,9 @@ static int iwl_pcie_gen2_nic_init(struct iwl_trans *trans)
 	int ret;
 
 	/* TODO: most of the logic can be removed in A0 - but not in Z0 */
-	spin_lock_bh(&trans_pcie->irq_lock);
+	spin_lock_bh_dbg(&trans_pcie->irq_lock);
 	ret = iwl_pcie_gen2_apm_init(trans);
-	spin_unlock_bh(&trans_pcie->irq_lock);
+	spin_unlock_bh_dbg(&trans_pcie->irq_lock);
 	if (ret)
 		return ret;
 
@@ -364,11 +365,11 @@ void iwl_trans_pcie_gen2_fw_alive(struct iwl_trans *trans)
 	 * the firmware is alive.
 	 */
 	iwl_enable_interrupts(trans);
-	mutex_lock(&trans_pcie->mutex);
+	mutex_lock_dbg(&trans_pcie->mutex);
 	iwl_pcie_check_hw_rf_kill(trans);
 
 	iwl_pcie_get_rf_name(trans);
-	mutex_unlock(&trans_pcie->mutex);
+	mutex_unlock_dbg(&trans_pcie->mutex);
 }
 
 static bool iwl_pcie_set_ltr(struct iwl_trans *trans)
@@ -485,7 +486,7 @@ int iwl_trans_pcie_gen2_start_fw(struct iwl_trans *trans,
 	/* Make sure it finished running */
 	iwl_pcie_synchronize_irqs(trans);
 
-	mutex_lock(&trans_pcie->mutex);
+	mutex_lock_dbg(&trans_pcie->mutex);
 
 	/* If platform's RF_KILL switch is NOT set to KILL */
 	hw_rfkill = iwl_pcie_check_hw_rf_kill(trans);
@@ -544,6 +545,6 @@ int iwl_trans_pcie_gen2_start_fw(struct iwl_trans *trans,
 		ret = -ERFKILL;
 
 out:
-	mutex_unlock(&trans_pcie->mutex);
+	mutex_unlock_dbg(&trans_pcie->mutex);
 	return ret;
 }

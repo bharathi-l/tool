@@ -2326,7 +2326,7 @@ static u32 iwl_dump_ini_mem(struct iwl_fw_runtime *fwrt, struct list_head *list,
 		range = range + range_size;
 	}
 
-	list_add_tail(&entry->list, list);
+	list_add_tail_dbg(&entry->list, list);
 
 	return entry->size;
 
@@ -2436,7 +2436,7 @@ static u32 iwl_dump_ini_info(struct iwl_fw_runtime *fwrt,
 	/* add dump info TLV to the beginning of the list since it needs to be
 	 * the first TLV in the dump
 	 */
-	list_add(&entry->list, list);
+	list_add_dbg(&entry->list, list);
 
 	return entry->size;
 }
@@ -2464,7 +2464,7 @@ static u32 iwl_dump_ini_file_name_info(struct iwl_fw_runtime *fwrt,
 	memcpy(tlv->data, fwrt->trans->dbg.dump_file_name_ext, len);
 
 	/* add the dump file name extension tlv to the list */
-	list_add_tail(&entry->list, list);
+	list_add_tail_dbg(&entry->list, list);
 
 	fwrt->trans->dbg.dump_file_name_ext_valid = false;
 
@@ -2718,7 +2718,7 @@ static u32 iwl_dump_ini_file_gen(struct iwl_fw_runtime *fwrt,
 	hdr->barker = cpu_to_le32(IWL_FW_INI_ERROR_DUMP_BARKER);
 	hdr->file_len = cpu_to_le32(size + entry->size);
 
-	list_add(&entry->list, list);
+	list_add_dbg(&entry->list, list);
 
 	return le32_to_cpu(hdr->file_len);
 }
@@ -2787,7 +2787,7 @@ static void iwl_dump_ini_list_free(struct list_head *list)
 		struct iwl_fw_ini_dump_entry *entry =
 			list_entry(list->next, typeof(*entry), list);
 
-		list_del(&entry->list);
+		list_del_dbg(&entry->list);
 		vfree(entry);
 	}
 }

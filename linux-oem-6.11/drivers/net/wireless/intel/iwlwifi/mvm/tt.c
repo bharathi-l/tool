@@ -293,7 +293,7 @@ static void check_exit_ctkill(struct work_struct *work)
 
 	flush_work_dbg(&mvm->roc_done_wk);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	if (__iwl_mvm_mac_start(mvm))
 		goto reschedule;
@@ -308,13 +308,13 @@ static void check_exit_ctkill(struct work_struct *work)
 	IWL_DEBUG_TEMP(mvm, "NIC temperature: %d\n", temp);
 
 	if (temp <= tt->params.ct_kill_exit) {
-		mutex_unlock(&mvm->mutex);
+		mutex_unlock_dbg(&mvm->mutex);
 		iwl_mvm_exit_ctkill(mvm);
 		return;
 	}
 
 reschedule:
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 	schedule_delayed_work_dbg(&mvm->thermal_throttle.ct_kill_exit,
 			      round_jiffies(duration * HZ));
 }

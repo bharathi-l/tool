@@ -577,7 +577,7 @@ void iwl_mvm_tdls_cancel_channel_switch(struct ieee80211_hw *hw,
 
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	IWL_DEBUG_TDLS(mvm, "TDLS cancel channel switch with %pM\n", sta->addr);
 
@@ -609,7 +609,7 @@ void iwl_mvm_tdls_cancel_channel_switch(struct ieee80211_hw *hw,
 	mvm->tdls_cs.peer.skb = NULL;
 
 out:
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	/* make sure the phy is on the base channel */
 	if (wait_for_phy)

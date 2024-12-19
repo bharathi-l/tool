@@ -267,7 +267,7 @@ static void iwl_bg_beacon_update(struct work_struct *work)
 		container_of(work, struct iwl_priv, beacon_update);
 	struct sk_buff *beacon;
 
-	mutex_lock(&priv->mutex);
+	mutex_lock_dbg(&priv->mutex);
 	if (!priv->beacon_ctx) {
 		IWL_ERR(priv, "updating beacon w/o beacon context!\n");
 		goto out;
@@ -298,7 +298,7 @@ static void iwl_bg_beacon_update(struct work_struct *work)
 
 	iwlagn_send_beacon_cmd(priv);
  out:
-	mutex_unlock(&priv->mutex);
+	mutex_unlock_dbg(&priv->mutex);
 }
 
 static void iwl_bg_bt_runtime_config(struct work_struct *work)
@@ -306,7 +306,7 @@ static void iwl_bg_bt_runtime_config(struct work_struct *work)
 	struct iwl_priv *priv =
 		container_of(work, struct iwl_priv, bt_runtime_config);
 
-	mutex_lock(&priv->mutex);
+	mutex_lock_dbg(&priv->mutex);
 	if (test_bit(STATUS_EXIT_PENDING, &priv->status))
 		goto out;
 
@@ -316,7 +316,7 @@ static void iwl_bg_bt_runtime_config(struct work_struct *work)
 
 	iwlagn_send_advance_bt_config(priv);
 out:
-	mutex_unlock(&priv->mutex);
+	mutex_unlock_dbg(&priv->mutex);
 }
 
 static void iwl_bg_bt_full_concurrency(struct work_struct *work)
@@ -325,7 +325,7 @@ static void iwl_bg_bt_full_concurrency(struct work_struct *work)
 		container_of(work, struct iwl_priv, bt_full_concurrency);
 	struct iwl_rxon_context *ctx;
 
-	mutex_lock(&priv->mutex);
+	mutex_lock_dbg(&priv->mutex);
 
 	if (test_bit(STATUS_EXIT_PENDING, &priv->status))
 		goto out;
@@ -349,7 +349,7 @@ static void iwl_bg_bt_full_concurrency(struct work_struct *work)
 
 	iwlagn_send_advance_bt_config(priv);
 out:
-	mutex_unlock(&priv->mutex);
+	mutex_unlock_dbg(&priv->mutex);
 }
 
 int iwl_send_statistics_request(struct iwl_priv *priv, u8 flags, bool clear)
@@ -872,7 +872,7 @@ static void iwl_clear_driver_stations(struct iwl_priv *priv)
 {
 	struct iwl_rxon_context *ctx;
 
-	spin_lock_bh(&priv->sta_lock);
+	spin_lock_bh_dbg(&priv->sta_lock);
 	memset(priv->stations, 0, sizeof(priv->stations));
 	priv->num_stations = 0;
 
@@ -890,7 +890,7 @@ static void iwl_clear_driver_stations(struct iwl_priv *priv)
 		ctx->key_mapping_keys = 0;
 	}
 
-	spin_unlock_bh(&priv->sta_lock);
+	spin_unlock_bh_dbg(&priv->sta_lock);
 }
 
 void iwl_down(struct iwl_priv *priv)
@@ -960,11 +960,11 @@ static void iwl_bg_run_time_calib_work(struct work_struct *work)
 	struct iwl_priv *priv = container_of(work, struct iwl_priv,
 			run_time_calib_work);
 
-	mutex_lock(&priv->mutex);
+	mutex_lock_dbg(&priv->mutex);
 
 	if (test_bit(STATUS_EXIT_PENDING, &priv->status) ||
 	    test_bit(STATUS_SCANNING, &priv->status)) {
-		mutex_unlock(&priv->mutex);
+		mutex_unlock_dbg(&priv->mutex);
 		return;
 	}
 
@@ -973,7 +973,7 @@ static void iwl_bg_run_time_calib_work(struct work_struct *work)
 		iwl_sensitivity_calibration(priv);
 	}
 
-	mutex_unlock(&priv->mutex);
+	mutex_unlock_dbg(&priv->mutex);
 }
 
 void iwlagn_prepare_restart(struct iwl_priv *priv)
@@ -1030,9 +1030,9 @@ static void iwl_bg_restart(struct work_struct *data)
 		return;
 
 	if (test_and_clear_bit(STATUS_FW_ERROR, &priv->status)) {
-		mutex_lock(&priv->mutex);
+		mutex_lock_dbg(&priv->mutex);
 		iwlagn_prepare_restart(priv);
-		mutex_unlock(&priv->mutex);
+		mutex_unlock_dbg(&priv->mutex);
 		iwl_cancel_deferred_work(priv);
 		if (priv->mac80211_registered)
 			ieee80211_restart_hw(priv->hw);
@@ -1090,9 +1090,9 @@ void iwl_cancel_deferred_work(struct iwl_priv *priv)
 
 static int iwl_init_drv(struct iwl_priv *priv)
 {
-	spin_lock_init(&priv->sta_lock);
+	spin_lock_init_dbg(&priv->sta_lock);
 
-	mutex_init(&priv->mutex);
+	mutex_init_dbg(&priv->mutex);
 
 	INIT_LIST_HEAD(&priv->calib_results);
 
@@ -1373,7 +1373,7 @@ static struct iwl_op_mode *iwl_op_mode_dvm_start(struct iwl_trans *trans,
 	/* these spin locks will be used in apm_ops.init and EEPROM access
 	 * we should init now
 	 */
-	spin_lock_init(&priv->statistics.lock);
+	spin_lock_init_dbg(&priv->statistics.lock);
 
 	/***********************
 	 * 2. Read REV register

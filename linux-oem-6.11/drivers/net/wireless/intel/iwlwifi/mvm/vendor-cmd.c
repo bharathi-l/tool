@@ -29,7 +29,7 @@ static int iwl_mvm_vendor_get_csme_conn_info(struct wiphy *wiphy,
 	struct sk_buff *skb;
 	int err = 0;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	csme_conn_info = iwl_mvm_get_csme_conn_info(mvm);
 
 	if (!csme_conn_info) {
@@ -60,7 +60,7 @@ static int iwl_mvm_vendor_get_csme_conn_info(struct wiphy *wiphy,
 	}
 
 out_unlock:
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 	if (err)
 		return err;
 
@@ -75,9 +75,9 @@ static int iwl_mvm_vendor_host_get_ownership(struct wiphy *wiphy,
 	struct iwl_mvm *mvm = IWL_MAC80211_GET_MVM(hw);
 	int ret;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	ret = iwl_mvm_mei_get_ownership(mvm);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret;
 }

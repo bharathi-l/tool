@@ -35,9 +35,9 @@ static ssize_t iwl_dbgfs_ctdp_budget_read(struct file *file,
 	    mvm->fwrt.cur_fw_img != IWL_UCODE_REGULAR)
 		return -EIO;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	budget = iwl_mvm_ctdp_command(mvm, CTDP_CMD_OPERATION_REPORT, 0);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	if (budget < 0)
 		return budget;
@@ -69,9 +69,9 @@ static ssize_t iwl_dbgfs_stop_ctdp_write(struct iwl_mvm *mvm, char *buf,
 	    mvm->fwrt.cur_fw_img != IWL_UCODE_REGULAR)
 		return -EIO;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	ret = iwl_mvm_ctdp_command(mvm, CTDP_CMD_OPERATION_STOP, 0);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret ?: count;
 }
@@ -99,9 +99,9 @@ static ssize_t iwl_dbgfs_start_ctdp_write(struct iwl_mvm *mvm,
 	    mvm->fwrt.cur_fw_img != IWL_UCODE_REGULAR)
 		return -EIO;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	ret = iwl_mvm_ctdp_command(mvm, CTDP_CMD_OPERATION_START, 0);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret ?: count;
 }
@@ -135,19 +135,19 @@ static ssize_t iwl_dbgfs_tx_flush_write(struct iwl_mvm *mvm, char *buf,
 		IWL_DEBUG_TX_QUEUES(mvm,
 				    "FLUSHING all tids queues on sta_id = %d\n",
 				    flush_arg);
-		mutex_lock(&mvm->mutex);
+		mutex_lock_dbg(&mvm->mutex);
 		ret = iwl_mvm_flush_sta_tids(mvm, flush_arg, 0xFFFF)
 			? : count;
-		mutex_unlock(&mvm->mutex);
+		mutex_unlock_dbg(&mvm->mutex);
 		return ret;
 	}
 
 	IWL_DEBUG_TX_QUEUES(mvm, "FLUSHING queues mask to flush = 0x%x\n",
 			    flush_arg);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	ret =  iwl_mvm_flush_tx_path(mvm, flush_arg) ? : count;
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret;
 }
@@ -258,7 +258,7 @@ static ssize_t iwl_dbgfs_set_nic_temperature_write(struct iwl_mvm *mvm,
 	    temperature < IWL_MVM_DEBUG_SET_TEMPERATURE_MIN)
 		return -EINVAL;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	if (temperature == IWL_MVM_DEBUG_SET_TEMPERATURE_DISABLE) {
 		if (!mvm->temperature_test)
 			goto out;
@@ -280,7 +280,7 @@ static ssize_t iwl_dbgfs_set_nic_temperature_write(struct iwl_mvm *mvm,
 	iwl_mvm_tt_handler(mvm);
 
 out:
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return count;
 }
@@ -297,9 +297,9 @@ static ssize_t iwl_dbgfs_nic_temp_read(struct file *file,
 	if (!iwl_mvm_firmware_running(mvm))
 		return -EIO;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	ret = iwl_mvm_get_temp(mvm, &temp);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	if (ret)
 		return -EIO;
@@ -323,10 +323,10 @@ static ssize_t iwl_dbgfs_sar_geo_profile_read(struct file *file,
 	if (!iwl_mvm_firmware_running(mvm))
 		return -EIO;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	tbl_idx = iwl_mvm_get_sar_geo_profile(mvm);
 	if (tbl_idx < 0) {
-		mutex_unlock(&mvm->mutex);
+		mutex_unlock_dbg(&mvm->mutex);
 		return tbl_idx;
 	}
 
@@ -347,7 +347,7 @@ static ssize_t iwl_dbgfs_sar_geo_profile_read(struct file *file,
 				 mvm->fwrt.geo_profiles[tbl_idx - 1].bands[1].chains[1],
 				 mvm->fwrt.geo_profiles[tbl_idx - 1].bands[1].max);
 	}
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return simple_read_from_buffer(user_buf, count, ppos, buf, pos);
 }
@@ -379,7 +379,7 @@ static ssize_t iwl_dbgfs_stations_read(struct file *file, char __user *user_buf,
 	char buf[400];
 	int i, pos = 0, bufsz = sizeof(buf);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	for (i = 0; i < mvm->fw->ucode_capa.num_stations; i++) {
 		pos += scnprintf(buf + pos, bufsz - pos, "%.2d: ", i);
@@ -395,7 +395,7 @@ static ssize_t iwl_dbgfs_stations_read(struct file *file, char __user *user_buf,
 					 sta->addr);
 	}
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return simple_read_from_buffer(user_buf, count, ppos, buf, pos);
 }
@@ -531,9 +531,9 @@ static ssize_t iwl_dbgfs_disable_power_off_write(struct iwl_mvm *mvm, char *buf,
 		return -EINVAL;
 	}
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	ret = iwl_mvm_power_update_device(mvm);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret ?: count;
 }
@@ -610,9 +610,9 @@ static ssize_t iwl_dbgfs_tas_get_status_read(struct file *file,
 	if (!iwl_mvm_firmware_running(mvm))
 		return -ENODEV;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	ret = iwl_mvm_send_cmd(mvm, &hcmd);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 	if (ret < 0)
 		return ret;
 
@@ -812,7 +812,7 @@ static ssize_t iwl_dbgfs_fw_rx_stats_read(struct file *file,
 	if (!buf)
 		return -ENOMEM;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	if (iwl_mvm_firmware_running(mvm))
 		iwl_mvm_request_statistics(mvm, false);
@@ -969,7 +969,7 @@ static ssize_t iwl_dbgfs_fw_rx_stats_read(struct file *file,
 		PRINT_STATS_LE32(ht, unsupport_mcs);
 	}
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	ret = simple_read_from_buffer(user_buf, count, ppos, buf, pos);
 	kfree(buf);
@@ -1010,7 +1010,7 @@ static ssize_t iwl_dbgfs_fw_system_stats_read(struct file *file,
 		goto send_out;
 	}
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	if (iwl_mvm_firmware_running(mvm))
 		iwl_mvm_request_statistics(mvm, false);
 
@@ -1064,7 +1064,7 @@ static ssize_t iwl_dbgfs_fw_system_stats_read(struct file *file,
 			 mvm->accu_radio_stats.tx_time);
 
 release_send_out:
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 send_out:
 	ret = simple_read_from_buffer(user_buf, count, ppos, buff, pos - buff);
@@ -1087,7 +1087,7 @@ static ssize_t iwl_dbgfs_frame_stats_read(struct iwl_mvm *mvm,
 	if (!buff)
 		return -ENOMEM;
 
-	spin_lock_bh(&mvm->drv_stats_lock);
+	spin_lock_bh_dbg(&mvm->drv_stats_lock);
 
 	pos = buff;
 	endpos = pos + bufsz;
@@ -1132,7 +1132,7 @@ static ssize_t iwl_dbgfs_frame_stats_read(struct iwl_mvm *mvm,
 		if (pos < endpos - 1)
 			*pos++ = '\n';
 	}
-	spin_unlock_bh(&mvm->drv_stats_lock);
+	spin_unlock_bh_dbg(&mvm->drv_stats_lock);
 
 	ret = simple_read_from_buffer(user_buf, count, ppos, buff, pos - buff);
 	kfree(buff);
@@ -1158,7 +1158,7 @@ static ssize_t iwl_dbgfs_fw_restart_write(struct iwl_mvm *mvm, char *buf,
 	if (!iwl_mvm_firmware_running(mvm))
 		return -EIO;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	/* allow one more restart that we're provoking here */
 	if (mvm->fw_restart >= 0)
@@ -1174,7 +1174,7 @@ static ssize_t iwl_dbgfs_fw_restart_write(struct iwl_mvm *mvm, char *buf,
 				   WIDE_ID(LONG_GROUP, REPLY_ERROR),
 				   0, 0, NULL);
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return count;
 }
@@ -1278,13 +1278,13 @@ static ssize_t iwl_dbgfs_indirection_tbl_write(struct iwl_mvm *mvm,
 
 	netdev_rss_key_fill(cmd.secret_key, sizeof(cmd.secret_key));
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	if (iwl_mvm_firmware_running(mvm))
 		ret = iwl_mvm_send_cmd_pdu(mvm, RSS_CONFIG_CMD, 0,
 					   sizeof(cmd), &cmd);
 	else
 		ret = 0;
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret ?: count;
 }
@@ -1362,7 +1362,7 @@ static int _iwl_dbgfs_inject_beacon_ie(struct iwl_mvm *mvm, char *bin, int len)
 			IWL_UCODE_TLV_API_NEW_BEACON_TEMPLATE))
 		return -EINVAL;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	for (i = 0; i < NUM_MAC_INDEX_DRIVER; i++) {
 		vif = iwl_mvm_rcu_dereference_vif_id(mvm, i, false);
@@ -1421,7 +1421,7 @@ static int _iwl_dbgfs_inject_beacon_ie(struct iwl_mvm *mvm, char *bin, int len)
 		iwl_mvm_mac_ctxt_send_beacon_cmd(mvm, beacon, &beacon_cmd,
 						 sizeof(beacon_cmd));
 	}
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), beacon, __func__, __LINE__);
 	dev_kfree_skb(beacon);
@@ -1429,7 +1429,7 @@ static int _iwl_dbgfs_inject_beacon_ie(struct iwl_mvm *mvm, char *bin, int len)
 	return 0;
 
 out_err:
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 	return -EINVAL;
 }
 
@@ -1465,9 +1465,9 @@ static ssize_t iwl_dbgfs_fw_dbg_conf_read(struct file *file,
 	const size_t bufsz = sizeof(buf);
 	int pos = 0;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	conf = mvm->fwrt.dump.conf;
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	pos += scnprintf(buf + pos, bufsz - pos, "%d\n", conf);
 
@@ -1491,9 +1491,9 @@ static ssize_t iwl_dbgfs_fw_dbg_conf_write(struct iwl_mvm *mvm,
 	if (WARN_ON(conf_id >= FW_DBG_CONF_MAX))
 		return -EINVAL;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	ret = iwl_fw_start_dbg_conf(&mvm->fwrt, conf_id);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret ?: count;
 }
@@ -1521,9 +1521,9 @@ static ssize_t iwl_dbgfs_fw_dbg_clear_write(struct iwl_mvm *mvm,
 	if (mvm->trans->trans_cfg->device_family < IWL_DEVICE_FAMILY_9000)
 		return -EOPNOTSUPP;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	iwl_fw_dbg_clear_monitor_buf(&mvm->fwrt);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return count;
 }
@@ -1573,18 +1573,18 @@ _iwl_dbgfs_link_sta_wrap_write(ssize_t (*real)(struct ieee80211_link_sta *,
 	struct iwl_mvm_link_sta *mvm_link_sta;
 	ssize_t ret;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	mvm_link_sta = rcu_dereference_protected(mvmsta->link[link_sta->link_id],
 						 lockdep_is_held(&mvm->mutex));
 	if (WARN_ON(!mvm_link_sta)) {
-		mutex_unlock(&mvm->mutex);
+		mutex_unlock_dbg(&mvm->mutex);
 		return -ENODEV;
 	}
 
 	ret = real(link_sta, mvmsta, mvm, mvm_link_sta, buf, buf_size, ppos);
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret;
 }
@@ -1605,18 +1605,18 @@ _iwl_dbgfs_link_sta_wrap_read(ssize_t (*real)(struct ieee80211_link_sta *,
 	struct iwl_mvm_link_sta *mvm_link_sta;
 	ssize_t ret;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	mvm_link_sta = rcu_dereference_protected(mvmsta->link[link_sta->link_id],
 						 lockdep_is_held(&mvm->mutex));
 	if (WARN_ON(!mvm_link_sta)) {
-		mutex_unlock(&mvm->mutex);
+		mutex_unlock_dbg(&mvm->mutex);
 		return -ENODEV;
 	}
 
 	ret = real(link_sta, mvmsta, mvm, mvm_link_sta, user_buf, count, ppos);
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret;
 }
@@ -1730,9 +1730,9 @@ iwl_dbgfs_send_echo_cmd_write(struct iwl_mvm *mvm, char *buf,
 	if (!iwl_mvm_firmware_running(mvm))
 		return -EIO;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	ret = iwl_mvm_send_cmd_pdu(mvm, ECHO_CMD, 0, 0, NULL);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret ?: count;
 }
@@ -1785,7 +1785,7 @@ iwl_dbgfs_he_sniffer_params_write(struct iwl_mvm *mvm, char *buf,
 	apply.aid = aid;
 	apply.bssid = (void *)he_mon_cmd.bssid;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	/*
 	 * Use the notification waiter to get our function triggered
@@ -1808,7 +1808,7 @@ iwl_dbgfs_he_sniffer_params_write(struct iwl_mvm *mvm, char *buf,
 	/* no need to really wait, we already did anyway */
 	iwl_remove_notification(&mvm->notif_wait, &wait);
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret ?: count;
 }
@@ -1840,13 +1840,13 @@ iwl_dbgfs_uapsd_noagg_bssids_read(struct file *file, char __user *user_buf,
 	size_t bufsz = sizeof(buf);
 	int i;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	for (i = 0; i < IWL_MVM_UAPSD_NOAGG_LIST_LEN; i++)
 		pos += scnprintf(buf + pos, bufsz - pos, "%pM\n",
 				 mvm->uapsd_noagg_bssids[i].addr);
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return simple_read_from_buffer(user_buf, count, ppos, buf, pos);
 }
@@ -1872,10 +1872,10 @@ iwl_dbgfs_ltr_config_write(struct iwl_mvm *mvm,
 		return -EINVAL;
 	}
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	ret = iwl_mvm_send_cmd_pdu(mvm, LTR_CONFIG, 0, sizeof(ltr_config),
 				   &ltr_config);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	if (ret)
 		IWL_ERR(mvm, "failed to send ltr configuration cmd\n");
@@ -1894,9 +1894,9 @@ static ssize_t iwl_dbgfs_rfi_freq_table_write(struct iwl_mvm *mvm, char *buf,
 
 	/* value zero triggers re-sending the default table to the device */
 	if (!op_id) {
-		mutex_lock(&mvm->mutex);
+		mutex_lock_dbg(&mvm->mutex);
 		ret = iwl_rfi_send_config_cmd(mvm, NULL);
-		mutex_unlock(&mvm->mutex);
+		mutex_unlock_dbg(&mvm->mutex);
 	} else {
 		ret = -EOPNOTSUPP; /* in the future a new table will be added */
 	}
@@ -2023,9 +2023,9 @@ static ssize_t iwl_dbgfs_mem_read(struct file *file, char __user *user_buf,
 	cmd.len = cpu_to_le32(min(ALIGN(count + delta, 4) / 4,
 				  (size_t)DEBUG_MEM_MAX_SIZE_DWORDS));
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	ret = iwl_mvm_send_cmd(mvm, &hcmd);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	if (ret < 0)
 		return ret;
@@ -2102,9 +2102,9 @@ static ssize_t iwl_dbgfs_mem_write(struct file *file,
 	hcmd.data[0] = (void *)cmd;
 	hcmd.len[0] = cmd_size;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	ret = iwl_mvm_send_cmd(mvm, &hcmd);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	kfree(cmd);
 
@@ -2157,7 +2157,7 @@ void iwl_mvm_dbgfs_register(struct iwl_mvm *mvm)
 {
 	struct dentry *bcast_dir __maybe_unused;
 
-	spin_lock_init(&mvm->drv_stats_lock);
+	spin_lock_init_dbg(&mvm->drv_stats_lock);
 
 	MVM_DEBUGFS_ADD_FILE(tx_flush, mvm->debugfs_dir, 0200);
 	MVM_DEBUGFS_ADD_FILE(sram, mvm->debugfs_dir, 0600);

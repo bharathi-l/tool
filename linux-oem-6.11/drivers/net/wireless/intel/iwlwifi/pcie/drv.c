@@ -16,6 +16,7 @@
 #include "iwl-drv.h"
 #include "iwl-prph.h"
 #include "internal.h"
+#include <linux/drv_dbg.h>
 
 #define TRANS_CFG_MARKER BIT(0)
 #define _IS_A(cfg, _struct) __builtin_types_compatible_p(typeof(cfg),	\
@@ -1631,10 +1632,10 @@ static int _iwl_pci_resume(struct device *device, bool restore)
 	 * status). Must be locked to avoid processing a possible rfkill
 	 * interrupt while in iwl_pcie_check_hw_rf_kill().
 	 */
-	mutex_lock(&trans_pcie->mutex);
+	mutex_lock_dbg(&trans_pcie->mutex);
 	iwl_enable_rfkill_int(trans);
 	iwl_pcie_check_hw_rf_kill(trans);
-	mutex_unlock(&trans_pcie->mutex);
+	mutex_unlock_dbg(&trans_pcie->mutex);
 
 	return 0;
 }

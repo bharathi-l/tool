@@ -194,9 +194,9 @@ int iwl_mvm_esr_non_bss_link(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 					    IEEE80211_IFACE_ITER_NORMAL,
 					    iwl_mvm_esr_vif_iterator, &data);
 	if (data.lift_block) {
-		mutex_lock(&mvm->mutex);
+		mutex_lock_dbg(&mvm->mutex);
 		iwl_mvm_unblock_esr(mvm, bss_vif, IWL_MVM_ESR_BLOCKED_NON_BSS);
-		mutex_unlock(&mvm->mutex);
+		mutex_unlock_dbg(&mvm->mutex);
 	}
 
 	return 0;
@@ -1069,10 +1069,10 @@ int iwl_mvm_block_esr_sync(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 	if (ret)
 		return ret;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	/* only additionally block for consistency and to avoid concurrency */
 	iwl_mvm_block_esr(mvm, vif, reason, primary_link);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return 0;
 }

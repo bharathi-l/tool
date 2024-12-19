@@ -2758,10 +2758,10 @@ static void iwl_mvm_mei_scan_work(struct work_struct *wk)
 	struct sk_buff *skb;
 	u8 bssid[ETH_ALEN];
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	info = iwl_mvm_get_csme_conn_info(mvm);
 	memcpy(bssid, info->conn_info.bssid, ETH_ALEN);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	while ((skb = skb_dequeue(&scan_filter->scan_res))) {
 		struct ieee80211_mgmt *mgmt = (void *)skb->data;

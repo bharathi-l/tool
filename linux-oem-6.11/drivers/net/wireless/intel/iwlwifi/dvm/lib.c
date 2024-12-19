@@ -151,7 +151,7 @@ int iwlagn_txfifo_flush(struct iwl_priv *priv, u32 scd_q_msk)
 
 void iwlagn_dev_txfifo_flush(struct iwl_priv *priv)
 {
-	mutex_lock(&priv->mutex);
+	mutex_lock_dbg(&priv->mutex);
 	ieee80211_stop_queues(priv->hw);
 	if (iwlagn_txfifo_flush(priv, 0)) {
 		IWL_ERR(priv, "flush request fail\n");
@@ -161,7 +161,7 @@ void iwlagn_dev_txfifo_flush(struct iwl_priv *priv)
 	iwl_trans_wait_tx_queues_empty(priv->trans, 0xffffffff);
 done:
 	ieee80211_wake_queues(priv->hw);
-	mutex_unlock(&priv->mutex);
+	mutex_unlock_dbg(&priv->mutex);
 }
 
 /*
@@ -424,7 +424,7 @@ static void iwlagn_bt_traffic_change_work(struct work_struct *work)
 		break;
 	}
 
-	mutex_lock(&priv->mutex);
+	mutex_lock_dbg(&priv->mutex);
 
 	/*
 	 * We can not send command to firmware while scanning. When the scan
@@ -452,7 +452,7 @@ static void iwlagn_bt_traffic_change_work(struct work_struct *work)
 	 */
 	iwlagn_bt_coex_rssi_monitor(priv);
 out:
-	mutex_unlock(&priv->mutex);
+	mutex_unlock_dbg(&priv->mutex);
 }
 
 /*
@@ -887,7 +887,7 @@ static void iwlagn_wowlan_program_keys(struct ieee80211_hw *hw,
 	u16 p1k[IWLAGN_P1K_SIZE];
 	int ret, i;
 
-	mutex_lock(&priv->mutex);
+	mutex_lock_dbg(&priv->mutex);
 
 	if ((key->cipher == WLAN_CIPHER_SUITE_WEP40 ||
 	     key->cipher == WLAN_CIPHER_SUITE_WEP104) &&
@@ -989,7 +989,7 @@ static void iwlagn_wowlan_program_keys(struct ieee80211_hw *hw,
 		break;
 	}
 
-	mutex_unlock(&priv->mutex);
+	mutex_unlock_dbg(&priv->mutex);
 }
 
 int iwlagn_send_patterns(struct iwl_priv *priv,
@@ -1144,11 +1144,11 @@ int iwlagn_suspend(struct iwl_priv *priv, struct cfg80211_wowlan *wowlan)
 		 * constraints. Since we're in the suspend path
 		 * that isn't really a problem though.
 		 */
-		mutex_unlock(&priv->mutex);
+		mutex_unlock_dbg(&priv->mutex);
 		ieee80211_iter_keys(priv->hw, ctx->vif,
 				    iwlagn_wowlan_program_keys,
 				    &key_data);
-		mutex_lock(&priv->mutex);
+		mutex_lock_dbg(&priv->mutex);
 		if (key_data.error) {
 			ret = -EIO;
 			goto out;

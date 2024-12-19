@@ -6,6 +6,7 @@
 #include "mvm.h"
 #include "fw/api/commands.h"
 #include "fw/api/phy-ctxt.h"
+#include <linux/drv_dbg.h>
 
 /*
  * DDR needs frequency in units of 16.666MHz, so provide FW with the
@@ -126,9 +127,9 @@ struct iwl_rfi_freq_table_resp_cmd *iwl_rfi_get_freq_table(struct iwl_mvm *mvm)
 	if (!iwl_rfi_supported(mvm))
 		return ERR_PTR(-EOPNOTSUPP);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	ret = iwl_mvm_send_cmd(mvm, &cmd);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 	if (ret)
 		return ERR_PTR(ret);
 

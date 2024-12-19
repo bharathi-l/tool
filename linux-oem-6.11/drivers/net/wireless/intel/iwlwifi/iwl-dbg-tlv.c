@@ -78,7 +78,7 @@ static struct iwl_ucode_tlv *iwl_dbg_tlv_add(const struct iwl_ucode_tlv *tlv,
 
 	memcpy(&node->tlv, tlv, sizeof(node->tlv));
 	memcpy(node->tlv.data, tlv->data, len);
-	list_add_tail(&node->list, list);
+	list_add_tail_dbg(&node->list, list);
 
 	return &node->tlv;
 }
@@ -382,7 +382,7 @@ void iwl_dbg_tlv_del_timers(struct iwl_trans *trans)
 
 	list_for_each_entry_safe(node, tmp, timer_list, list) {
 		timer_shutdown_sync_dbg(&node->timer);
-		list_del(&node->list);
+		list_del_dbg(&node->list);
 		kfree(node);
 	}
 }
@@ -433,7 +433,7 @@ void iwl_dbg_tlv_free(struct iwl_trans *trans)
 
 	list_for_each_entry_safe(tlv_node, tlv_node_tmp,
 				 &trans->dbg.debug_info_tlv_list, list) {
-		list_del(&tlv_node->list);
+		list_del_dbg(&tlv_node->list);
 		kfree(tlv_node);
 	}
 
@@ -443,25 +443,25 @@ void iwl_dbg_tlv_free(struct iwl_trans *trans)
 
 		list_for_each_entry_safe(tlv_node, tlv_node_tmp, &tp->trig_list,
 					 list) {
-			list_del(&tlv_node->list);
+			list_del_dbg(&tlv_node->list);
 			kfree(tlv_node);
 		}
 
 		list_for_each_entry_safe(tlv_node, tlv_node_tmp, &tp->hcmd_list,
 					 list) {
-			list_del(&tlv_node->list);
+			list_del_dbg(&tlv_node->list);
 			kfree(tlv_node);
 		}
 
 		list_for_each_entry_safe(tlv_node, tlv_node_tmp,
 					 &tp->active_trig_list, list) {
-			list_del(&tlv_node->list);
+			list_del_dbg(&tlv_node->list);
 			kfree(tlv_node);
 		}
 
 		list_for_each_entry_safe(tlv_node, tlv_node_tmp,
 					 &tp->config_list, list) {
-			list_del(&tlv_node->list);
+			list_del_dbg(&tlv_node->list);
 			kfree(tlv_node);
 		}
 
@@ -1014,7 +1014,7 @@ static void iwl_dbg_tlv_set_periodic_trigs(struct iwl_fw_runtime *fwrt)
 		timer_setup_dbg(&timer_node->timer,
 			    iwl_dbg_tlv_periodic_trig_handler, 0);
 
-		list_add_tail(&timer_node->list,
+		list_add_tail_dbg(&timer_node->list,
 			      &fwrt->trans->dbg.periodic_trig_list);
 
 		IWL_DEBUG_FW(fwrt, "WRT: Enabling periodic trigger\n");
@@ -1082,7 +1082,7 @@ static int iwl_dbg_tlv_override_trig_node(struct iwl_fw_runtime *fwrt,
 		struct list_head *prev = node->list.prev;
 		struct iwl_dbg_tlv_node *tmp;
 
-		list_del(&node->list);
+		list_del_dbg(&node->list);
 
 		tmp = krealloc(node, sizeof(*node) + size, GFP_KERNEL);
 		if (!tmp) {
@@ -1090,12 +1090,12 @@ static int iwl_dbg_tlv_override_trig_node(struct iwl_fw_runtime *fwrt,
 				 "WRT: No memory to override trigger (time point %u)\n",
 				 le32_to_cpu(trig->time_point));
 
-			list_add(&node->list, prev);
+			list_add_dbg(&node->list, prev);
 
 			return -ENOMEM;
 		}
 
-		list_add(&tmp->list, prev);
+		list_add_dbg(&tmp->list, prev);
 		node_tlv = &tmp->tlv;
 		node_trig = (void *)node_tlv->data;
 	}

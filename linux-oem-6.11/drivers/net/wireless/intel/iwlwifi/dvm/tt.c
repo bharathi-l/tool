@@ -289,7 +289,7 @@ static void iwl_legacy_tt_handler(struct iwl_priv *priv, s32 temp, bool force)
 			tt->tt_power_mode = IWL_POWER_INDEX_5;
 			break;
 		}
-		mutex_lock(&priv->mutex);
+		mutex_lock_dbg(&priv->mutex);
 		if (old_state == IWL_TI_CT_KILL)
 			clear_bit(STATUS_CT_KILL, &priv->status);
 		if (tt->state != IWL_TI_CT_KILL &&
@@ -319,7 +319,7 @@ static void iwl_legacy_tt_handler(struct iwl_priv *priv, s32 temp, bool force)
 			IWL_DEBUG_TEMP(priv, "Power Index change to %u\n",
 					tt->tt_power_mode);
 		}
-		mutex_unlock(&priv->mutex);
+		mutex_unlock_dbg(&priv->mutex);
 	}
 }
 
@@ -429,7 +429,7 @@ static void iwl_advance_tt_handler(struct iwl_priv *priv, s32 temp, bool force)
 			 * in case get disabled before */
 			iwl_set_rxon_ht(priv, &priv->current_ht_config);
 		}
-		mutex_lock(&priv->mutex);
+		mutex_lock_dbg(&priv->mutex);
 		if (old_state == IWL_TI_CT_KILL)
 			clear_bit(STATUS_CT_KILL, &priv->status);
 		if (tt->state != IWL_TI_CT_KILL &&
@@ -463,7 +463,7 @@ static void iwl_advance_tt_handler(struct iwl_priv *priv, s32 temp, bool force)
 				iwl_perform_ct_kill_task(priv, false);
 			}
 		}
-		mutex_unlock(&priv->mutex);
+		mutex_unlock_dbg(&priv->mutex);
 	}
 }
 

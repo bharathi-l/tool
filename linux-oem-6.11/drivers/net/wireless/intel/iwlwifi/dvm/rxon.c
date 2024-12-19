@@ -1161,7 +1161,7 @@ int iwlagn_mac_config(struct ieee80211_hw *hw, u32 changed)
 
 	IWL_DEBUG_MAC80211(priv, "enter: changed %#x\n", changed);
 
-	mutex_lock(&priv->mutex);
+	mutex_lock_dbg(&priv->mutex);
 
 	if (unlikely(test_bit(STATUS_SCANNING, &priv->status))) {
 		IWL_DEBUG_MAC80211(priv, "leave - scanning\n");
@@ -1247,7 +1247,7 @@ int iwlagn_mac_config(struct ieee80211_hw *hw, u32 changed)
 		iwlagn_commit_rxon(priv, ctx);
 	}
  out:
-	mutex_unlock(&priv->mutex);
+	mutex_unlock_dbg(&priv->mutex);
 	IWL_DEBUG_MAC80211(priv, "leave\n");
 
 	return ret;
@@ -1392,7 +1392,7 @@ void iwlagn_bss_info_changed(struct ieee80211_hw *hw,
 	int ret;
 	bool force = false;
 
-	mutex_lock(&priv->mutex);
+	mutex_lock_dbg(&priv->mutex);
 
 	if (changes & BSS_CHANGED_IDLE && vif->cfg.idle) {
 		/*
@@ -1404,13 +1404,13 @@ void iwlagn_bss_info_changed(struct ieee80211_hw *hw,
 
 	if (unlikely(!iwl_is_ready(priv))) {
 		IWL_DEBUG_MAC80211(priv, "leave - not ready\n");
-		mutex_unlock(&priv->mutex);
+		mutex_unlock_dbg(&priv->mutex);
 		return;
         }
 
 	if (unlikely(!ctx->vif)) {
 		IWL_DEBUG_MAC80211(priv, "leave - vif is NULL\n");
-		mutex_unlock(&priv->mutex);
+		mutex_unlock_dbg(&priv->mutex);
 		return;
 	}
 
@@ -1523,7 +1523,7 @@ void iwlagn_bss_info_changed(struct ieee80211_hw *hw,
 			IWL_ERR(priv, "Error updating beacon\n");
 	}
 
-	mutex_unlock(&priv->mutex);
+	mutex_unlock_dbg(&priv->mutex);
 }
 
 void iwlagn_post_scan(struct iwl_priv *priv)

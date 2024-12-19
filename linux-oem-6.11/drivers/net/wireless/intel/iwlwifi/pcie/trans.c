@@ -543,9 +543,9 @@ static int iwl_pcie_nic_init(struct iwl_trans *trans)
 	int ret;
 
 	/* nic_init */
-	spin_lock_bh(&trans_pcie->irq_lock);
+	spin_lock_bh_dbg(&trans_pcie->irq_lock);
 	ret = iwl_pcie_apm_init(trans);
-	spin_unlock_bh(&trans_pcie->irq_lock);
+	spin_unlock_bh_dbg(&trans_pcie->irq_lock);
 
 	if (ret)
 		return ret;
@@ -1363,7 +1363,7 @@ int iwl_trans_pcie_start_fw(struct iwl_trans *trans,
 	/* Make sure it finished running */
 	iwl_pcie_synchronize_irqs(trans);
 
-	mutex_lock(&trans_pcie->mutex);
+	mutex_lock_dbg(&trans_pcie->mutex);
 
 	/* If platform's RF_KILL switch is NOT set to KILL */
 	hw_rfkill = iwl_pcie_check_hw_rf_kill(trans);
@@ -1419,7 +1419,7 @@ int iwl_trans_pcie_start_fw(struct iwl_trans *trans,
 		ret = -ERFKILL;
 
 out:
-	mutex_unlock(&trans_pcie->mutex);
+	mutex_unlock_dbg(&trans_pcie->mutex);
 	return ret;
 }
 
@@ -1467,12 +1467,12 @@ void iwl_trans_pcie_stop_device(struct iwl_trans *trans)
 			       IWL_FW_INI_TIME_POINT_HOST_DEVICE_DISABLE,
 			       NULL);
 
-	mutex_lock(&trans_pcie->mutex);
+	mutex_lock_dbg(&trans_pcie->mutex);
 	trans_pcie->opmode_down = true;
 	was_in_rfkill = test_bit(STATUS_RFKILL_OPMODE, &trans->status);
 	_iwl_trans_pcie_stop_device(trans, false);
 	iwl_trans_pcie_handle_stop_rfkill(trans, was_in_rfkill);
-	mutex_unlock(&trans_pcie->mutex);
+	mutex_unlock_dbg(&trans_pcie->mutex);
 }
 
 void iwl_trans_pcie_rf_kill(struct iwl_trans *trans, bool state, bool from_irq)
@@ -1890,9 +1890,9 @@ int iwl_trans_pcie_start_hw(struct iwl_trans *trans)
 	struct iwl_trans_pcie *trans_pcie = IWL_TRANS_GET_PCIE_TRANS(trans);
 	int ret;
 
-	mutex_lock(&trans_pcie->mutex);
+	mutex_lock_dbg(&trans_pcie->mutex);
 	ret = _iwl_trans_pcie_start_hw(trans);
-	mutex_unlock(&trans_pcie->mutex);
+	mutex_unlock_dbg(&trans_pcie->mutex);
 
 	return ret;
 }
@@ -1901,7 +1901,7 @@ void iwl_trans_pcie_op_mode_leave(struct iwl_trans *trans)
 {
 	struct iwl_trans_pcie *trans_pcie = IWL_TRANS_GET_PCIE_TRANS(trans);
 
-	mutex_lock(&trans_pcie->mutex);
+	mutex_lock_dbg(&trans_pcie->mutex);
 
 	/* disable interrupts - don't enable HW RF kill interrupt */
 	iwl_disable_interrupts(trans);
@@ -1912,7 +1912,7 @@ void iwl_trans_pcie_op_mode_leave(struct iwl_trans *trans)
 
 	iwl_pcie_disable_ict(trans);
 
-	mutex_unlock(&trans_pcie->mutex);
+	mutex_unlock_dbg(&trans_pcie->mutex);
 
 	iwl_pcie_synchronize_irqs(trans);
 }
@@ -2088,7 +2088,7 @@ void iwl_trans_pcie_free(struct iwl_trans *trans)
 	iwl_trans_pcie_free_pnvm_dram_regions(&trans_pcie->reduced_tables_data,
 					      trans->dev);
 
-	mutex_destroy(&trans_pcie->mutex);
+	mutex_destroy_dbg(&trans_pcie->mutex);
 
 	if (trans_pcie->txqs.tso_hdr_page) {
 		for_each_possible_cpu(i) {
@@ -2203,7 +2203,7 @@ bool __iwl_trans_pcie_grab_nic_access(struct iwl_trans *trans)
 	if (test_bit(STATUS_TRANS_DEAD, &trans->status))
 		return false;
 
-	spin_lock(&trans_pcie->reg_lock);
+	spin_lock_dbg(&trans_pcie->reg_lock);
 
 	if (trans_pcie->cmd_hold_nic_awake)
 		goto out;
@@ -2255,7 +2255,7 @@ bool __iwl_trans_pcie_grab_nic_access(struct iwl_trans *trans)
 			iwl_write32(trans, CSR_RESET,
 				    CSR_RESET_REG_FLAG_FORCE_NMI);
 
-		spin_unlock(&trans_pcie->reg_lock);
+		spin_unlock_dbg(&trans_pcie->reg_lock);
 		return false;
 	}
 
@@ -2309,7 +2309,7 @@ void iwl_trans_pcie_release_nic_access(struct iwl_trans *trans)
 	 * scheduled on different CPUs (after we drop reg_lock).
 	 */
 out:
-	spin_unlock_bh(&trans_pcie->reg_lock);
+	spin_unlock_bh_dbg(&trans_pcie->reg_lock);
 }
 
 int iwl_trans_pcie_read_mem(struct iwl_trans *trans, u32 addr,
@@ -2423,10 +2423,10 @@ int iwl_trans_pcie_wait_txq_empty(struct iwl_trans *trans, int txq_idx)
 	IWL_DEBUG_TX_QUEUES(trans, "Emptying queue %d...\n", txq_idx);
 	txq = trans_pcie->txqs.txq[txq_idx];
 
-	spin_lock_bh(&txq->lock);
+	spin_lock_bh_dbg(&txq->lock);
 	overflow_tx = txq->overflow_tx ||
 		      !skb_queue_empty(&txq->overflow_q);
-	spin_unlock_bh(&txq->lock);
+	spin_unlock_bh_dbg(&txq->lock);
 
 	wr_ptr = READ_ONCE(txq->write_ptr);
 
@@ -2449,10 +2449,10 @@ int iwl_trans_pcie_wait_txq_empty(struct iwl_trans *trans, int txq_idx)
 
 		usleep_range(1000, 2000);
 
-		spin_lock_bh(&txq->lock);
+		spin_lock_bh_dbg(&txq->lock);
 		overflow_tx = txq->overflow_tx ||
 			      !skb_queue_empty(&txq->overflow_q);
-		spin_unlock_bh(&txq->lock);
+		spin_unlock_bh_dbg(&txq->lock);
 	}
 
 	if (txq->read_ptr != txq->write_ptr) {
@@ -2498,9 +2498,9 @@ void iwl_trans_pcie_set_bits_mask(struct iwl_trans *trans, u32 reg,
 {
 	struct iwl_trans_pcie *trans_pcie = IWL_TRANS_GET_PCIE_TRANS(trans);
 
-	spin_lock_bh(&trans_pcie->reg_lock);
+	spin_lock_bh_dbg(&trans_pcie->reg_lock);
 	__iwl_trans_pcie_set_bits_mask(trans, reg, mask, value);
-	spin_unlock_bh(&trans_pcie->reg_lock);
+	spin_unlock_bh_dbg(&trans_pcie->reg_lock);
 }
 
 static const char *get_csr_string(int cmd)
@@ -2963,10 +2963,10 @@ static ssize_t iwl_dbgfs_monitor_data_read(struct file *file,
 	if (unlikely(!trans->dbg.rec_on))
 		return 0;
 
-	mutex_lock(&data->mutex);
+	mutex_lock_dbg(&data->mutex);
 	if (data->state ==
 	    IWL_FW_MON_DBGFS_STATE_DISABLED) {
-		mutex_unlock(&data->mutex);
+		mutex_unlock_dbg(&data->mutex);
 		return 0;
 	}
 
@@ -3017,7 +3017,7 @@ static ssize_t iwl_dbgfs_monitor_data_read(struct file *file,
 		data->prev_wrap_cnt = wrap_cnt;
 	}
 
-	mutex_unlock(&data->mutex);
+	mutex_unlock_dbg(&data->mutex);
 
 	return bytes_copied;
 }
@@ -3078,9 +3078,9 @@ void iwl_trans_pcie_debugfs_cleanup(struct iwl_trans *trans)
 	struct iwl_trans_pcie *trans_pcie = IWL_TRANS_GET_PCIE_TRANS(trans);
 	struct cont_rec *data = &trans_pcie->fw_mon_data;
 
-	mutex_lock(&data->mutex);
+	mutex_lock_dbg(&data->mutex);
 	data->state = IWL_FW_MON_DBGFS_STATE_DISABLED;
-	mutex_unlock(&data->mutex);
+	mutex_unlock_dbg(&data->mutex);
 }
 #endif /*CONFIG_IWLWIFI_DEBUGFS */
 
@@ -3106,7 +3106,7 @@ static u32 iwl_trans_pcie_dump_rbs(struct iwl_trans *trans,
 	struct iwl_rxq *rxq = &trans_pcie->rxq[0];
 	u32 i, r, j, rb_len = 0;
 
-	spin_lock_bh(&rxq->lock);
+	spin_lock_bh_dbg(&rxq->lock);
 
 	r = iwl_get_closed_rb_stts(trans, rxq);
 
@@ -3130,7 +3130,7 @@ static u32 iwl_trans_pcie_dump_rbs(struct iwl_trans *trans,
 		*data = iwl_fw_error_next_data(*data);
 	}
 
-	spin_unlock_bh(&rxq->lock);
+	spin_unlock_bh_dbg(&rxq->lock);
 
 	return rb_len;
 }
@@ -3429,7 +3429,7 @@ iwl_trans_pcie_dump_data(struct iwl_trans *trans, u32 dump_mask,
 
 		data->type = cpu_to_le32(IWL_FW_ERROR_DUMP_TXCMD);
 		txcmd = (void *)data->data;
-		spin_lock_bh(&cmdq->lock);
+		spin_lock_bh_dbg(&cmdq->lock);
 		ptr = cmdq->write_ptr;
 		for (i = 0; i < cmdq->n_window; i++) {
 			u8 idx = iwl_txq_get_cmd_index(cmdq, ptr);
@@ -3461,7 +3461,7 @@ iwl_trans_pcie_dump_data(struct iwl_trans *trans, u32 dump_mask,
 
 			ptr = iwl_txq_dec_wrap(trans, ptr);
 		}
-		spin_unlock_bh(&cmdq->lock);
+		spin_unlock_bh_dbg(&cmdq->lock);
 
 		data->len = cpu_to_le32(len);
 		len += sizeof(*data);
@@ -3616,10 +3616,10 @@ struct iwl_trans *iwl_trans_pcie_alloc(struct pci_dev *pdev,
 
 	trans_pcie->trans = trans;
 	trans_pcie->opmode_down = true;
-	spin_lock_init(&trans_pcie->irq_lock);
-	spin_lock_init(&trans_pcie->reg_lock);
-	spin_lock_init(&trans_pcie->alloc_page_lock);
-	mutex_init(&trans_pcie->mutex);
+	spin_lock_init_dbg(&trans_pcie->irq_lock);
+	spin_lock_init_dbg(&trans_pcie->reg_lock);
+	spin_lock_init_dbg(&trans_pcie->alloc_page_lock);
+	mutex_init_dbg(&trans_pcie->mutex);
 	init_waitqueue_head(&trans_pcie->ucode_write_waitq);
 	init_waitqueue_head(&trans_pcie->fw_reset_waitq);
 	init_waitqueue_head(&trans_pcie->imr_waitq);
@@ -3737,7 +3737,7 @@ struct iwl_trans *iwl_trans_pcie_alloc(struct pci_dev *pdev,
 
 #ifdef CONFIG_IWLWIFI_DEBUGFS
 	trans_pcie->fw_mon_data.state = IWL_FW_MON_DBGFS_STATE_CLOSED;
-	mutex_init(&trans_pcie->fw_mon_data.mutex);
+	mutex_init_dbg(&trans_pcie->fw_mon_data.mutex);
 #endif
 
 	iwl_dbg_tlv_init(trans);

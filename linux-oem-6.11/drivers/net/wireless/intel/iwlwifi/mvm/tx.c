@@ -1236,7 +1236,7 @@ static int iwl_mvm_tx_mpdu(struct iwl_mvm *mvm, struct sk_buff *skb,
 	 */
 	info->flags &= ~IEEE80211_TX_STATUS_EOSP;
 
-	spin_lock(&mvmsta->lock);
+	spin_lock_dbg(&mvmsta->lock);
 
 	/* nullfunc frames should go to the MGMT queue regardless of QOS,
 	 * the conditions of !ieee80211_is_qos_nullfunc(fc) and
@@ -1276,7 +1276,7 @@ static int iwl_mvm_tx_mpdu(struct iwl_mvm *mvm, struct sk_buff *skb,
 
 	if (WARN_ONCE(txq_id == IWL_MVM_INVALID_QUEUE, "Invalid TXQ id")) {
 		iwl_trans_free_tx_cmd(mvm->trans, dev_cmd);
-		spin_unlock(&mvmsta->lock);
+		spin_unlock_dbg(&mvmsta->lock);
 		return -1;
 	}
 
@@ -1324,7 +1324,7 @@ static int iwl_mvm_tx_mpdu(struct iwl_mvm *mvm, struct sk_buff *skb,
 	if (tid < IWL_MAX_TID_COUNT && !ieee80211_has_morefrags(fc))
 		mvmsta->tid_data[tid].seq_number = seq_number + 0x10;
 
-	spin_unlock(&mvmsta->lock);
+	spin_unlock_dbg(&mvmsta->lock);
 
 	if (iwl_mvm_tx_pkt_queued(mvm, mvmsta,
 				  tid == IWL_MAX_TID_COUNT ? 0 : tid))
@@ -1334,7 +1334,7 @@ static int iwl_mvm_tx_mpdu(struct iwl_mvm *mvm, struct sk_buff *skb,
 
 drop_unlock_sta:
 	iwl_trans_free_tx_cmd(mvm->trans, dev_cmd);
-	spin_unlock(&mvmsta->lock);
+	spin_unlock_dbg(&mvmsta->lock);
 drop:
 	IWL_DEBUG_TX(mvm, "TX to [%d|%d] dropped\n", mvmsta->deflink.sta_id,
 		     tid);
@@ -1894,7 +1894,7 @@ static void iwl_mvm_rx_tx_cmd_single(struct iwl_mvm *mvm,
 				&mvmsta->tid_data[tid];
 			bool send_eosp_ndp = false;
 
-			spin_lock_bh(&mvmsta->lock);
+			spin_lock_bh_dbg(&mvmsta->lock);
 
 			if (!is_ndp) {
 				tid_data->next_reclaimed = next_reclaimed;
@@ -1930,7 +1930,7 @@ static void iwl_mvm_rx_tx_cmd_single(struct iwl_mvm *mvm,
 				}
 			}
 
-			spin_unlock_bh(&mvmsta->lock);
+			spin_unlock_bh_dbg(&mvmsta->lock);
 			if (send_eosp_ndp) {
 				iwl_mvm_sta_modify_sleep_tx_count(mvm, sta,
 					IEEE80211_FRAME_RELEASE_UAPSD,
@@ -2131,7 +2131,7 @@ static void iwl_mvm_tx_reclaim(struct iwl_mvm *mvm, int sta_id, int tid,
 		return;
 	}
 
-	spin_lock_bh(&mvmsta->lock);
+	spin_lock_bh_dbg(&mvmsta->lock);
 
 	tid_data->next_reclaimed = index;
 
@@ -2166,7 +2166,7 @@ static void iwl_mvm_tx_reclaim(struct iwl_mvm *mvm, int sta_id, int tid,
 		}
 	}
 
-	spin_unlock_bh(&mvmsta->lock);
+	spin_unlock_bh_dbg(&mvmsta->lock);
 
 	/* We got a BA notif with 0 acked or scd_ssn didn't progress which is
 	 * possible (i.e. first MPDU in the aggregation wasn't acked)

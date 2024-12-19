@@ -21,6 +21,7 @@
 #include "iwl-op-mode.h"
 #include "mvm.h"
 #include "debugfs.h"
+#include <linux/drv_dbg.h>
 
 #define IWL_RATE_MAX_WINDOW		62	/* # tx in history window */
 
@@ -2695,7 +2696,7 @@ static void rs_drv_get_rate(void *mvm_r, struct ieee80211_sta *sta,
 
 	lq_sta = mvm_sta;
 
-	spin_lock_bh(&lq_sta->pers.lock);
+	spin_lock_bh_dbg(&lq_sta->pers.lock);
 	iwl_mvm_hwrate_to_tx_rate_v1(lq_sta->last_rate_n_flags,
 				     info->band, &info->control.rates[0]);
 	info->control.rates[0].count = 1;
@@ -2710,7 +2711,7 @@ static void rs_drv_get_rate(void *mvm_r, struct ieee80211_sta *sta,
 		iwl_mvm_hwrate_to_tx_rate_v1(last_ucode_rate, info->band,
 					     &txrc->reported_rate);
 	}
-	spin_unlock_bh(&lq_sta->pers.lock);
+	spin_unlock_bh_dbg(&lq_sta->pers.lock);
 }
 
 static void *rs_drv_alloc_sta(void *mvm_rate, struct ieee80211_sta *sta,
@@ -2852,16 +2853,16 @@ static void rs_vht_init(struct iwl_mvm *mvm,
 #ifdef CONFIG_IWLWIFI_DEBUGFS
 void iwl_mvm_reset_frame_stats(struct iwl_mvm *mvm)
 {
-	spin_lock_bh(&mvm->drv_stats_lock);
+	spin_lock_bh_dbg(&mvm->drv_stats_lock);
 	memset(&mvm->drv_rx_stats, 0, sizeof(mvm->drv_rx_stats));
-	spin_unlock_bh(&mvm->drv_stats_lock);
+	spin_unlock_bh_dbg(&mvm->drv_stats_lock);
 }
 
 void iwl_mvm_update_frame_stats(struct iwl_mvm *mvm, u32 rate, bool agg)
 {
 	u8 nss = 0;
 
-	spin_lock(&mvm->drv_stats_lock);
+	spin_lock_dbg(&mvm->drv_stats_lock);
 
 	if (agg)
 		mvm->drv_rx_stats.agg_frames++;
@@ -2910,7 +2911,7 @@ void iwl_mvm_update_frame_stats(struct iwl_mvm *mvm, u32 rate, bool agg)
 		(mvm->drv_rx_stats.last_frame_idx + 1) %
 			ARRAY_SIZE(mvm->drv_rx_stats.last_rates);
 
-	spin_unlock(&mvm->drv_stats_lock);
+	spin_unlock_dbg(&mvm->drv_stats_lock);
 }
 #endif
 
@@ -3263,15 +3264,22 @@ void iwl_mvm_rs_tx_status(struct iwl_mvm *mvm, struct ieee80211_sta *sta,
 			  int tid, struct ieee80211_tx_info *info, bool ndp)
 {
 	struct iwl_mvm_sta *mvmsta = iwl_mvm_sta_from_mac80211(sta);
+	int ret;
 
 	/* If it's locked we are in middle of init flow
 	 * just wait for next tx status to update the lq_sta data
 	 */
-	if (!spin_trylock_bh(&mvmsta->deflink.lq_sta.rs_drv.pers.lock))
-		return;
+	ret = spin_trylock_bh_dbg(&mvmsta->deflink.lq_sta.rs_drv.pers.lock);
 
+	if (!ret)
+		return;
+/*
+
+	if (!spin_trylock_bh_dbg(&mvmsta->deflink.lq_sta.rs_drv.pers.lock))
+		return;
+*/
 	__iwl_mvm_rs_tx_status(mvm, sta, tid, info, ndp);
-	spin_unlock_bh(&mvmsta->deflink.lq_sta.rs_drv.pers.lock);
+	spin_unlock_bh_dbg(&mvmsta->deflink.lq_sta.rs_drv.pers.lock);
 }
 
 #ifdef CONFIG_MAC80211_DEBUGFS
@@ -4120,9 +4128,9 @@ void iwl_mvm_rs_rate_init(struct iwl_mvm *mvm,
 	} else {
 		struct iwl_mvm_sta *mvmsta = iwl_mvm_sta_from_mac80211(sta);
 
-		spin_lock_bh(&mvmsta->deflink.lq_sta.rs_drv.pers.lock);
+		spin_lock_bh_dbg(&mvmsta->deflink.lq_sta.rs_drv.pers.lock);
 		rs_drv_rate_init(mvm, sta, band);
-		spin_unlock_bh(&mvmsta->deflink.lq_sta.rs_drv.pers.lock);
+		spin_unlock_bh_dbg(&mvmsta->deflink.lq_sta.rs_drv.pers.lock);
 	}
 }
 

@@ -360,7 +360,7 @@ static void iwlagn_rx_statistics(struct iwl_priv *priv,
 	IWL_DEBUG_RX(priv, "Statistics notification received (%d bytes).\n",
 		     len);
 
-	spin_lock(&priv->statistics.lock);
+	spin_lock_dbg(&priv->statistics.lock);
 
 	if (len == sizeof(struct iwl_bt_notif_statistics)) {
 		struct iwl_bt_notif_statistics *stats;
@@ -395,7 +395,7 @@ static void iwlagn_rx_statistics(struct iwl_priv *priv,
 		WARN_ONCE(1, "len %d doesn't match BT (%zu) or normal (%zu)\n",
 			  len, sizeof(struct iwl_bt_notif_statistics),
 			  sizeof(struct iwl_notif_statistics));
-		spin_unlock(&priv->statistics.lock);
+		spin_unlock_dbg(&priv->statistics.lock);
 		return;
 	}
 
@@ -440,7 +440,7 @@ static void iwlagn_rx_statistics(struct iwl_priv *priv,
 	if (priv->lib->temperature && change)
 		priv->lib->temperature(priv);
 
-	spin_unlock(&priv->statistics.lock);
+	spin_unlock_dbg(&priv->statistics.lock);
 }
 
 static void iwlagn_rx_reply_statistics(struct iwl_priv *priv,

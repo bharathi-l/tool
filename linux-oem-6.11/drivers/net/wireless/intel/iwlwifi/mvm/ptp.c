@@ -168,7 +168,7 @@ iwl_mvm_phc_get_crosstimestamp(struct ptp_clock_info *ptp,
 		return -ENODEV;
 	}
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	if (fw_has_capa(&mvm->fw->ucode_capa, IWL_UCODE_TLV_CAPA_SYNCED_TIME)) {
 		ret = iwl_mvm_get_crosstimestamp_fw(mvm, &gp2, &sys_time);
 
@@ -188,7 +188,7 @@ iwl_mvm_phc_get_crosstimestamp(struct ptp_clock_info *ptp,
 	xtstamp->sys_realtime = sys_time;
 
 out:
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 	return ret;
 }
 
@@ -198,10 +198,10 @@ static void iwl_mvm_ptp_work(struct work_struct *wk)
 					   ptp_data.dwork.work);
 	u32 gp2;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	gp2 = iwl_mvm_get_systime(mvm);
 	iwl_mvm_ptp_update_new_read(mvm, gp2);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 }
 
 static int iwl_mvm_ptp_gettime(struct ptp_clock_info *ptp,
@@ -212,10 +212,10 @@ static int iwl_mvm_ptp_gettime(struct ptp_clock_info *ptp,
 	u64 gp2;
 	u64 ns;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	gp2 = iwl_mvm_get_systime(mvm);
 	ns = iwl_mvm_ptp_get_adj_time(mvm, gp2 * NSEC_PER_USEC);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	*ts = ns_to_timespec64(ns);
 	return 0;
@@ -228,11 +228,11 @@ static int iwl_mvm_ptp_adjtime(struct ptp_clock_info *ptp, s64 delta)
 	struct ptp_data *data = container_of(ptp, struct ptp_data,
 					     ptp_clock_info);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	data->delta += delta;
 	IWL_DEBUG_INFO(mvm, "delta=%lld, new delta=%lld\n", (long long)delta,
 		       (long long)data->delta);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 	return 0;
 }
 
@@ -243,7 +243,7 @@ static int iwl_mvm_ptp_adjfine(struct ptp_clock_info *ptp, long scaled_ppm)
 	struct ptp_data *data = &mvm->ptp_data;
 	u32 gp2;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	/* Must call _iwl_mvm_ptp_get_adj_time() before updating
 	 * data->scale_update_gp2 or data->scaled_freq since
@@ -260,7 +260,7 @@ static int iwl_mvm_ptp_adjfine(struct ptp_clock_info *ptp, long scaled_ppm)
 	IWL_DEBUG_INFO(mvm, "adjfine: scaled_ppm=%ld new=%llu\n",
 		       scaled_ppm, (unsigned long long)data->scaled_freq);
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 	return 0;
 }
 

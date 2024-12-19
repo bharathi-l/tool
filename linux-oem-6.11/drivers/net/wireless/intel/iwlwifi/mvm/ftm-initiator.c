@@ -10,6 +10,7 @@
 #include "iwl-io.h"
 #include "iwl-prph.h"
 #include "constants.h"
+#include <linux/drv_dbg.h>
 
 struct iwl_mvm_loc_entry {
 	struct list_head list;
@@ -123,7 +124,7 @@ int iwl_mvm_ftm_add_pasn_sta(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 	if (tk && tk_len)
 		memcpy(pasn->tk, tk, sizeof(pasn->tk));
 
-	list_add_tail(&pasn->list, &mvm->ftm_initiator.pasn_list);
+	list_add_tail_dbg(&pasn->list, &mvm->ftm_initiator.pasn_list);
 	return 0;
 out:
 	kfree(pasn);
@@ -141,7 +142,7 @@ void iwl_mvm_ftm_remove_pasn_sta(struct iwl_mvm *mvm, u8 *addr)
 		if (memcmp(entry->addr, addr, sizeof(entry->addr)))
 			continue;
 
-		list_del(&entry->list);
+		list_del_dbg(&entry->list);
 		kfree(entry);
 		return;
 	}
@@ -157,7 +158,7 @@ static void iwl_mvm_ftm_reset(struct iwl_mvm *mvm)
 	       sizeof(mvm->ftm_initiator.responses));
 
 	list_for_each_entry_safe(e, t, &mvm->ftm_initiator.loc_list, list) {
-		list_del(&e->list);
+		list_del_dbg(&e->list);
 		kfree(e);
 	}
 }
@@ -211,7 +212,7 @@ void iwl_mvm_ftm_initiator_smooth_stop(struct iwl_mvm *mvm)
 
 	list_for_each_entry_safe(se, st, &mvm->ftm_initiator.smooth.resp,
 				 list) {
-		list_del(&se->list);
+		list_del_dbg(&se->list);
 		kfree(se);
 	}
 }
@@ -1223,7 +1224,7 @@ static void iwl_mvm_ftm_rtt_smoothing(struct iwl_mvm *mvm,
 			return;
 
 		memcpy(resp->addr, res->addr, ETH_ALEN);
-		list_add_tail(&resp->list, &mvm->ftm_initiator.smooth.resp);
+		list_add_tail_dbg(&resp->list, &mvm->ftm_initiator.smooth.resp);
 
 		resp->rtt_avg = rtt;
 
@@ -1544,5 +1545,5 @@ void iwl_mvm_ftm_lc_notif(struct iwl_mvm *mvm, struct iwl_rx_cmd_buffer *rxb)
 	if (civic_len)
 		memcpy(entry->buf + lci_len, civic, civic_len);
 
-	list_add_tail(&entry->list, &mvm->ftm_initiator.loc_list);
+	list_add_tail_dbg(&entry->list, &mvm->ftm_initiator.loc_list);
 }

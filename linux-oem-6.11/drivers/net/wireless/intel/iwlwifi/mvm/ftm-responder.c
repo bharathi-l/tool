@@ -7,6 +7,7 @@
 #include <linux/etherdevice.h>
 #include "mvm.h"
 #include "constants.h"
+#include <linux/drv_dbg.h>
 
 struct iwl_mvm_pasn_sta {
 	struct list_head list;
@@ -309,7 +310,7 @@ static void iwl_mvm_resp_del_pasn_sta(struct iwl_mvm *mvm,
 				      struct ieee80211_vif *vif,
 				      struct iwl_mvm_pasn_sta *sta)
 {
-	list_del(&sta->list);
+	list_del_dbg(&sta->list);
 
 	if (sta->keyconf.keylen)
 		iwl_mvm_sec_key_del_pasn(mvm, vif, BIT(sta->int_sta.sta_id),
@@ -382,7 +383,7 @@ int iwl_mvm_ftm_respoder_add_pasn_sta(struct iwl_mvm *mvm,
 		}
 
 		memcpy(sta->addr, addr, ETH_ALEN);
-		list_add_tail(&sta->list, &mvm->resp_pasn_list);
+		list_add_tail_dbg(&sta->list, &mvm->resp_pasn_list);
 	}
 
 	ret = iwl_mvm_ftm_responder_dyn_cfg_v3(mvm, vif, NULL, hltk_data_ptr);

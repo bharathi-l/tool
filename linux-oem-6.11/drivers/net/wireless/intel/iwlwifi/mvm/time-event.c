@@ -31,7 +31,7 @@ void iwl_mvm_te_clear_data(struct iwl_mvm *mvm,
 	if (!te_data || !te_data->vif)
 		return;
 
-	list_del(&te_data->list);
+	list_del_dbg(&te_data->list);
 
 	/*
 	 * the list is only used for AUX ROC events so make sure it is always
@@ -117,7 +117,7 @@ static void iwl_mvm_cleanup_roc(struct iwl_mvm *mvm)
 
 		if (mvm->mld_api_is_used) {
 			iwl_mvm_mld_rm_aux_sta(mvm);
-			mutex_unlock(&mvm->mutex);
+			mutex_unlock_dbg(&mvm->mutex);
 			return;
 		}
 
@@ -130,14 +130,14 @@ static void iwl_mvm_cleanup_roc(struct iwl_mvm *mvm)
 
 	if (!IS_ERR_OR_NULL(bss_vif))
 		iwl_mvm_unblock_esr(mvm, bss_vif, IWL_MVM_ESR_BLOCKED_ROC);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 }
 
 void iwl_mvm_roc_done_wk(struct work_struct *wk)
 {
 	struct iwl_mvm *mvm = container_of(wk, struct iwl_mvm, roc_done_wk);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	/* Mutex is released inside */
 	iwl_mvm_cleanup_roc(mvm);
 }
@@ -481,7 +481,7 @@ static int iwl_mvm_aux_roc_te_handle_notif(struct iwl_mvm *mvm,
 		/* End TE, notify mac80211 */
 		ieee80211_remain_on_channel_expired(mvm->hw);
 		iwl_mvm_roc_finished(mvm); /* flush aux queue */
-		list_del(&te_data->list); /* remove from list */
+		list_del_dbg(&te_data->list); /* remove from list */
 		te_data->running = false;
 		te_data->vif = NULL;
 		te_data->uid = 0;
@@ -514,7 +514,7 @@ void iwl_mvm_rx_time_event_notif(struct iwl_mvm *mvm,
 		     le32_to_cpu(notif->unique_id),
 		     le32_to_cpu(notif->action));
 
-	spin_lock_bh(&mvm->time_event_lock);
+	spin_lock_bh_dbg(&mvm->time_event_lock);
 	/* This time event is triggered for Aux ROC request */
 	if (!iwl_mvm_aux_roc_te_handle_notif(mvm, notif))
 		goto unlock;
@@ -524,7 +524,7 @@ void iwl_mvm_rx_time_event_notif(struct iwl_mvm *mvm,
 			iwl_mvm_te_handle_notif(mvm, te_data, notif);
 	}
 unlock:
-	spin_unlock_bh(&mvm->time_event_lock);
+	spin_unlock_bh_dbg(&mvm->time_event_lock);
 }
 
 static bool iwl_mvm_te_notif(struct iwl_notif_wait_data *notif_wait,
@@ -602,16 +602,16 @@ static int iwl_mvm_time_event_send_add(struct iwl_mvm *mvm,
 	IWL_DEBUG_TE(mvm, "Add new TE, duration %d TU\n",
 		     le32_to_cpu(te_cmd->duration));
 
-	spin_lock_bh(&mvm->time_event_lock);
+	spin_lock_bh_dbg(&mvm->time_event_lock);
 	if (WARN_ON(te_data->id != TE_MAX)) {
-		spin_unlock_bh(&mvm->time_event_lock);
+		spin_unlock_bh_dbg(&mvm->time_event_lock);
 		return -EIO;
 	}
 	te_data->vif = vif;
 	te_data->duration = le32_to_cpu(te_cmd->duration);
 	te_data->id = le32_to_cpu(te_cmd->id);
-	list_add_tail(&te_data->list, &mvm->time_event_list);
-	spin_unlock_bh(&mvm->time_event_lock);
+	list_add_tail_dbg(&te_data->list, &mvm->time_event_list);
+	spin_unlock_bh_dbg(&mvm->time_event_lock);
 
 	/*
 	 * Use a notification wait, which really just processes the
@@ -644,9 +644,9 @@ static int iwl_mvm_time_event_send_add(struct iwl_mvm *mvm,
 
 	if (ret) {
  out_clear_te:
-		spin_lock_bh(&mvm->time_event_lock);
+		spin_lock_bh_dbg(&mvm->time_event_lock);
 		iwl_mvm_te_clear_data(mvm, te_data);
-		spin_unlock_bh(&mvm->time_event_lock);
+		spin_unlock_bh_dbg(&mvm->time_event_lock);
 	}
 	return ret;
 }
@@ -814,7 +814,7 @@ static bool __iwl_mvm_remove_time_event(struct iwl_mvm *mvm,
 	 * It is possible that by the time we got to this point the time
 	 * event was already removed.
 	 */
-	spin_lock_bh(&mvm->time_event_lock);
+	spin_lock_bh_dbg(&mvm->time_event_lock);
 
 	/* Save time event uid before clearing its data */
 	*uid = te_data->uid;
@@ -825,7 +825,7 @@ static bool __iwl_mvm_remove_time_event(struct iwl_mvm *mvm,
 	 * The clear_data function handles time events that were already removed
 	 */
 	iwl_mvm_te_clear_data(mvm, te_data);
-	spin_unlock_bh(&mvm->time_event_lock);
+	spin_unlock_bh_dbg(&mvm->time_event_lock);
 
 	if ((p2p_aux && iftype == NL80211_IFTYPE_P2P_DEVICE) ||
 	    (roc_ver >= 3 && mvmvif->roc_activity == ROC_ACTIVITY_HOTSPOT)) {
@@ -940,9 +940,9 @@ void iwl_mvm_stop_session_protection(struct iwl_mvm *mvm,
 
 	lockdep_assert_held(&mvm->mutex);
 
-	spin_lock_bh(&mvm->time_event_lock);
+	spin_lock_bh_dbg(&mvm->time_event_lock);
 	id = te_data->id;
-	spin_unlock_bh(&mvm->time_event_lock);
+	spin_unlock_bh_dbg(&mvm->time_event_lock);
 
 	if (fw_has_capa(&mvm->fw->ucode_capa,
 			IWL_UCODE_TLV_CAPA_SESSION_PROT_CMD)) {
@@ -1009,17 +1009,17 @@ void iwl_mvm_rx_session_protect_notif(struct iwl_mvm *mvm,
 		if (!le32_to_cpu(notif->status)) {
 			iwl_mvm_te_check_disconnect(mvm, vif,
 						    "Session protection failure");
-			spin_lock_bh(&mvm->time_event_lock);
+			spin_lock_bh_dbg(&mvm->time_event_lock);
 			iwl_mvm_te_clear_data(mvm, te_data);
-			spin_unlock_bh(&mvm->time_event_lock);
+			spin_unlock_bh_dbg(&mvm->time_event_lock);
 		}
 
 		if (le32_to_cpu(notif->start)) {
-			spin_lock_bh(&mvm->time_event_lock);
+			spin_lock_bh_dbg(&mvm->time_event_lock);
 			te_data->running = le32_to_cpu(notif->start);
 			te_data->end_jiffies =
 				TU_TO_EXP_TIME(te_data->duration);
-			spin_unlock_bh(&mvm->time_event_lock);
+			spin_unlock_bh_dbg(&mvm->time_event_lock);
 		} else {
 			/*
 			 * By now, we should have finished association
@@ -1029,9 +1029,9 @@ void iwl_mvm_rx_session_protect_notif(struct iwl_mvm *mvm,
 						    !vif->cfg.assoc ?
 						    "Not associated and the session protection is over already..." :
 						    "No beacon heard and the session protection is over already...");
-			spin_lock_bh(&mvm->time_event_lock);
+			spin_lock_bh_dbg(&mvm->time_event_lock);
 			iwl_mvm_te_clear_data(mvm, te_data);
-			spin_unlock_bh(&mvm->time_event_lock);
+			spin_unlock_bh_dbg(&mvm->time_event_lock);
 		}
 
 		goto out_unlock;
@@ -1259,7 +1259,7 @@ static struct iwl_mvm_time_event_data *iwl_mvm_get_roc_te(struct iwl_mvm *mvm)
 
 	lockdep_assert_held(&mvm->mutex);
 
-	spin_lock_bh(&mvm->time_event_lock);
+	spin_lock_bh_dbg(&mvm->time_event_lock);
 
 	/*
 	 * Iterate over the list of time events and find the time event that is
@@ -1280,7 +1280,7 @@ static struct iwl_mvm_time_event_data *iwl_mvm_get_roc_te(struct iwl_mvm *mvm)
 					   struct iwl_mvm_time_event_data,
 					   list);
 out:
-	spin_unlock_bh(&mvm->time_event_lock);
+	spin_unlock_bh_dbg(&mvm->time_event_lock);
 	return te_data;
 }
 
@@ -1303,7 +1303,7 @@ void iwl_mvm_stop_roc(struct iwl_mvm *mvm, struct ieee80211_vif *vif)
 					   WIDE_ID(MAC_CONF_GROUP, ROC_CMD), 0);
 	int iftype = vif->type;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	if (p2p_aux || (roc_ver >= 3 && iftype != NL80211_IFTYPE_P2P_DEVICE)) {
 		if (mvmvif->roc_activity < ROC_NUM_ACTIVITIES) {
@@ -1319,7 +1319,7 @@ void iwl_mvm_stop_roc(struct iwl_mvm *mvm, struct ieee80211_vif *vif)
 			if (te_data->id >= SESSION_PROTECT_CONF_MAX_ID) {
 				IWL_DEBUG_TE(mvm,
 					     "No remain on channel event\n");
-				mutex_unlock(&mvm->mutex);
+				mutex_unlock_dbg(&mvm->mutex);
 				return;
 			}
 			iwl_mvm_cancel_session_protection(mvm, vif,
@@ -1335,7 +1335,7 @@ void iwl_mvm_stop_roc(struct iwl_mvm *mvm, struct ieee80211_vif *vif)
 	te_data = iwl_mvm_get_roc_te(mvm);
 	if (!te_data) {
 		IWL_WARN(mvm, "No remain on channel event\n");
-		mutex_unlock(&mvm->mutex);
+		mutex_unlock_dbg(&mvm->mutex);
 		return;
 	}
 
@@ -1370,9 +1370,9 @@ void iwl_mvm_remove_csa_period(struct iwl_mvm *mvm,
 
 	lockdep_assert_held(&mvm->mutex);
 
-	spin_lock_bh(&mvm->time_event_lock);
+	spin_lock_bh_dbg(&mvm->time_event_lock);
 	id = te_data->id;
-	spin_unlock_bh(&mvm->time_event_lock);
+	spin_unlock_bh_dbg(&mvm->time_event_lock);
 
 	if (id != TE_CHANNEL_SWITCH_PERIOD)
 		return;
@@ -1393,9 +1393,9 @@ int iwl_mvm_schedule_csa_period(struct iwl_mvm *mvm,
 	if (te_data->running) {
 		u32 id;
 
-		spin_lock_bh(&mvm->time_event_lock);
+		spin_lock_bh_dbg(&mvm->time_event_lock);
 		id = te_data->id;
-		spin_unlock_bh(&mvm->time_event_lock);
+		spin_unlock_bh_dbg(&mvm->time_event_lock);
 
 		if (id == TE_CHANNEL_SWITCH_PERIOD) {
 			IWL_DEBUG_TE(mvm, "CS period is already scheduled\n");
@@ -1476,12 +1476,12 @@ void iwl_mvm_schedule_session_protection(struct iwl_mvm *mvm,
 
 	lockdep_assert_held(&mvm->mutex);
 
-	spin_lock_bh(&mvm->time_event_lock);
+	spin_lock_bh_dbg(&mvm->time_event_lock);
 	if (te_data->running && te_data->link_id == link_id &&
 	    time_after(te_data->end_jiffies, TU_TO_EXP_TIME(min_duration))) {
 		IWL_DEBUG_TE(mvm, "We have enough time in the current TE: %u\n",
 			     jiffies_to_msecs(te_data->end_jiffies - jiffies));
-		spin_unlock_bh(&mvm->time_event_lock);
+		spin_unlock_bh_dbg(&mvm->time_event_lock);
 
 		return;
 	}
@@ -1495,7 +1495,7 @@ void iwl_mvm_schedule_session_protection(struct iwl_mvm *mvm,
 	te_data->duration = le32_to_cpu(cmd.duration_tu);
 	te_data->vif = vif;
 	te_data->link_id = link_id;
-	spin_unlock_bh(&mvm->time_event_lock);
+	spin_unlock_bh_dbg(&mvm->time_event_lock);
 
 	IWL_DEBUG_TE(mvm, "Add new session protection, duration %d TU\n",
 		     le32_to_cpu(cmd.duration_tu));
@@ -1531,7 +1531,7 @@ void iwl_mvm_schedule_session_protection(struct iwl_mvm *mvm,
 send_cmd_err:
 	IWL_ERR(mvm,
 		"Couldn't send the SESSION_PROTECTION_CMD\n");
-	spin_lock_bh(&mvm->time_event_lock);
+	spin_lock_bh_dbg(&mvm->time_event_lock);
 	iwl_mvm_te_clear_data(mvm, te_data);
-	spin_unlock_bh(&mvm->time_event_lock);
+	spin_unlock_bh_dbg(&mvm->time_event_lock);
 }

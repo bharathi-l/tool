@@ -691,7 +691,7 @@ int iwl_mvm_mld_add_sta(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 		if (ret)
 			return ret;
 
-		spin_lock_init(&mvm_sta->lock);
+		spin_lock_init_dbg(&mvm_sta->lock);
 
 		ret = iwl_mvm_sta_init(mvm, vif, sta, IWL_MVM_INVALID_STA,
 				       STATION_TYPE_PEER);
@@ -906,16 +906,16 @@ void iwl_mvm_mld_sta_modify_disable_tx_ap(struct iwl_mvm *mvm,
 {
 	struct iwl_mvm_sta *mvm_sta = iwl_mvm_sta_from_mac80211(sta);
 
-	spin_lock_bh(&mvm_sta->lock);
+	spin_lock_bh_dbg(&mvm_sta->lock);
 
 	if (mvm_sta->disable_tx == disable) {
-		spin_unlock_bh(&mvm_sta->lock);
+		spin_unlock_bh_dbg(&mvm_sta->lock);
 		return;
 	}
 
 	iwl_mvm_mld_sta_modify_disable_tx(mvm, mvm_sta, disable);
 
-	spin_unlock_bh(&mvm_sta->lock);
+	spin_unlock_bh_dbg(&mvm_sta->lock);
 }
 
 void iwl_mvm_mld_modify_all_sta_disable_tx(struct iwl_mvm *mvm,

@@ -367,7 +367,7 @@ int iwlagn_tx_skb(struct iwl_priv *priv,
 	info->driver_data[1] = dev_cmd;
 	/* From now on, we cannot access info->control */
 
-	spin_lock(&priv->sta_lock);
+	spin_lock_dbg(&priv->sta_lock);
 
 	if (ieee80211_is_data_qos(fc) && !ieee80211_is_qos_nullfunc(fc)) {
 		u8 *qc = NULL;
@@ -437,7 +437,7 @@ int iwlagn_tx_skb(struct iwl_priv *priv,
 	if (is_data_qos && !ieee80211_has_morefrags(fc))
 		priv->tid_data[sta_id][tid].seq_number = seq_number;
 
-	spin_unlock(&priv->sta_lock);
+	spin_unlock_dbg(&priv->sta_lock);
 
 	/*
 	 * Avoid atomic ops if it isn't an associated client.
@@ -454,7 +454,7 @@ int iwlagn_tx_skb(struct iwl_priv *priv,
 drop_unlock_sta:
 	if (dev_cmd)
 		iwl_trans_free_tx_cmd(priv->trans, dev_cmd);
-	spin_unlock(&priv->sta_lock);
+	spin_unlock_dbg(&priv->sta_lock);
 drop_unlock_priv:
 	return -1;
 }
@@ -494,7 +494,7 @@ int iwlagn_tx_agg_stop(struct iwl_priv *priv, struct ieee80211_vif *vif,
 		return -ENXIO;
 	}
 
-	spin_lock_bh(&priv->sta_lock);
+	spin_lock_bh_dbg(&priv->sta_lock);
 
 	tid_data = &priv->tid_data[sta_id][tid];
 	txq_id = tid_data->agg.txq_id;
@@ -522,7 +522,7 @@ int iwlagn_tx_agg_stop(struct iwl_priv *priv, struct ieee80211_vif *vif,
 		IWL_WARN(priv,
 			 "Stopping AGG while state not ON or starting for %d on %d (%d)\n",
 			 sta_id, tid, tid_data->agg.state);
-		spin_unlock_bh(&priv->sta_lock);
+		spin_unlock_bh_dbg(&priv->sta_lock);
 		return 0;
 	}
 
@@ -539,7 +539,7 @@ int iwlagn_tx_agg_stop(struct iwl_priv *priv, struct ieee80211_vif *vif,
 				    tid_data->agg.ssn,
 				    tid_data->next_reclaimed);
 		tid_data->agg.state = IWL_EMPTYING_HW_QUEUE_DELBA;
-		spin_unlock_bh(&priv->sta_lock);
+		spin_unlock_bh_dbg(&priv->sta_lock);
 		return 0;
 	}
 
@@ -549,7 +549,7 @@ turn_off:
 	agg_state = tid_data->agg.state;
 	tid_data->agg.state = IWL_AGG_OFF;
 
-	spin_unlock_bh(&priv->sta_lock);
+	spin_unlock_bh_dbg(&priv->sta_lock);
 
 	if (test_bit(txq_id, priv->agg_q_alloc)) {
 		/*
@@ -606,7 +606,7 @@ int iwlagn_tx_agg_start(struct iwl_priv *priv, struct ieee80211_vif *vif,
 	if (ret)
 		return ret;
 
-	spin_lock_bh(&priv->sta_lock);
+	spin_lock_bh_dbg(&priv->sta_lock);
 	tid_data = &priv->tid_data[sta_id][tid];
 	tid_data->agg.ssn = IEEE80211_SEQ_TO_SN(tid_data->seq_number);
 	tid_data->agg.txq_id = txq_id;
@@ -625,7 +625,7 @@ int iwlagn_tx_agg_start(struct iwl_priv *priv, struct ieee80211_vif *vif,
 				    tid_data->next_reclaimed);
 		tid_data->agg.state = IWL_EMPTYING_HW_QUEUE_ADDBA;
 	}
-	spin_unlock_bh(&priv->sta_lock);
+	spin_unlock_bh_dbg(&priv->sta_lock);
 
 	return ret;
 }
@@ -642,7 +642,7 @@ int iwlagn_tx_agg_flush(struct iwl_priv *priv, struct ieee80211_vif *vif,
 	 * First set the agg state to OFF to avoid calling
 	 * ieee80211_stop_tx_ba_cb in iwlagn_check_ratid_empty.
 	 */
-	spin_lock_bh(&priv->sta_lock);
+	spin_lock_bh_dbg(&priv->sta_lock);
 
 	tid_data = &priv->tid_data[sta_id][tid];
 	txq_id = tid_data->agg.txq_id;
@@ -652,7 +652,7 @@ int iwlagn_tx_agg_flush(struct iwl_priv *priv, struct ieee80211_vif *vif,
 
 	tid_data->agg.state = IWL_AGG_OFF;
 
-	spin_unlock_bh(&priv->sta_lock);
+	spin_unlock_bh_dbg(&priv->sta_lock);
 
 	if (iwlagn_txfifo_flush(priv, BIT(txq_id)))
 		IWL_ERR(priv, "Couldn't flush the AGG queue\n");
@@ -685,11 +685,11 @@ int iwlagn_tx_agg_oper(struct iwl_priv *priv, struct ieee80211_vif *vif,
 
 	buf_size = min_t(int, buf_size, LINK_QUAL_AGG_FRAME_LIMIT_DEF);
 
-	spin_lock_bh(&priv->sta_lock);
+	spin_lock_bh_dbg(&priv->sta_lock);
 	ssn = priv->tid_data[sta_priv->sta_id][tid].agg.ssn;
 	q = priv->tid_data[sta_priv->sta_id][tid].agg.txq_id;
 	priv->tid_data[sta_priv->sta_id][tid].agg.state = IWL_AGG_ON;
-	spin_unlock_bh(&priv->sta_lock);
+	spin_unlock_bh_dbg(&priv->sta_lock);
 
 	fifo = ctx->ac_to_fifo[tid_to_ac[tid]];
 
@@ -1131,7 +1131,7 @@ void iwlagn_rx_reply_tx(struct iwl_priv *priv, struct iwl_rx_cmd_buffer *rxb)
 	sta_id = (tx_resp->ra_tid & IWLAGN_TX_RES_RA_MSK) >>
 		IWLAGN_TX_RES_RA_POS;
 
-	spin_lock_bh(&priv->sta_lock);
+	spin_lock_bh_dbg(&priv->sta_lock);
 
 	if (is_agg) {
 		WARN_ON_ONCE(sta_id >= IWLAGN_STATION_COUNT ||
@@ -1245,7 +1245,7 @@ void iwlagn_rx_reply_tx(struct iwl_priv *priv, struct iwl_rx_cmd_buffer *rxb)
 	}
 
 	iwl_check_abort_status(priv, tx_resp->frame_count, status);
-	spin_unlock_bh(&priv->sta_lock);
+	spin_unlock_bh_dbg(&priv->sta_lock);
 
 	while (!skb_queue_empty(&skbs)) {
 		skb = __skb_dequeue(&skbs);
@@ -1288,12 +1288,12 @@ void iwlagn_rx_reply_compressed_ba(struct iwl_priv *priv,
 	tid = ba_resp->tid;
 	agg = &priv->tid_data[sta_id][tid].agg;
 
-	spin_lock_bh(&priv->sta_lock);
+	spin_lock_bh_dbg(&priv->sta_lock);
 
 	if (unlikely(!agg->wait_for_ba)) {
 		if (unlikely(ba_resp->bitmap))
 			IWL_ERR(priv, "Received BA when not expected\n");
-		spin_unlock_bh(&priv->sta_lock);
+		spin_unlock_bh_dbg(&priv->sta_lock);
 		return;
 	}
 
@@ -1307,7 +1307,7 @@ void iwlagn_rx_reply_compressed_ba(struct iwl_priv *priv,
 		IWL_DEBUG_TX_QUEUES(priv,
 				    "Bad queue mapping txq_id=%d, agg_txq[sta:%d,tid:%d]=%d\n",
 				    scd_flow, sta_id, tid, agg->txq_id);
-		spin_unlock_bh(&priv->sta_lock);
+		spin_unlock_bh_dbg(&priv->sta_lock);
 		return;
 	}
 
@@ -1382,7 +1382,7 @@ void iwlagn_rx_reply_compressed_ba(struct iwl_priv *priv,
 		}
 	}
 
-	spin_unlock_bh(&priv->sta_lock);
+	spin_unlock_bh_dbg(&priv->sta_lock);
 
 	while (!skb_queue_empty(&reclaimed_skbs)) {
 		skb = __skb_dequeue(&reclaimed_skbs);

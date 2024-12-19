@@ -389,14 +389,14 @@ static void iwl_mei_csa_throttle_end_wk(struct work_struct *wk)
 	struct iwl_mei *mei =
 		container_of(wk, struct iwl_mei, csa_throttle_end_wk.work);
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	mei->csa_throttled = false;
 
 	if (iwl_mei_host_to_me_data_pending(mei))
 		iwl_mei_send_check_shared_area(mei->cldev);
 
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 }
 
 static int iwl_mei_send_sap_msg_payload(struct mei_cl_device *cldev,
@@ -465,10 +465,10 @@ void iwl_mei_add_data_to_ring(struct sk_buff *skb, bool cb_tx)
 	 * Take the lock already here to make sure we see that remove()
 	 * might have cleared the IWL_MEI_STATUS_SAP_CONNECTED bit.
 	 */
-	spin_lock_bh(&mei->data_q_lock);
+	spin_lock_bh_dbg(&mei->data_q_lock);
 
 	if (!iwl_mei_is_connected()) {
-		spin_unlock_bh(&mei->data_q_lock);
+		spin_unlock_bh_dbg(&mei->data_q_lock);
 		return;
 	}
 
@@ -538,7 +538,7 @@ void iwl_mei_add_data_to_ring(struct sk_buff *skb, bool cb_tx)
 	WRITE_ONCE(notif_q->wr_ptr, cpu_to_le32((wr + tx_sz) % q_sz));
 
 out:
-	spin_unlock_bh(&mei->data_q_lock);
+	spin_unlock_bh_dbg(&mei->data_q_lock);
 }
 
 static int
@@ -559,11 +559,11 @@ static void iwl_mei_send_csa_msg_wk(struct work_struct *wk)
 	if (!iwl_mei_is_connected())
 		return;
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	iwl_mei_send_check_shared_area(mei->cldev);
 
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 }
 
 /* Called in a RCU read critical section from netif_receive_skb */
@@ -619,7 +619,7 @@ static void iwl_mei_netdev_work(struct work_struct *wk)
 	 * with iwl_mei_set_netdev()
 	 */
 	rtnl_lock();
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	netdev = rcu_dereference_protected(iwl_mei_cache.netdev,
 					   lockdep_is_held(&iwl_mei_mutex));
@@ -631,7 +631,7 @@ static void iwl_mei_netdev_work(struct work_struct *wk)
 			netdev_rx_handler_unregister(netdev);
 	}
 
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 	rtnl_unlock();
 }
 
@@ -656,13 +656,13 @@ iwl_mei_handle_rx_start_ok(struct mei_cl_device *cldev,
 		return;
 	}
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 	set_bit(IWL_MEI_STATUS_SAP_CONNECTED, &iwl_mei_status);
 	/*
 	 * We'll receive AMT_STATE SAP message in a bit and
 	 * that will continue the flow
 	 */
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 }
 
 static void iwl_mei_handle_csme_filters(struct mei_cl_device *cldev,
@@ -792,7 +792,7 @@ static void iwl_mei_handle_amt_state(struct mei_cl_device *cldev,
 {
 	struct iwl_mei *mei = mei_cldev_get_drvdata(cldev);
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	if (mei->amt_enabled == !!le32_to_cpu(dw->val))
 		goto out;
@@ -807,7 +807,7 @@ static void iwl_mei_handle_amt_state(struct mei_cl_device *cldev,
 	schedule_work_dbg(&mei->netdev_work);
 
 out:
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 }
 
 static void iwl_mei_handle_nic_owner(struct mei_cl_device *cldev,
@@ -937,9 +937,9 @@ static void iwl_mei_handle_sap_msg(struct mei_cl_device *cldev,
 				(unsigned int)_sz);			\
 			break;						\
 		}							\
-		mutex_lock(&iwl_mei_mutex);				\
+		mutex_lock_dbg(&iwl_mei_mutex);				\
 		_handler(cldev, (const void *)hdr);			\
-		mutex_unlock(&iwl_mei_mutex);				\
+		mutex_unlock_dbg(&iwl_mei_mutex);				\
 		break
 
 #define SAP_MSG_HANDLER_NO_LOCK(_cmd, _handler, _sz)			\
@@ -1196,7 +1196,7 @@ static void iwl_mei_handle_check_shared_area(struct mei_cl_device *cldev)
 	 */
 	iwl_mei_handle_sap_rx(cldev, notif_q, q_head, NULL, q_sz);
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 	dir = &mei->shared_mem.ctrl->dir[SAP_DIRECTION_ME_TO_HOST];
 	notif_q = &dir->q_ctrl_blk[SAP_QUEUE_IDX_DATA];
 	q_head = mei->shared_mem.q_head[SAP_DIRECTION_ME_TO_HOST][SAP_QUEUE_IDX_DATA];
@@ -1207,7 +1207,7 @@ static void iwl_mei_handle_check_shared_area(struct mei_cl_device *cldev)
 	iwl_mei_handle_sap_rx(cldev, notif_q, q_head, &tx_skbs, q_sz);
 
 	if (skb_queue_empty(&tx_skbs)) {
-		mutex_unlock(&iwl_mei_mutex);
+		mutex_unlock_dbg(&iwl_mei_mutex);
 		return;
 	}
 
@@ -1220,7 +1220,7 @@ static void iwl_mei_handle_check_shared_area(struct mei_cl_device *cldev)
 	 */
 	rcu_read_lock();
 
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 
 	if (!rcu_access_pointer(iwl_mei_cache.netdev)) {
 		dev_err(&cldev->dev, "Can't Tx without a netdev\n");
@@ -1328,7 +1328,7 @@ struct iwl_mei_nvm *iwl_mei_get_nvm(void)
 	struct iwl_mei *mei;
 	int ret;
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	if (!iwl_mei_is_connected())
 		goto out;
@@ -1343,13 +1343,13 @@ struct iwl_mei_nvm *iwl_mei_get_nvm(void)
 	if (ret)
 		goto out;
 
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 
 	ret = wait_event_timeout(mei->get_nvm_wq, mei->nvm, 2 * HZ);
 	if (!ret)
 		return NULL;
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	if (!iwl_mei_is_connected())
 		goto out;
@@ -1363,7 +1363,7 @@ struct iwl_mei_nvm *iwl_mei_get_nvm(void)
 		nvm = kmemdup(mei->nvm, sizeof(*mei->nvm), GFP_KERNEL);
 
 out:
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 	return nvm;
 }
 EXPORT_SYMBOL_GPL(iwl_mei_get_nvm);
@@ -1380,7 +1380,7 @@ int iwl_mei_pldr_req(void)
 	};
 	int i;
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	/* In case we didn't have a bind */
 	if (!iwl_mei_is_connected()) {
@@ -1402,7 +1402,7 @@ int iwl_mei_pldr_req(void)
 
 	for (i = 0; i < IWL_MEI_PLDR_NUM_RETRIES; i++) {
 		ret = iwl_mei_send_sap_msg_payload(mei->cldev, &msg.hdr);
-		mutex_unlock(&iwl_mei_mutex);
+		mutex_unlock_dbg(&iwl_mei_mutex);
 		if (ret)
 			return ret;
 
@@ -1411,7 +1411,7 @@ int iwl_mei_pldr_req(void)
 			break;
 
 		/* Take the mutex for the next iteration */
-		mutex_lock(&iwl_mei_mutex);
+		mutex_lock_dbg(&iwl_mei_mutex);
 	}
 
 	if (ret)
@@ -1419,7 +1419,7 @@ int iwl_mei_pldr_req(void)
 
 	ret = -ETIMEDOUT;
 out:
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(iwl_mei_pldr_req);
@@ -1429,7 +1429,7 @@ int iwl_mei_get_ownership(void)
 	struct iwl_mei *mei;
 	int ret;
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	/* In case we didn't have a bind */
 	if (!iwl_mei_is_connected()) {
@@ -1459,7 +1459,7 @@ int iwl_mei_get_ownership(void)
 	if (ret)
 		goto out;
 
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 
 	ret = wait_event_timeout(mei->get_ownership_wq,
 				 mei->got_ownership, HZ / 2);
@@ -1471,7 +1471,7 @@ int iwl_mei_get_ownership(void)
 
 	return 0;
 out:
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(iwl_mei_get_ownership);
@@ -1486,7 +1486,7 @@ void iwl_mei_alive_notif(bool success)
 			cpu_to_le32(SAP_PLDR_STATUS_FAILURE),
 	};
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	if (!iwl_mei_is_connected())
 		goto out;
@@ -1499,7 +1499,7 @@ void iwl_mei_alive_notif(bool success)
 
 	iwl_mei_send_sap_msg_payload(mei->cldev, &msg.hdr);
 out:
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 }
 EXPORT_SYMBOL_GPL(iwl_mei_alive_notif);
 
@@ -1531,7 +1531,7 @@ void iwl_mei_host_associated(const struct iwl_mei_conn_info *conn_info,
 		memcpy(msg.colloc_bssid, colloc_info->bssid, ETH_ALEN);
 	}
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	if (!iwl_mei_is_connected())
 		goto out;
@@ -1547,7 +1547,7 @@ out:
 	kfree(iwl_mei_cache.conn_info);
 	iwl_mei_cache.conn_info =
 		kmemdup(&msg.conn_info, sizeof(msg.conn_info), GFP_KERNEL);
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 }
 EXPORT_SYMBOL_GPL(iwl_mei_host_associated);
 
@@ -1560,7 +1560,7 @@ void iwl_mei_host_disassociated(void)
 		.type = HOST_LINK_DOWN_TYPE_TEMPORARY,
 	};
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	if (!iwl_mei_is_connected())
 		goto out;
@@ -1575,7 +1575,7 @@ void iwl_mei_host_disassociated(void)
 out:
 	kfree(iwl_mei_cache.conn_info);
 	iwl_mei_cache.conn_info = NULL;
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 }
 EXPORT_SYMBOL_GPL(iwl_mei_host_disassociated);
 
@@ -1594,7 +1594,7 @@ void iwl_mei_set_rfkill_state(bool hw_rfkill, bool sw_rfkill)
 	if (!hw_rfkill)
 		rfkill_state |= SAP_HW_RFKILL_DEASSERTED;
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	if (!iwl_mei_is_connected())
 		goto out;
@@ -1610,7 +1610,7 @@ void iwl_mei_set_rfkill_state(bool hw_rfkill, bool sw_rfkill)
 
 out:
 	iwl_mei_cache.rf_kill = rfkill_state;
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 }
 EXPORT_SYMBOL_GPL(iwl_mei_set_rfkill_state);
 
@@ -1622,7 +1622,7 @@ void iwl_mei_set_nic_info(const u8 *mac_address, const u8 *nvm_address)
 		.hdr.len = cpu_to_le16(sizeof(msg) - sizeof(msg.hdr)),
 	};
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	if (!iwl_mei_is_connected())
 		goto out;
@@ -1640,7 +1640,7 @@ void iwl_mei_set_nic_info(const u8 *mac_address, const u8 *nvm_address)
 out:
 	ether_addr_copy(iwl_mei_cache.mac_address, mac_address);
 	ether_addr_copy(iwl_mei_cache.nvm_address, nvm_address);
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 }
 EXPORT_SYMBOL_GPL(iwl_mei_set_nic_info);
 
@@ -1653,7 +1653,7 @@ void iwl_mei_set_country_code(u16 mcc)
 		.mcc = cpu_to_le16(mcc),
 	};
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	if (!iwl_mei_is_connected())
 		goto out;
@@ -1667,7 +1667,7 @@ void iwl_mei_set_country_code(u16 mcc)
 
 out:
 	iwl_mei_cache.mcc = mcc;
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 }
 EXPORT_SYMBOL_GPL(iwl_mei_set_country_code);
 
@@ -1679,7 +1679,7 @@ void iwl_mei_set_power_limit(const __le16 *power_limit)
 		.hdr.len = cpu_to_le16(sizeof(msg) - sizeof(msg.hdr)),
 	};
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	if (!iwl_mei_is_connected())
 		goto out;
@@ -1697,7 +1697,7 @@ out:
 	kfree(iwl_mei_cache.power_limit);
 	iwl_mei_cache.power_limit = kmemdup(power_limit,
 					    sizeof(msg.sar_chain_info_table), GFP_KERNEL);
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 }
 EXPORT_SYMBOL_GPL(iwl_mei_set_power_limit);
 
@@ -1705,7 +1705,7 @@ void iwl_mei_set_netdev(struct net_device *netdev)
 {
 	struct iwl_mei *mei;
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	if (!iwl_mei_is_connected()) {
 		rcu_assign_pointer(iwl_mei_cache.netdev, netdev);
@@ -1734,7 +1734,7 @@ void iwl_mei_set_netdev(struct net_device *netdev)
 		netdev_rx_handler_register(netdev, iwl_mei_rx_handler, mei);
 
 out:
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 }
 EXPORT_SYMBOL_GPL(iwl_mei_set_netdev);
 
@@ -1742,7 +1742,7 @@ void iwl_mei_device_state(bool up)
 {
 	struct iwl_mei *mei;
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	if (!iwl_mei_is_connected())
 		goto out;
@@ -1763,7 +1763,7 @@ void iwl_mei_device_state(bool up)
 	schedule_delayed_work_dbg(&mei->ownership_dwork,
 			      MEI_OWNERSHIP_RETAKE_TIMEOUT_MS);
 out:
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 }
 EXPORT_SYMBOL_GPL(iwl_mei_device_state);
 
@@ -1778,7 +1778,7 @@ int iwl_mei_register(void *priv, const struct iwl_mei_ops *ops)
 	if (!priv)
 		return -EINVAL;
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	/* do not allow registration if someone else already registered */
 	if (iwl_mei_cache.priv || iwl_mei_cache.ops) {
@@ -1804,14 +1804,14 @@ int iwl_mei_register(void *priv, const struct iwl_mei_ops *ops)
 	ret = 0;
 
 out:
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(iwl_mei_register);
 
 void iwl_mei_start_unregister(void)
 {
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	/* At this point, the wifi driver should have removed the netdev */
 	if (rcu_access_pointer(iwl_mei_cache.netdev))
@@ -1824,13 +1824,13 @@ void iwl_mei_start_unregister(void)
 	iwl_mei_cache.ops = NULL;
 	/* leave iwl_mei_cache.priv non-NULL to prevent any new registration */
 
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 }
 EXPORT_SYMBOL_GPL(iwl_mei_start_unregister);
 
 void iwl_mei_unregister_complete(void)
 {
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	iwl_mei_cache.priv = NULL;
 
@@ -1844,7 +1844,7 @@ void iwl_mei_unregister_complete(void)
 		mei->got_ownership = false;
 	}
 
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 }
 EXPORT_SYMBOL_GPL(iwl_mei_unregister_complete);
 
@@ -1857,7 +1857,7 @@ iwl_mei_dbgfs_send_start_message_write(struct file *file,
 {
 	int ret;
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	if (!iwl_mei_global_cldev) {
 		ret = -ENODEV;
@@ -1867,7 +1867,7 @@ iwl_mei_dbgfs_send_start_message_write(struct file *file,
 	ret = iwl_mei_send_start(iwl_mei_global_cldev);
 
 out:
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 	return ret ?: count;
 }
 
@@ -1952,7 +1952,7 @@ static int iwl_mei_probe(struct mei_cl_device *cldev,
 			  iwl_mei_csa_throttle_end_wk);
 	init_waitqueue_head(&mei->get_ownership_wq);
 	init_waitqueue_head(&mei->pldr_wq);
-	spin_lock_init(&mei->data_q_lock);
+	spin_lock_init_dbg(&mei->data_q_lock);
 	INIT_WORK(&mei->netdev_work, iwl_mei_netdev_work);
 	INIT_DELAYED_WORK(&mei->ownership_dwork, iwl_mei_ownership_dwork);
 
@@ -1998,9 +1998,9 @@ static int iwl_mei_probe(struct mei_cl_device *cldev,
 	 * We now have a Rx function in place, start the SAP protocol
 	 * we expect to get the SAP_ME_MSG_START_OK response later on.
 	 */
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 	ret = iwl_mei_send_start(cldev);
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 	if (ret)
 		goto debugfs_unregister;
 
@@ -2045,9 +2045,9 @@ static void iwl_mei_remove(struct mei_cl_device *cldev)
 		while (!down && iter--) {
 			mdelay(1);
 
-			mutex_lock(&iwl_mei_mutex);
+			mutex_lock_dbg(&iwl_mei_mutex);
 			down = mei->device_down;
-			mutex_unlock(&iwl_mei_mutex);
+			mutex_unlock_dbg(&iwl_mei_mutex);
 		}
 
 		if (!down)
@@ -2062,7 +2062,7 @@ static void iwl_mei_remove(struct mei_cl_device *cldev)
 		 * with iwl_mei_set_netdev()
 		 */
 		rtnl_lock();
-		mutex_lock(&iwl_mei_mutex);
+		mutex_lock_dbg(&iwl_mei_mutex);
 
 		/*
 		 * If we are suspending and the wifi driver hasn't removed it's netdev
@@ -2072,11 +2072,11 @@ static void iwl_mei_remove(struct mei_cl_device *cldev)
 						lockdep_is_held(&iwl_mei_mutex));
 
 		netdev_rx_handler_unregister(dev);
-		mutex_unlock(&iwl_mei_mutex);
+		mutex_unlock_dbg(&iwl_mei_mutex);
 		rtnl_unlock();
 	}
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	/* Tell CSME that we are going down so that it won't access the
 	 * memory anymore, make sure this message goes through immediately.
@@ -2101,7 +2101,7 @@ static void iwl_mei_remove(struct mei_cl_device *cldev)
 		dev_err(&mei->cldev->dev,
 			"Couldn't get ACK from CSME on HOST_GOES_DOWN message\n");
 
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 
 	/*
 	 * This looks strange, but this lock is taken here to make sure that
@@ -2110,9 +2110,9 @@ static void iwl_mei_remove(struct mei_cl_device *cldev)
 	 * Rx isn't a problem because the rx_handler can't be called after
 	 * having been unregistered.
 	 */
-	spin_lock_bh(&mei->data_q_lock);
+	spin_lock_bh_dbg(&mei->data_q_lock);
 	clear_bit(IWL_MEI_STATUS_SAP_CONNECTED, &iwl_mei_status);
-	spin_unlock_bh(&mei->data_q_lock);
+	spin_unlock_bh_dbg(&mei->data_q_lock);
 
 	if (iwl_mei_cache.ops)
 		iwl_mei_cache.ops->rfkill(iwl_mei_cache.priv, false, false);
@@ -2143,7 +2143,7 @@ static void iwl_mei_remove(struct mei_cl_device *cldev)
 	wake_up_all(&mei->get_ownership_wq);
 	wake_up_all(&mei->pldr_wq);
 
-	mutex_lock(&iwl_mei_mutex);
+	mutex_lock_dbg(&iwl_mei_mutex);
 
 	iwl_mei_global_cldev = NULL;
 
@@ -2161,7 +2161,7 @@ static void iwl_mei_remove(struct mei_cl_device *cldev)
 
 	devm_kfree(&cldev->dev, mei);
 
-	mutex_unlock(&iwl_mei_mutex);
+	mutex_unlock_dbg(&iwl_mei_mutex);
 }
 
 static const struct mei_cl_device_id iwl_mei_tbl[] = {

@@ -751,7 +751,7 @@ int iwl_txq_gen2_tx(struct iwl_trans *trans, struct sk_buff *skb,
 	    __skb_linearize(skb))
 		return -ENOMEM;
 
-	spin_lock(&txq->lock);
+	spin_lock_dbg(&txq->lock);
 
 	if (iwl_txq_space(trans, txq) < txq->high_mark) {
 		iwl_txq_stop(trans, txq);
@@ -765,7 +765,7 @@ int iwl_txq_gen2_tx(struct iwl_trans *trans, struct sk_buff *skb,
 
 			*dev_cmd_ptr = dev_cmd;
 			__skb_queue_tail(&txq->overflow_q, skb);
-			spin_unlock(&txq->lock);
+			spin_unlock_dbg(&txq->lock);
 			return 0;
 		}
 	}
@@ -786,7 +786,7 @@ int iwl_txq_gen2_tx(struct iwl_trans *trans, struct sk_buff *skb,
 
 	tfd = iwl_txq_gen2_build_tfd(trans, txq, dev_cmd, skb, out_meta);
 	if (!tfd) {
-		spin_unlock(&txq->lock);
+		spin_unlock_dbg(&txq->lock);
 		return -1;
 	}
 
@@ -817,7 +817,7 @@ int iwl_txq_gen2_tx(struct iwl_trans *trans, struct sk_buff *skb,
 	 * At this point the frame is "transmitted" successfully
 	 * and we will get a TX status notification eventually.
 	 */
-	spin_unlock(&txq->lock);
+	spin_unlock_dbg(&txq->lock);
 	return 0;
 }
 
@@ -831,8 +831,8 @@ static void iwl_txq_gen2_unmap(struct iwl_trans *trans, int txq_id)
 	struct iwl_trans_pcie *trans_pcie = IWL_TRANS_GET_PCIE_TRANS(trans);
 	struct iwl_txq *txq = trans_pcie->txqs.txq[txq_id];
 
-	spin_lock_bh(&txq->reclaim_lock);
-	spin_lock(&txq->lock);
+	spin_lock_bh_dbg(&txq->reclaim_lock);
+	spin_lock_dbg(&txq->lock);
 	while (txq->write_ptr != txq->read_ptr) {
 		IWL_DEBUG_TX_REPLY(trans, "Q %d Free %d\n",
 				   txq_id, txq->read_ptr);
@@ -855,8 +855,8 @@ static void iwl_txq_gen2_unmap(struct iwl_trans *trans, int txq_id)
 		iwl_op_mode_free_skb(trans->op_mode, skb);
 	}
 
-	spin_unlock(&txq->lock);
-	spin_unlock_bh(&txq->reclaim_lock);
+	spin_unlock_dbg(&txq->lock);
+	spin_unlock_bh_dbg(&txq->reclaim_lock);
 
 	/* just in case - this queue may have been stopped */
 	iwl_trans_pcie_wake_queue(trans, txq);
@@ -1295,14 +1295,14 @@ int iwl_pcie_gen2_enqueue_hcmd(struct iwl_trans *trans,
 		goto free_dup_buf;
 	}
 
-	spin_lock_irqsave(&txq->lock, flags);
+	spin_lock_irqsave_dbg(&txq->lock, flags);
 
 	idx = iwl_txq_get_cmd_index(txq, txq->write_ptr);
 	tfd = iwl_txq_get_tfd(trans, txq, txq->write_ptr);
 	memset(tfd, 0, sizeof(*tfd));
 
 	if (iwl_txq_space(trans, txq) < ((cmd->flags & CMD_ASYNC) ? 2 : 1)) {
-		spin_unlock_irqrestore(&txq->lock, flags);
+		spin_unlock_irqrestore_dbg(&txq->lock, flags);
 
 		IWL_ERR(trans, "No space in command queue\n");
 		iwl_op_mode_cmd_queue_full(trans->op_mode);
@@ -1430,14 +1430,14 @@ int iwl_pcie_gen2_enqueue_hcmd(struct iwl_trans *trans,
 	if (txq->read_ptr == txq->write_ptr && txq->wd_timeout)
 		mod_timer_dbg(&txq->stuck_timer, jiffies + txq->wd_timeout);
 
-	spin_lock(&trans_pcie->reg_lock);
+	spin_lock_dbg(&trans_pcie->reg_lock);
 	/* Increment and update queue's write index */
 	txq->write_ptr = iwl_txq_inc_wrap(trans, txq->write_ptr);
 	iwl_txq_inc_wr_ptr(trans, txq);
-	spin_unlock(&trans_pcie->reg_lock);
+	spin_unlock_dbg(&trans_pcie->reg_lock);
 
 out:
-	spin_unlock_irqrestore(&txq->lock, flags);
+	spin_unlock_irqrestore_dbg(&txq->lock, flags);
 free_dup_buf:
 	if (idx < 0)
 		kfree(dup_buf);

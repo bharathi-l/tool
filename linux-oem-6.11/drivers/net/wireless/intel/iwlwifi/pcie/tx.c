@@ -132,12 +132,12 @@ void iwl_pcie_txq_check_wrptrs(struct iwl_trans *trans)
 		if (!test_bit(i, trans_pcie->txqs.queue_used))
 			continue;
 
-		spin_lock_bh(&txq->lock);
+		spin_lock_bh_dbg(&txq->lock);
 		if (txq->need_update) {
 			iwl_pcie_txq_inc_wr_ptr(trans, txq);
 			txq->need_update = false;
 		}
-		spin_unlock_bh(&txq->lock);
+		spin_unlock_bh_dbg(&txq->lock);
 	}
 }
 
@@ -197,17 +197,17 @@ static void iwl_pcie_clear_cmd_in_flight(struct iwl_trans *trans)
 	if (!trans->trans_cfg->base_params->apmg_wake_up_wa)
 		return;
 
-	spin_lock(&trans_pcie->reg_lock);
+	spin_lock_dbg(&trans_pcie->reg_lock);
 
 	if (WARN_ON(!trans_pcie->cmd_hold_nic_awake)) {
-		spin_unlock(&trans_pcie->reg_lock);
+		spin_unlock_dbg(&trans_pcie->reg_lock);
 		return;
 	}
 
 	trans_pcie->cmd_hold_nic_awake = false;
 	__iwl_trans_pcie_clear_bit(trans, CSR_GP_CNTRL,
 				   CSR_GP_CNTRL_REG_FLAG_MAC_ACCESS_REQ);
-	spin_unlock(&trans_pcie->reg_lock);
+	spin_unlock_dbg(&trans_pcie->reg_lock);
 }
 
 static void iwl_pcie_free_and_unmap_tso_page(struct iwl_trans *trans,
@@ -389,8 +389,8 @@ static void iwl_pcie_txq_unmap(struct iwl_trans *trans, int txq_id)
 		return;
 	}
 
-	spin_lock_bh(&txq->reclaim_lock);
-	spin_lock(&txq->lock);
+	spin_lock_bh_dbg(&txq->reclaim_lock);
+	spin_lock_dbg(&txq->lock);
 	while (txq->write_ptr != txq->read_ptr) {
 		IWL_DEBUG_TX_REPLY(trans, "Q %d Free %d\n",
 				   txq_id, txq->read_ptr);
@@ -415,12 +415,11 @@ static void iwl_pcie_txq_unmap(struct iwl_trans *trans, int txq_id)
 
 	while (!skb_queue_empty(&txq->overflow_q)) {
 		struct sk_buff *skb = __skb_dequeue(&txq->overflow_q);
-
 		iwl_op_mode_free_skb(trans->op_mode, skb);
 	}
 
-	spin_unlock(&txq->lock);
-	spin_unlock_bh(&txq->reclaim_lock);
+	spin_unlock_dbg(&txq->lock);
+	spin_unlock_bh_dbg(&txq->reclaim_lock);
 
 	/* just in case - this queue may have been stopped */
 	iwl_trans_pcie_wake_queue(trans, txq);
@@ -581,7 +580,7 @@ static void iwl_pcie_tx_stop_fh(struct iwl_trans *trans)
 	int ch, ret;
 	u32 mask = 0;
 
-	spin_lock_bh(&trans_pcie->irq_lock);
+	spin_lock_bh_dbg(&trans_pcie->irq_lock);
 
 	if (!iwl_trans_grab_nic_access(trans))
 		goto out;
@@ -602,7 +601,7 @@ static void iwl_pcie_tx_stop_fh(struct iwl_trans *trans)
 	iwl_trans_release_nic_access(trans);
 
 out:
-	spin_unlock_bh(&trans_pcie->irq_lock);
+	spin_unlock_bh_dbg(&trans_pcie->irq_lock);
 }
 
 /*
@@ -707,13 +706,13 @@ static void iwl_txq_stuck_timer(struct timer_list *t)
 	struct iwl_txq *txq = from_timer(txq, t, stuck_timer);
 	struct iwl_trans *trans = txq->trans;
 
-	spin_lock(&txq->lock);
+	spin_lock_dbg(&txq->lock);
 	/* check if triggered erroneously */
 	if (txq->read_ptr == txq->write_ptr) {
-		spin_unlock(&txq->lock);
+		spin_unlock_dbg(&txq->lock);
 		return;
 	}
-	spin_unlock(&txq->lock);
+	spin_unlock_dbg(&txq->lock);
 
 	iwl_txq_log_scd_error(trans, txq);
 
@@ -924,8 +923,8 @@ int iwl_txq_init(struct iwl_trans *trans, struct iwl_txq *txq,
 	if (ret)
 		return ret;
 
-	spin_lock_init(&txq->lock);
-	spin_lock_init(&txq->reclaim_lock);
+	spin_lock_init_dbg(&txq->lock);
+	spin_lock_init_dbg(&txq->reclaim_lock);
 
 	if (cmd_queue) {
 		static struct lock_class_key iwl_txq_cmd_queue_lock_class;
@@ -952,7 +951,7 @@ int iwl_pcie_tx_init(struct iwl_trans *trans)
 		alloc = true;
 	}
 
-	spin_lock_bh(&trans_pcie->irq_lock);
+	spin_lock_bh_dbg(&trans_pcie->irq_lock);
 
 	/* Turn off all Tx DMA fifos */
 	iwl_scd_deactivate_fifos(trans);
@@ -961,7 +960,7 @@ int iwl_pcie_tx_init(struct iwl_trans *trans)
 	iwl_write_direct32(trans, FH_KW_MEM_ADDR_REG,
 			   trans_pcie->kw.dma >> 4);
 
-	spin_unlock_bh(&trans_pcie->irq_lock);
+	spin_unlock_bh_dbg(&trans_pcie->irq_lock);
 
 	/* Alloc and init all Tx queues, including the command queue (#4/#9) */
 	for (txq_id = 0; txq_id < trans->trans_cfg->base_params->num_of_queues;
@@ -1031,7 +1030,7 @@ static int iwl_pcie_set_cmd_in_flight(struct iwl_trans *trans,
 	 * already true, so it's OK to unconditionally set it to true.
 	 */
 	trans_pcie->cmd_hold_nic_awake = true;
-	spin_unlock(&trans_pcie->reg_lock);
+	spin_unlock_dbg(&trans_pcie->reg_lock);
 
 	return 0;
 }
@@ -1319,7 +1318,7 @@ static void iwl_trans_pcie_block_txq_ptrs(struct iwl_trans *trans, bool block)
 			continue;
 
 		/* we skip the command queue (obviously) so it's OK to nest */
-		spin_lock_nested(&txq->lock, 1);
+		spin_lock_nested_dbg(&txq->lock, 1);
 
 		if (!block && !(WARN_ON_ONCE(!txq->block))) {
 			txq->block--;
@@ -1331,7 +1330,7 @@ static void iwl_trans_pcie_block_txq_ptrs(struct iwl_trans *trans, bool block)
 			txq->block++;
 		}
 
-		spin_unlock(&txq->lock);
+		spin_unlock_dbg(&txq->lock);
 	}
 }
 
@@ -1445,10 +1444,10 @@ int iwl_pcie_enqueue_hcmd(struct iwl_trans *trans,
 		goto free_dup_buf;
 	}
 
-	spin_lock_irqsave(&txq->lock, flags);
+	spin_lock_irqsave_dbg(&txq->lock, flags);
 
 	if (iwl_txq_space(trans, txq) < ((cmd->flags & CMD_ASYNC) ? 2 : 1)) {
-		spin_unlock_irqrestore(&txq->lock, flags);
+		spin_unlock_irqrestore_dbg(&txq->lock, flags);
 
 		IWL_ERR(trans, "No space in command queue\n");
 		iwl_op_mode_cmd_queue_full(trans->op_mode);
@@ -1609,7 +1608,7 @@ int iwl_pcie_enqueue_hcmd(struct iwl_trans *trans,
 	iwl_pcie_txq_inc_wr_ptr(trans, txq);
 
  out:
-	spin_unlock_irqrestore(&txq->lock, flags);
+	spin_unlock_irqrestore_dbg(&txq->lock, flags);
  free_dup_buf:
 	if (idx < 0)
 		kfree(dup_buf);
@@ -1646,7 +1645,7 @@ void iwl_pcie_hcmd_complete(struct iwl_trans *trans,
 		return;
 	}
 
-	spin_lock_bh(&txq->lock);
+	spin_lock_bh_dbg(&txq->lock);
 
 	cmd_index = iwl_txq_get_cmd_index(txq, index);
 	cmd = txq->entries[cmd_index].cmd;
@@ -1688,7 +1687,7 @@ void iwl_pcie_hcmd_complete(struct iwl_trans *trans,
 
 	meta->flags = 0;
 
-	spin_unlock_bh(&txq->lock);
+	spin_unlock_bh_dbg(&txq->lock);
 }
 
 static int iwl_fill_data_tbs(struct iwl_trans *trans, struct sk_buff *skb,
@@ -2140,7 +2139,7 @@ int iwl_trans_pcie_tx(struct iwl_trans *trans, struct sk_buff *skb,
 	fc = hdr->frame_control;
 	hdr_len = ieee80211_hdrlen(fc);
 
-	spin_lock(&txq->lock);
+	spin_lock_dbg(&txq->lock);
 
 	if (iwl_txq_space(trans, txq) < txq->high_mark) {
 		iwl_txq_stop(trans, txq);
@@ -2155,7 +2154,7 @@ int iwl_trans_pcie_tx(struct iwl_trans *trans, struct sk_buff *skb,
 			*dev_cmd_ptr = dev_cmd;
 			__skb_queue_tail(&txq->overflow_q, skb);
 
-			spin_unlock(&txq->lock);
+			spin_unlock_dbg(&txq->lock);
 			return 0;
 		}
 	}
@@ -2297,11 +2296,11 @@ int iwl_trans_pcie_tx(struct iwl_trans *trans, struct sk_buff *skb,
 	 * At this point the frame is "transmitted" successfully
 	 * and we will get a TX status notification eventually.
 	 */
-	spin_unlock(&txq->lock);
+	spin_unlock_dbg(&txq->lock);
 	return 0;
 out_err:
 	iwl_txq_gen1_tfd_unmap(trans, out_meta, txq, txq->write_ptr);
-	spin_unlock(&txq->lock);
+	spin_unlock_dbg(&txq->lock);
 	return -1;
 }
 
@@ -2349,12 +2348,12 @@ void iwl_pcie_reclaim(struct iwl_trans *trans, int txq_id, int ssn,
 
 	tfd_num = iwl_txq_get_cmd_index(txq, ssn);
 
-	spin_lock_bh(&txq->reclaim_lock);
+	spin_lock_bh_dbg(&txq->reclaim_lock);
 
-	spin_lock(&txq->lock);
+	spin_lock_dbg(&txq->lock);
 	txq_read_ptr = txq->read_ptr;
 	txq_write_ptr = txq->write_ptr;
-	spin_unlock(&txq->lock);
+	spin_unlock_dbg(&txq->lock);
 
 	read_ptr = iwl_txq_get_cmd_index(txq, txq_read_ptr);
 
@@ -2415,7 +2414,7 @@ void iwl_pcie_reclaim(struct iwl_trans *trans, int txq_id, int ssn,
 		iwl_txq_free_tfd(trans, txq, txq_read_ptr);
 	}
 
-	spin_lock(&txq->lock);
+	spin_lock_dbg(&txq->lock);
 	txq->read_ptr = txq_read_ptr;
 
 	iwl_txq_progress(txq);
@@ -2444,7 +2443,7 @@ void iwl_pcie_reclaim(struct iwl_trans *trans, int txq_id, int ssn,
 		 * from that path. We stopped tx, so we can't have tx as well.
 		 * Bottom line, we can unlock and re-lock later.
 		 */
-		spin_unlock(&txq->lock);
+		spin_unlock_dbg(&txq->lock);
 
 		while ((skb = __skb_dequeue(&overflow_skbs))) {
 			struct iwl_device_tx_cmd *dev_cmd_ptr;
@@ -2463,13 +2462,13 @@ void iwl_pcie_reclaim(struct iwl_trans *trans, int txq_id, int ssn,
 		if (iwl_txq_space(trans, txq) > txq->low_mark)
 			iwl_trans_pcie_wake_queue(trans, txq);
 
-		spin_lock(&txq->lock);
+		spin_lock_dbg(&txq->lock);
 		txq->overflow_tx = false;
 	}
 
-	spin_unlock(&txq->lock);
+	spin_unlock_dbg(&txq->lock);
 out:
-	spin_unlock_bh(&txq->reclaim_lock);
+	spin_unlock_bh_dbg(&txq->reclaim_lock);
 }
 
 /* Set wr_ptr of specific device and txq  */
@@ -2478,12 +2477,12 @@ void iwl_pcie_set_q_ptrs(struct iwl_trans *trans, int txq_id, int ptr)
 	struct iwl_trans_pcie *trans_pcie = IWL_TRANS_GET_PCIE_TRANS(trans);
 	struct iwl_txq *txq = trans_pcie->txqs.txq[txq_id];
 
-	spin_lock_bh(&txq->lock);
+	spin_lock_bh_dbg(&txq->lock);
 
 	txq->write_ptr = ptr;
 	txq->read_ptr = txq->write_ptr;
 
-	spin_unlock_bh(&txq->lock);
+	spin_unlock_bh_dbg(&txq->lock);
 }
 
 void iwl_pcie_freeze_txq_timer(struct iwl_trans *trans,
@@ -2496,7 +2495,7 @@ void iwl_pcie_freeze_txq_timer(struct iwl_trans *trans,
 		struct iwl_txq *txq = trans_pcie->txqs.txq[queue];
 		unsigned long now;
 
-		spin_lock_bh(&txq->lock);
+		spin_lock_bh_dbg(&txq->lock);
 
 		now = jiffies;
 
@@ -2535,7 +2534,7 @@ void iwl_pcie_freeze_txq_timer(struct iwl_trans *trans,
 			  now + txq->frozen_expiry_remainder);
 
 next_queue:
-		spin_unlock_bh(&txq->lock);
+		spin_unlock_bh_dbg(&txq->lock);
 	}
 }
 

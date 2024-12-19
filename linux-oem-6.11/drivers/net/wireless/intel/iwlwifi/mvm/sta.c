@@ -426,11 +426,11 @@ static int iwl_mvm_disable_txq(struct iwl_mvm *mvm, struct ieee80211_sta *sta,
 		struct iwl_mvm_txq *mvmtxq =
 			iwl_mvm_txq_from_tid(sta, tid);
 
-		spin_lock_bh(&mvm->add_stream_lock);
-		list_del_init(&mvmtxq->list);
+		spin_lock_bh_dbg(&mvm->add_stream_lock);
+		list_del_init_dbg(&mvmtxq->list);
 		clear_bit(IWL_MVM_TXQ_STATE_READY, &mvmtxq->state);
 		mvmtxq->txq_id = IWL_MVM_INVALID_QUEUE;
-		spin_unlock_bh(&mvm->add_stream_lock);
+		spin_unlock_bh_dbg(&mvm->add_stream_lock);
 	}
 
 	/* Regardless if this is a reserved TXQ for a STA - mark it as false */
@@ -473,12 +473,12 @@ static int iwl_mvm_get_queue_agg_tids(struct iwl_mvm *mvm, int queue)
 
 	mvmsta = iwl_mvm_sta_from_mac80211(sta);
 
-	spin_lock_bh(&mvmsta->lock);
+	spin_lock_bh_dbg(&mvmsta->lock);
 	for_each_set_bit(tid, &tid_bitmap, IWL_MAX_TID_COUNT + 1) {
 		if (mvmsta->tid_data[tid].state == IWL_AGG_ON)
 			agg_tids |= BIT(tid);
 	}
-	spin_unlock_bh(&mvmsta->lock);
+	spin_unlock_bh_dbg(&mvmsta->lock);
 
 	return agg_tids;
 }
@@ -516,7 +516,7 @@ static int iwl_mvm_remove_sta_queue_marking(struct iwl_mvm *mvm, int queue)
 
 	mvmsta = iwl_mvm_sta_from_mac80211(sta);
 
-	spin_lock_bh(&mvmsta->lock);
+	spin_lock_bh_dbg(&mvmsta->lock);
 	/* Unmap MAC queues and TIDs from this queue */
 	for_each_set_bit(tid, &tid_bitmap, IWL_MAX_TID_COUNT + 1) {
 		struct iwl_mvm_txq *mvmtxq =
@@ -526,15 +526,15 @@ static int iwl_mvm_remove_sta_queue_marking(struct iwl_mvm *mvm, int queue)
 			disable_agg_tids |= BIT(tid);
 		mvmsta->tid_data[tid].txq_id = IWL_MVM_INVALID_QUEUE;
 
-		spin_lock_bh(&mvm->add_stream_lock);
-		list_del_init(&mvmtxq->list);
+		spin_lock_bh_dbg(&mvm->add_stream_lock);
+		list_del_init_dbg(&mvmtxq->list);
 		clear_bit(IWL_MVM_TXQ_STATE_READY, &mvmtxq->state);
 		mvmtxq->txq_id = IWL_MVM_INVALID_QUEUE;
-		spin_unlock_bh(&mvm->add_stream_lock);
+		spin_unlock_bh_dbg(&mvm->add_stream_lock);
 	}
 
 	mvmsta->tfd_queue_msk &= ~BIT(queue); /* Don't use this queue anymore */
-	spin_unlock_bh(&mvmsta->lock);
+	spin_unlock_bh_dbg(&mvmsta->lock);
 
 	rcu_read_unlock();
 
@@ -930,9 +930,9 @@ static int iwl_mvm_sta_alloc_queue_tvqm(struct iwl_mvm *mvm,
 
 	IWL_DEBUG_TX_QUEUES(mvm, "Allocated queue is %d\n", queue);
 
-	spin_lock_bh(&mvmsta->lock);
+	spin_lock_bh_dbg(&mvmsta->lock);
 	mvmsta->tid_data[tid].txq_id = queue;
-	spin_unlock_bh(&mvmsta->lock);
+	spin_unlock_bh_dbg(&mvmsta->lock);
 
 	return 0;
 }
@@ -1304,7 +1304,7 @@ static int iwl_mvm_inactivity_check(struct iwl_mvm *mvm, u8 alloc_for_sta)
 
 		mvmsta = iwl_mvm_sta_from_mac80211(sta);
 
-		spin_lock_bh(&mvmsta->lock);
+		spin_lock_bh_dbg(&mvmsta->lock);
 		ret = iwl_mvm_remove_inactive_tids(mvm, mvmsta, i,
 						   inactive_tid_bitmap,
 						   &unshare_queues,
@@ -1314,7 +1314,7 @@ static int iwl_mvm_inactivity_check(struct iwl_mvm *mvm, u8 alloc_for_sta)
 			free_queue = i;
 		}
 		/* only unlock sta lock - we still need the queue info lock */
-		spin_unlock_bh(&mvmsta->lock);
+		spin_unlock_bh_dbg(&mvmsta->lock);
 	}
 
 
@@ -1362,10 +1362,10 @@ static int iwl_mvm_sta_alloc_queue(struct iwl_mvm *mvm,
 	if (iwl_mvm_has_new_tx_api(mvm))
 		return iwl_mvm_sta_alloc_queue_tvqm(mvm, sta, ac, tid);
 
-	spin_lock_bh(&mvmsta->lock);
+	spin_lock_bh_dbg(&mvmsta->lock);
 	tfd_queue_mask = mvmsta->tfd_queue_msk;
 	ssn = IEEE80211_SEQ_TO_SN(mvmsta->tid_data[tid].seq_number);
-	spin_unlock_bh(&mvmsta->lock);
+	spin_unlock_bh_dbg(&mvmsta->lock);
 
 	if (tid == IWL_MAX_TID_COUNT) {
 		queue = iwl_mvm_find_free_queue(mvm, mvmsta->deflink.sta_id,
@@ -1457,7 +1457,7 @@ static int iwl_mvm_sta_alloc_queue(struct iwl_mvm *mvm,
 	if (shared_queue)
 		iwl_trans_txq_set_shared_mode(mvm->trans, queue, true);
 
-	spin_lock_bh(&mvmsta->lock);
+	spin_lock_bh_dbg(&mvmsta->lock);
 	/*
 	 * This looks racy, but it is not. We have only one packet for
 	 * this ra/tid in our Tx path since we stop the Qdisc when we
@@ -1473,7 +1473,7 @@ static int iwl_mvm_sta_alloc_queue(struct iwl_mvm *mvm,
 
 	if (mvmsta->reserved_queue == queue)
 		mvmsta->reserved_queue = IEEE80211_INVAL_HW_QUEUE;
-	spin_unlock_bh(&mvmsta->lock);
+	spin_unlock_bh_dbg(&mvmsta->lock);
 
 	if (!shared_queue) {
 		ret = iwl_mvm_sta_send_to_fw(mvm, sta, true, STA_MODIFY_QUEUES);
@@ -1523,10 +1523,10 @@ int iwl_mvm_sta_ensure_queue(struct iwl_mvm *mvm,
 	}
 
 	local_bh_disable();
-	spin_lock(&mvm->add_stream_lock);
+	spin_lock_dbg(&mvm->add_stream_lock);
 	if (!list_empty(&mvmtxq->list))
-		list_del_init(&mvmtxq->list);
-	spin_unlock(&mvm->add_stream_lock);
+		list_del_init_dbg(&mvmtxq->list);
+	spin_unlock_dbg(&mvm->add_stream_lock);
 	local_bh_enable();
 
 	return ret;
@@ -1537,7 +1537,7 @@ void iwl_mvm_add_new_dqa_stream_wk(struct work_struct *wk)
 	struct iwl_mvm *mvm = container_of(wk, struct iwl_mvm,
 					   add_stream_wk);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	iwl_mvm_inactivity_check(mvm, IWL_MVM_INVALID_STA);
 
@@ -1562,9 +1562,9 @@ void iwl_mvm_add_new_dqa_stream_wk(struct work_struct *wk)
 		 * a queue in the function itself.
 		 */
 		if (iwl_mvm_sta_alloc_queue(mvm, txq->sta, txq->ac, tid)) {
-			spin_lock_bh(&mvm->add_stream_lock);
-			list_del_init(&mvmtxq->list);
-			spin_unlock_bh(&mvm->add_stream_lock);
+			spin_lock_bh_dbg(&mvm->add_stream_lock);
+			list_del_init_dbg(&mvmtxq->list);
+			spin_unlock_bh_dbg(&mvm->add_stream_lock);
 			continue;
 		}
 
@@ -1574,15 +1574,15 @@ void iwl_mvm_add_new_dqa_stream_wk(struct work_struct *wk)
 		set_bit(IWL_MVM_TXQ_STATE_READY, &mvmtxq->state);
 
 		local_bh_disable();
-		spin_lock(&mvm->add_stream_lock);
-		list_del_init(&mvmtxq->list);
-		spin_unlock(&mvm->add_stream_lock);
+		spin_lock_dbg(&mvm->add_stream_lock);
+		list_del_init_dbg(&mvmtxq->list);
+		spin_unlock_dbg(&mvm->add_stream_lock);
 
 		iwl_mvm_mac_itxq_xmit(mvm->hw, txq);
 		local_bh_enable();
 	}
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 }
 
 static int iwl_mvm_reserve_sta_stream(struct iwl_mvm *mvm,
@@ -1846,7 +1846,7 @@ int iwl_mvm_sta_init(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 	if (iwl_mvm_has_tlc_offload(mvm))
 		iwl_mvm_rs_add_sta(mvm, mvm_sta);
 	else
-		spin_lock_init(&mvm_sta->deflink.lq_sta.rs_drv.pers.lock);
+		spin_lock_init_dbg(&mvm_sta->deflink.lq_sta.rs_drv.pers.lock);
 
 	iwl_mvm_toggle_tx_ant(mvm, &mvm_sta->tx_ant);
 
@@ -1859,7 +1859,7 @@ int iwl_mvm_sta_init(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 				GFP_KERNEL);
 		if (mvm_sta->mpdu_counters)
 			for (int q = 0; q < mvm->trans->num_rx_queues; q++)
-				spin_lock_init(&mvm_sta->mpdu_counters[q].lock);
+				spin_lock_init_dbg(&mvm_sta->mpdu_counters[q].lock);
 	}
 
 	return 0;
@@ -1886,7 +1886,7 @@ int iwl_mvm_add_sta(struct iwl_mvm *mvm,
 	if (sta_id == IWL_MVM_INVALID_STA)
 		return -ENOSPC;
 
-	spin_lock_init(&mvm_sta->lock);
+	spin_lock_init_dbg(&mvm_sta->lock);
 
 	/* if this is a HW restart re-alloc existing queues */
 	if (test_bit(IWL_MVM_STATUS_IN_HW_RESTART, &mvm->status)) {
@@ -2030,11 +2030,11 @@ static void iwl_mvm_disable_sta_queues(struct iwl_mvm *mvm,
 		struct iwl_mvm_txq *mvmtxq =
 			iwl_mvm_txq_from_mac80211(sta->txq[i]);
 
-		spin_lock_bh(&mvm->add_stream_lock);
+		spin_lock_bh_dbg(&mvm->add_stream_lock);
 		mvmtxq->txq_id = IWL_MVM_INVALID_QUEUE;
-		list_del_init(&mvmtxq->list);
+		list_del_init_dbg(&mvmtxq->list);
 		clear_bit(IWL_MVM_TXQ_STATE_READY, &mvmtxq->state);
-		spin_unlock_bh(&mvm->add_stream_lock);
+		spin_unlock_bh_dbg(&mvm->add_stream_lock);
 	}
 }
 
@@ -2047,9 +2047,9 @@ int iwl_mvm_wait_sta_queues_empty(struct iwl_mvm *mvm,
 		u16 txq_id;
 		int ret;
 
-		spin_lock_bh(&mvm_sta->lock);
+		spin_lock_bh_dbg(&mvm_sta->lock);
 		txq_id = mvm_sta->tid_data[i].txq_id;
-		spin_unlock_bh(&mvm_sta->lock);
+		spin_unlock_bh_dbg(&mvm_sta->lock);
 
 		if (txq_id == IWL_MVM_INVALID_QUEUE)
 			continue;
@@ -2752,9 +2752,9 @@ static void iwl_mvm_free_reorder(struct iwl_mvm *mvm,
 		struct iwl_mvm_reorder_buf_entry *entries =
 			&data->entries[i * data->entries_per_queue];
 
-		spin_lock_bh(&reorder_buf->lock);
+		spin_lock_bh_dbg(&reorder_buf->lock);
 		if (likely(!reorder_buf->num_stored)) {
-			spin_unlock_bh(&reorder_buf->lock);
+			spin_unlock_bh_dbg(&reorder_buf->lock);
 			continue;
 		}
 
@@ -2768,7 +2768,7 @@ static void iwl_mvm_free_reorder(struct iwl_mvm *mvm,
 		for (j = 0; j < data->buf_size; j++)
 			__skb_queue_purge(&entries[j].frames);
 
-		spin_unlock_bh(&reorder_buf->lock);
+		spin_unlock_bh_dbg(&reorder_buf->lock);
 	}
 }
 
@@ -2787,7 +2787,7 @@ static void iwl_mvm_init_reorder_buffer(struct iwl_mvm *mvm,
 
 		reorder_buf->num_stored = 0;
 		reorder_buf->head_sn = ssn;
-		spin_lock_init(&reorder_buf->lock);
+		spin_lock_init_dbg(&reorder_buf->lock);
 		reorder_buf->queue = i;
 		reorder_buf->valid = false;
 		for (j = 0; j < data->buf_size; j++)
@@ -3150,7 +3150,7 @@ int iwl_mvm_sta_tx_agg_start(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 			return ret;
 	}
 
-	spin_lock_bh(&mvmsta->lock);
+	spin_lock_bh_dbg(&mvmsta->lock);
 
 	/*
 	 * Note the possible cases:
@@ -3219,7 +3219,7 @@ int iwl_mvm_sta_tx_agg_start(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 	}
 
 out:
-	spin_unlock_bh(&mvmsta->lock);
+	spin_unlock_bh_dbg(&mvmsta->lock);
 
 	return ret;
 }
@@ -3254,14 +3254,14 @@ int iwl_mvm_sta_tx_agg_oper(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 	BUILD_BUG_ON((sizeof(mvmsta->agg_tids) * BITS_PER_BYTE)
 		     != IWL_MAX_TID_COUNT);
 
-	spin_lock_bh(&mvmsta->lock);
+	spin_lock_bh_dbg(&mvmsta->lock);
 	ssn = tid_data->ssn;
 	queue = tid_data->txq_id;
 	tid_data->state = IWL_AGG_ON;
 	mvmsta->agg_tids |= BIT(tid);
 	tid_data->ssn = 0xffff;
 	tid_data->amsdu_in_ampdu_allowed = amsdu;
-	spin_unlock_bh(&mvmsta->lock);
+	spin_unlock_bh_dbg(&mvmsta->lock);
 
 	if (iwl_mvm_has_new_tx_api(mvm)) {
 		/*
@@ -3394,7 +3394,7 @@ int iwl_mvm_sta_tx_agg_stop(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 		return 0;
 	}
 
-	spin_lock_bh(&mvmsta->lock);
+	spin_lock_bh_dbg(&mvmsta->lock);
 
 	txq_id = tid_data->txq_id;
 
@@ -3416,7 +3416,7 @@ int iwl_mvm_sta_tx_agg_stop(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 
 		tid_data->ssn = 0xffff;
 		tid_data->state = IWL_AGG_OFF;
-		spin_unlock_bh(&mvmsta->lock);
+		spin_unlock_bh_dbg(&mvmsta->lock);
 
 		ieee80211_stop_tx_ba_cb_irqsafe(vif, sta->addr, tid);
 
@@ -3445,7 +3445,7 @@ int iwl_mvm_sta_tx_agg_stop(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 		err = -EINVAL;
 	}
 
-	spin_unlock_bh(&mvmsta->lock);
+	spin_unlock_bh_dbg(&mvmsta->lock);
 
 	return err;
 }
@@ -3462,7 +3462,7 @@ int iwl_mvm_sta_tx_agg_flush(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 	 * First set the agg state to OFF to avoid calling
 	 * ieee80211_stop_tx_ba_cb in iwl_mvm_check_ratid_empty.
 	 */
-	spin_lock_bh(&mvmsta->lock);
+	spin_lock_bh_dbg(&mvmsta->lock);
 	txq_id = tid_data->txq_id;
 	IWL_DEBUG_TX_QUEUES(mvm, "Flush AGG: sta %d tid %d q %d state %d\n",
 			    mvmsta->deflink.sta_id, tid, txq_id,
@@ -3470,7 +3470,7 @@ int iwl_mvm_sta_tx_agg_flush(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 	old_state = tid_data->state;
 	tid_data->state = IWL_AGG_OFF;
 	mvmsta->agg_tids &= ~BIT(tid);
-	spin_unlock_bh(&mvmsta->lock);
+	spin_unlock_bh_dbg(&mvmsta->lock);
 
 	iwl_mvm_unreserve_agg_queue(mvm, mvmsta, tid_data);
 
@@ -4123,7 +4123,7 @@ void iwl_mvm_sta_modify_sleep_tx_count(struct iwl_mvm *mvm,
 		int remaining = cnt;
 		int sleep_tx_count;
 
-		spin_lock_bh(&mvmsta->lock);
+		spin_lock_bh_dbg(&mvmsta->lock);
 		for_each_set_bit(tid, &_tids, IWL_MAX_TID_COUNT) {
 			struct iwl_mvm_tid_data *tid_data;
 			u16 n_queued;
@@ -4141,7 +4141,7 @@ void iwl_mvm_sta_modify_sleep_tx_count(struct iwl_mvm *mvm,
 		sleep_tx_count = cnt - remaining;
 		if (reason == IEEE80211_FRAME_RELEASE_UAPSD)
 			mvmsta->sleep_tx_count = sleep_tx_count;
-		spin_unlock_bh(&mvmsta->lock);
+		spin_unlock_bh_dbg(&mvmsta->lock);
 
 		cmd.sleep_tx_count = cpu_to_le16(sleep_tx_count);
 		if (WARN_ON(cnt - remaining == 0)) {
@@ -4228,10 +4228,10 @@ void iwl_mvm_sta_modify_disable_tx_ap(struct iwl_mvm *mvm,
 		return;
 	}
 
-	spin_lock_bh(&mvm_sta->lock);
+	spin_lock_bh_dbg(&mvm_sta->lock);
 
 	if (mvm_sta->disable_tx == disable) {
-		spin_unlock_bh(&mvm_sta->lock);
+		spin_unlock_bh_dbg(&mvm_sta->lock);
 		return;
 	}
 
@@ -4246,7 +4246,7 @@ void iwl_mvm_sta_modify_disable_tx_ap(struct iwl_mvm *mvm,
 
 	iwl_mvm_sta_modify_disable_tx(mvm, mvm_sta, disable);
 
-	spin_unlock_bh(&mvm_sta->lock);
+	spin_unlock_bh_dbg(&mvm_sta->lock);
 }
 
 static void iwl_mvm_int_sta_modify_disable_tx(struct iwl_mvm *mvm,
@@ -4473,7 +4473,7 @@ void iwl_mvm_count_mpdu(struct iwl_mvm_sta *mvm_sta, u8 fw_sta_id, u32 count,
 	queue_counter = &mvm_sta->mpdu_counters[queue];
 	link_counter = &queue_counter->per_link[fw_link_id];
 
-	spin_lock_bh(&queue_counter->lock);
+	spin_lock_bh_dbg(&queue_counter->lock);
 
 	if (tx)
 		link_counter->tx += count;
@@ -4505,5 +4505,5 @@ void iwl_mvm_count_mpdu(struct iwl_mvm_sta *mvm_sta, u8 fw_sta_id, u32 count,
 				 &mvmvif->unblock_esr_tpt_wk);
 
 out:
-	spin_unlock_bh(&queue_counter->lock);
+	spin_unlock_bh_dbg(&queue_counter->lock);
 }

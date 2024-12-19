@@ -22,6 +22,7 @@
 #include "iwl-modparams.h"
 #include "fw/api/alive.h"
 #include "fw/api/mac.h"
+#include <linux/drv_dbg.h>
 
 /******************************************************************************
  *
@@ -1702,7 +1703,7 @@ static void iwl_req_fw_callback(const struct firmware *ucode_raw, void *context)
 
 	iwl_dbg_tlv_load_bin(drv->trans->dev, drv->trans);
 
-	mutex_lock(&iwlwifi_opmode_table_mtx);
+	mutex_lock_dbg(&iwlwifi_opmode_table_mtx);
 	switch (fw->type) {
 	case IWL_FW_DVM:
 		op = &iwlwifi_opmode_table[DVM_OP_MODE];
@@ -1719,19 +1720,19 @@ static void iwl_req_fw_callback(const struct firmware *ucode_raw, void *context)
 		 drv->fw.fw_version, op->name);
 
 	/* add this device to the list of devices using this op_mode */
-	list_add_tail(&drv->list, &op->drv);
+	list_add_tail_dbg(&drv->list, &op->drv);
 
 	if (op->ops) {
 		drv->op_mode = _iwl_op_mode_start(drv, op);
 
 		if (!drv->op_mode) {
-			mutex_unlock(&iwlwifi_opmode_table_mtx);
+			mutex_unlock_dbg(&iwlwifi_opmode_table_mtx);
 			goto out_unbind;
 		}
 	} else {
 		request_module_nowait("%s", op->name);
 	}
-	mutex_unlock(&iwlwifi_opmode_table_mtx);
+	mutex_unlock_dbg(&iwlwifi_opmode_table_mtx);
 
 	complete(&drv->request_firmware_complete);
 
@@ -1830,7 +1831,7 @@ void iwl_drv_stop(struct iwl_drv *drv)
 {
 	wait_for_completion(&drv->request_firmware_complete);
 
-	mutex_lock(&iwlwifi_opmode_table_mtx);
+	mutex_lock_dbg(&iwlwifi_opmode_table_mtx);
 
 	_iwl_op_mode_stop(drv);
 
@@ -1842,8 +1843,8 @@ void iwl_drv_stop(struct iwl_drv *drv)
 	 * case we can't remove it from any list.
 	 */
 	if (!list_empty(&drv->list))
-		list_del(&drv->list);
-	mutex_unlock(&iwlwifi_opmode_table_mtx);
+		list_del_dbg(&drv->list);
+	mutex_unlock_dbg(&iwlwifi_opmode_table_mtx);
 
 #ifdef CONFIG_IWLWIFI_DEBUGFS
 	iwl_trans_debugfs_cleanup(drv->trans);
@@ -1873,7 +1874,7 @@ int iwl_opmode_register(const char *name, const struct iwl_op_mode_ops *ops)
 	struct iwl_drv *drv;
 	struct iwlwifi_opmode_table *op;
 
-	mutex_lock(&iwlwifi_opmode_table_mtx);
+	mutex_lock_dbg(&iwlwifi_opmode_table_mtx);
 	for (i = 0; i < ARRAY_SIZE(iwlwifi_opmode_table); i++) {
 		op = &iwlwifi_opmode_table[i];
 		if (strcmp(op->name, name))
@@ -1883,10 +1884,10 @@ int iwl_opmode_register(const char *name, const struct iwl_op_mode_ops *ops)
 		list_for_each_entry(drv, &op->drv, list)
 			drv->op_mode = _iwl_op_mode_start(drv, op);
 
-		mutex_unlock(&iwlwifi_opmode_table_mtx);
+		mutex_unlock_dbg(&iwlwifi_opmode_table_mtx);
 		return 0;
 	}
-	mutex_unlock(&iwlwifi_opmode_table_mtx);
+	mutex_unlock_dbg(&iwlwifi_opmode_table_mtx);
 	return -EIO;
 }
 IWL_EXPORT_SYMBOL(iwl_opmode_register);
@@ -1896,7 +1897,7 @@ void iwl_opmode_deregister(const char *name)
 	int i;
 	struct iwl_drv *drv;
 
-	mutex_lock(&iwlwifi_opmode_table_mtx);
+	mutex_lock_dbg(&iwlwifi_opmode_table_mtx);
 	for (i = 0; i < ARRAY_SIZE(iwlwifi_opmode_table); i++) {
 		if (strcmp(iwlwifi_opmode_table[i].name, name))
 			continue;
@@ -1906,10 +1907,10 @@ void iwl_opmode_deregister(const char *name)
 		list_for_each_entry(drv, &iwlwifi_opmode_table[i].drv, list)
 			_iwl_op_mode_stop(drv);
 
-		mutex_unlock(&iwlwifi_opmode_table_mtx);
+		mutex_unlock_dbg(&iwlwifi_opmode_table_mtx);
 		return;
 	}
-	mutex_unlock(&iwlwifi_opmode_table_mtx);
+	mutex_unlock_dbg(&iwlwifi_opmode_table_mtx);
 }
 IWL_EXPORT_SYMBOL(iwl_opmode_deregister);
 

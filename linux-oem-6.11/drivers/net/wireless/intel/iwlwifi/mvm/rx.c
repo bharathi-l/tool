@@ -31,9 +31,9 @@ void iwl_mvm_rx_rx_phy_cmd(struct iwl_mvm *mvm, struct iwl_rx_cmd_buffer *rxb)
 
 #ifdef CONFIG_IWLWIFI_DEBUGFS
 	if (mvm->last_phy_info.phy_flags & cpu_to_le16(RX_RES_PHY_FLAGS_AGG)) {
-		spin_lock(&mvm->drv_stats_lock);
+		spin_lock_dbg(&mvm->drv_stats_lock);
 		mvm->drv_rx_stats.ampdu_count++;
-		spin_unlock(&mvm->drv_stats_lock);
+		spin_unlock_dbg(&mvm->drv_stats_lock);
 	}
 #endif
 }
@@ -759,7 +759,7 @@ iwl_mvm_update_tcm_from_stats(struct iwl_mvm *mvm, __le32 *air_time_le,
 {
 	int i;
 
-	spin_lock(&mvm->tcm.lock);
+	spin_lock_dbg(&mvm->tcm.lock);
 	for (i = 0; i < NUM_MAC_INDEX_DRIVER; i++) {
 		struct iwl_mvm_tcm_mac *mdata = &mvm->tcm.data[i];
 		u32 rx_bytes = le32_to_cpu(rx_bytes_le[i]);
@@ -774,7 +774,7 @@ iwl_mvm_update_tcm_from_stats(struct iwl_mvm *mvm, __le32 *air_time_le,
 				      rx_bytes * 8 / airtime);
 		}
 	}
-	spin_unlock(&mvm->tcm.lock);
+	spin_unlock_dbg(&mvm->tcm.lock);
 }
 
 static void iwl_mvm_handle_per_phy_stats(struct iwl_mvm *mvm,
@@ -994,7 +994,7 @@ static void iwl_mvm_update_esr_mode_tpt(struct iwl_mvm *mvm)
 
 	/* Sum up RX and TX MPDUs from the different queues/links */
 	for (int q = 0; q < mvm->trans->num_rx_queues; q++) {
-		spin_lock_bh(&mvmsta->mpdu_counters[q].lock);
+		spin_lock_bh_dbg(&mvmsta->mpdu_counters[q].lock);
 
 		/* The link IDs that doesn't exist will contain 0 */
 		for (int link = 0; link < IWL_MVM_FW_MAX_LINK_ID; link++) {
@@ -1012,7 +1012,7 @@ static void iwl_mvm_update_esr_mode_tpt(struct iwl_mvm *mvm)
 		memset(mvmsta->mpdu_counters[q].per_link, 0,
 		       sizeof(mvmsta->mpdu_counters[q].per_link));
 
-		spin_unlock_bh(&mvmsta->mpdu_counters[q].lock);
+		spin_unlock_bh_dbg(&mvmsta->mpdu_counters[q].lock);
 	}
 
 	IWL_DEBUG_STATS(mvm, "total Tx MPDUs: %ld. total Rx MPDUs: %ld\n",

@@ -125,10 +125,10 @@ static ssize_t iwl_dbgfs_pm_params_write(struct ieee80211_vif *vif, char *buf,
 		return -EINVAL;
 	}
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	iwl_dbgfs_update_pm(mvm, vif, param, val);
 	ret = iwl_mvm_power_update_mac(mvm);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret ?: count;
 }
@@ -178,7 +178,7 @@ static ssize_t iwl_dbgfs_mac_params_read(struct file *file,
 	int pos = 0;
 	int i;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	ap_sta_id = mvmvif->deflink.ap_sta_id;
 
@@ -243,7 +243,7 @@ static ssize_t iwl_dbgfs_mac_params_read(struct file *file,
 				 chanctx_conf->rx_chains_dynamic);
 	rcu_read_unlock();
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return simple_read_from_buffer(user_buf, count, ppos, buf, pos);
 }
@@ -379,13 +379,13 @@ static ssize_t iwl_dbgfs_bf_params_write(struct ieee80211_vif *vif, char *buf,
 		return -EINVAL;
 	}
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	iwl_dbgfs_update_bf(vif, param, value);
 	if (param == MVM_DEBUGFS_BF_ENABLE_BEACON_FILTER && !value)
 		ret = iwl_mvm_disable_beacon_filter(mvm, vif);
 	else
 		ret = iwl_mvm_enable_beacon_filter(mvm, vif);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret ?: count;
 }
@@ -453,9 +453,9 @@ static ssize_t iwl_dbgfs_os_device_timediff_read(struct file *file,
 	const size_t bufsz = sizeof(buf);
 	int pos = 0;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	iwl_mvm_get_sync_time(mvm, CLOCK_BOOTTIME, &curr_gp2, &curr_os, NULL);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	do_div(curr_os, NSEC_PER_USEC);
 	diff = curr_os - curr_gp2;
@@ -478,9 +478,9 @@ static ssize_t iwl_dbgfs_low_latency_write(struct ieee80211_vif *vif, char *buf,
 	if (value > 1)
 		return -EINVAL;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	iwl_mvm_update_low_latency(mvm, vif, value, LOW_LATENCY_DEBUGFS);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return count;
 }
@@ -501,7 +501,7 @@ iwl_dbgfs_low_latency_force_write(struct ieee80211_vif *vif, char *buf,
 	if (value > NUM_LOW_LATENCY_FORCE)
 		return -EINVAL;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	if (value == LOW_LATENCY_FORCE_UNSET) {
 		iwl_mvm_update_low_latency(mvm, vif, false,
 					   LOW_LATENCY_DEBUGFS_FORCE);
@@ -514,7 +514,7 @@ iwl_dbgfs_low_latency_force_write(struct ieee80211_vif *vif, char *buf,
 		iwl_mvm_update_low_latency(mvm, vif, true,
 					   LOW_LATENCY_DEBUGFS_FORCE_ENABLE);
 	}
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 	return count;
 }
 
@@ -567,9 +567,9 @@ static ssize_t iwl_dbgfs_uapsd_misbehaving_write(struct ieee80211_vif *vif,
 	struct iwl_mvm *mvm = mvmvif->mvm;
 	bool ret;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	ret = mac_pton(buf, mvmvif->uapsd_misbehaving_ap_addr);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret ? count : -EINVAL;
 }
@@ -587,7 +587,7 @@ static ssize_t iwl_dbgfs_rx_phyinfo_write(struct ieee80211_vif *vif, char *buf,
 	if (ret)
 		return ret;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	mvm->dbgfs_rx_phyinfo = value;
 
@@ -620,7 +620,7 @@ static ssize_t iwl_dbgfs_rx_phyinfo_write(struct ieee80211_vif *vif, char *buf,
 					       chains_static, chains_dynamic);
 	}
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret ?: count;
 }
@@ -665,7 +665,7 @@ static ssize_t iwl_dbgfs_quota_min_write(struct ieee80211_vif *vif, char *buf,
 	if (value > 95)
 		return -EINVAL;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	mvmvif->dbgfs_quota_min = 0;
 	ieee80211_iterate_interfaces(mvm->hw, IEEE80211_IFACE_ITER_NORMAL,
@@ -674,7 +674,7 @@ static ssize_t iwl_dbgfs_quota_min_write(struct ieee80211_vif *vif, char *buf,
 		mvmvif->dbgfs_quota_min = value;
 		iwl_mvm_update_quotas(mvm, false, NULL);
 	}
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret ?: count;
 }
@@ -705,9 +705,9 @@ static ssize_t iwl_dbgfs_max_tx_op_write(struct ieee80211_vif *vif, char *buf,
 	if (ret)
 		return ret;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	mvmvif->max_tx_op = value;
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return count;
 }
@@ -722,9 +722,9 @@ static ssize_t iwl_dbgfs_max_tx_op_read(struct file *file,
 	char buf[10];
 	int len;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	len = scnprintf(buf, sizeof(buf), "%hu\n", mvmvif->max_tx_op);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
 }
@@ -744,7 +744,7 @@ static ssize_t iwl_dbgfs_int_mlo_scan_write(struct ieee80211_vif *vif,
 	if (kstrtou32(buf, 0, &action))
 		return -EINVAL;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	if (!action) {
 		ret = iwl_mvm_scan_stop(mvm, IWL_MVM_SCAN_INT_MLO, false);
@@ -754,7 +754,7 @@ static ssize_t iwl_dbgfs_int_mlo_scan_write(struct ieee80211_vif *vif,
 		ret = -EINVAL;
 	}
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return ret ?: count;
 }
@@ -771,9 +771,9 @@ static ssize_t iwl_dbgfs_esr_disable_reason_read(struct file *file,
 	int bufsz, pos, i;
 	ssize_t rv;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	esr_mask = mvmvif->esr_disable_reason;
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	bufsz = hweight32(esr_mask) * 32 + 40;
 	buf = kmalloc(bufsz, GFP_KERNEL);
@@ -808,13 +808,13 @@ static ssize_t iwl_dbgfs_esr_disable_reason_write(struct ieee80211_vif *vif,
 	if (hweight16(reason) != 1 || !(reason & IWL_MVM_BLOCK_ESR_REASONS))
 		return -EINVAL;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	if (block)
 		iwl_mvm_block_esr(mvm, vif, reason,
 				  iwl_mvm_get_primary_link(vif));
 	else
 		iwl_mvm_unblock_esr(mvm, vif, reason);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	return count;
 }

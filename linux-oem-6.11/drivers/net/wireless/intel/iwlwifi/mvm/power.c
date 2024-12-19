@@ -725,9 +725,9 @@ int iwl_mvm_power_mac_dbgfs_read(struct iwl_mvm *mvm,
 	struct iwl_mac_power_cmd cmd = {};
 	int pos = 0;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	memcpy(&cmd, &mvmvif->mac_pwr_cmd, sizeof(cmd));
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	pos += scnprintf(buf+pos, bufsz-pos, "power_scheme = %d\n",
 			 iwlmvm_mod_params.power_scheme);

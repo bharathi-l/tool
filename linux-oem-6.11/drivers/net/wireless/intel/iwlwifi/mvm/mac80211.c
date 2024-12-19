@@ -963,15 +963,15 @@ void iwl_mvm_mac_wake_tx_queue(struct ieee80211_hw *hw,
 	 * to handle any packets we leave on the txq now
 	 */
 
-	spin_lock_bh(&mvm->add_stream_lock);
+	spin_lock_bh_dbg(&mvm->add_stream_lock);
 	/* The list is being deleted only after the queue is fully allocated. */
 	if (list_empty(&mvmtxq->list) &&
 	    /* recheck under lock */
 	    !test_bit(IWL_MVM_TXQ_STATE_READY, &mvmtxq->state)) {
-		list_add_tail(&mvmtxq->list, &mvm->add_stream_txqs);
+		list_add_tail_dbg(&mvmtxq->list, &mvm->add_stream_txqs);
 		schedule_work_dbg(&mvm->add_stream_wk);
 	}
-	spin_unlock_bh(&mvm->add_stream_lock);
+	spin_unlock_bh_dbg(&mvm->add_stream_lock);
 	
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 }
@@ -1052,7 +1052,7 @@ int iwl_mvm_mac_ampdu_action(struct ieee80211_hw *hw,
 		return -EACCES;
 	}
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	switch (action) {
 	case IEEE80211_AMPDU_RX_START:
@@ -1110,7 +1110,7 @@ int iwl_mvm_mac_ampdu_action(struct ieee80211_hw *hw,
 		iwl_mvm_ampdu_check_trigger(mvm, vif, sta, tid,
 					    rx_ba_ssn, action);
 	}
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);		
 	return ret;
@@ -1126,9 +1126,9 @@ static void iwl_mvm_cleanup_iterator(void *data, u8 *mac,
 
 	mvmvif->uploaded = false;
 
-	spin_lock_bh(&mvm->time_event_lock);
+	spin_lock_bh_dbg(&mvm->time_event_lock);
 	iwl_mvm_te_clear_data(mvm, &mvmvif->time_event_data);
-	spin_unlock_bh(&mvm->time_event_lock);
+	spin_unlock_bh_dbg(&mvm->time_event_lock);
 
 	mvmvif->roc_activity = ROC_NUM_ACTIVITIES;
 
@@ -1328,7 +1328,7 @@ int iwl_mvm_mac_start(struct ieee80211_hw *hw)
 
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	/* we are starting the mac not in error flow, and restart is enabled */
 	if (!test_bit(IWL_MVM_STATUS_HW_RESTART_REQUESTED, &mvm->status) &&
@@ -1350,7 +1350,7 @@ int iwl_mvm_mac_start(struct ieee80211_hw *hw)
 	}
 	clear_bit(IWL_MVM_STATUS_STARTING, &mvm->status);
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	iwl_mvm_mei_set_sw_rfkill_state(mvm);
 
@@ -1458,9 +1458,9 @@ void iwl_mvm_mac_stop(struct ieee80211_hw *hw, bool suspend)
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
 	/* Stop internal MLO scan, if running */
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	iwl_mvm_scan_stop(mvm, IWL_MVM_SCAN_INT_MLO, false);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	wiphy_work_cancel_dbg(mvm->hw->wiphy, &mvm->trig_link_selection_wk);
 	wiphy_work_flush_dbg(mvm->hw->wiphy, &mvm->async_handlers_wiphy_wk);
@@ -1488,9 +1488,9 @@ void iwl_mvm_mac_stop(struct ieee80211_hw *hw, bool suspend)
 
 	iwl_mvm_mei_set_sw_rfkill_state(mvm);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	__iwl_mvm_mac_stop(mvm, suspend);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	/*
 	 * The worker might have been waiting for the mutex, let it run and
@@ -1580,7 +1580,7 @@ int iwl_mvm_post_channel_switch(struct ieee80211_hw *hw,
 
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	if (vif->type == NL80211_IFTYPE_STATION) {
 		struct iwl_mvm_sta *mvmsta;
@@ -1632,7 +1632,7 @@ int iwl_mvm_post_channel_switch(struct ieee80211_hw *hw,
 out_unlock:
 	if (mvmvif->csa_failed)
 		ret = -EIO;
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return ret;
@@ -1664,7 +1664,7 @@ void iwl_mvm_abort_channel_switch(struct ieee80211_hw *hw,
 
 	IWL_DEBUG_MAC80211(mvm, "Abort CSA on mac %d\n", mvmvif->id);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	if (!fw_has_capa(&mvm->fw->ucode_capa,
 			 IWL_UCODE_TLV_CAPA_CHANNEL_SWITCH_CMD))
 		iwl_mvm_remove_csa_period(mvm, vif);
@@ -1676,7 +1676,7 @@ void iwl_mvm_abort_channel_switch(struct ieee80211_hw *hw,
 					     0, sizeof(cmd), &cmd));
 	}
 	mvmvif->csa_failed = true;
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	/* If we're here, we can't support MLD */
 	iwl_mvm_post_channel_switch(hw, vif, &vif->bss_conf);
@@ -1806,7 +1806,7 @@ static int iwl_mvm_mac_add_interface(struct ieee80211_hw *hw,
 
 	printk("[%s] [%d] : ENTRY\n", __func__, __LINE__);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	iwl_mvm_mac_init_mvmvif(mvm, mvmvif);
 
@@ -1920,7 +1920,7 @@ out:
 	mvmvif->deflink.phy_ctxt = NULL;
 	iwl_mvm_mac_ctxt_remove(mvm, vif);
  out_unlock:
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return ret;
@@ -1966,7 +1966,7 @@ static void iwl_mvm_mac_remove_interface(struct ieee80211_hw *hw,
 	      vif->type == NL80211_IFTYPE_ADHOC))
 		iwl_mvm_tcm_rm_vif(mvm, vif);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	if (vif == mvm->csme_vif) {
 		iwl_mei_set_netdev(NULL);
@@ -2036,7 +2036,7 @@ out:
 		iwl_mvm_dealloc_bcast_sta(mvm, vif);
 	}
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 }
 
 struct iwl_mvm_mc_iter_data {
@@ -3106,7 +3106,7 @@ static int iwl_mvm_start_ap_ibss(struct ieee80211_hw *hw,
 	struct iwl_mvm_vif *mvmvif = iwl_mvm_vif_from_mac80211(vif);
 	int ret;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	/*
 	 * Re-calculate the tsf id, as the leader-follower relations depend on
@@ -3213,7 +3213,7 @@ out_unbind:
 out_remove:
 	iwl_mvm_mac_ctxt_remove(mvm, vif);
 out_unlock:
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 	return ret;
 }
 
@@ -3492,7 +3492,7 @@ static void __iwl_mvm_mac_sta_notify(struct ieee80211_hw *hw,
 	if (WARN_ON(iwl_mvm_has_new_tx_api(mvm)))
 		return;
 
-	spin_lock_bh(&mvmsta->lock);
+	spin_lock_bh_dbg(&mvmsta->lock);
 	for (tid = 0; tid < ARRAY_SIZE(mvmsta->tid_data); tid++) {
 		struct iwl_mvm_tid_data *tid_data = &mvmsta->tid_data[tid];
 
@@ -3531,7 +3531,7 @@ static void __iwl_mvm_mac_sta_notify(struct ieee80211_hw *hw,
 	default:
 		break;
 	}
-	spin_unlock_bh(&mvmsta->lock);
+	spin_unlock_bh_dbg(&mvmsta->lock);
 }
 
 void iwl_mvm_mac_sta_notify(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
@@ -4250,7 +4250,7 @@ int iwl_mvm_mac_sta_state_common(struct ieee80211_hw *hw,
 		kfree(mvm_sta->dup_data);
 	}
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	/* this would be a mac80211 bug ... but don't crash, unless we had a
 	 * firmware crash while we were activating a link, in which case it is
@@ -4260,7 +4260,7 @@ int iwl_mvm_mac_sta_state_common(struct ieee80211_hw *hw,
 	for_each_sta_active_link(vif, sta, link_sta, link_id) {
 		if (WARN_ON_ONCE(!mvmvif->link[link_id] ||
 				 !mvmvif->link[link_id]->phy_ctxt)) {
-			mutex_unlock(&mvm->mutex);
+			mutex_unlock_dbg(&mvm->mutex);
 			return test_bit(IWL_MVM_STATUS_HW_RESTART_REQUESTED,
 					&mvm->status) ? 0 : -EINVAL;
 		}
@@ -4328,7 +4328,7 @@ int iwl_mvm_mac_sta_state_common(struct ieee80211_hw *hw,
 		ret = -EIO;
 	}
  out_unlock:
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	if (sta->tdls && ret == 0) {
 		if (old_state == IEEE80211_STA_NOTEXIST &&
@@ -4469,7 +4469,7 @@ int iwl_mvm_mac_sched_scan_stop(struct ieee80211_hw *hw,
 
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	/* Due to a race condition, it's possible that mac80211 asks
 	 * us to stop a sched_scan when it's already stopped.  This
@@ -4480,13 +4480,13 @@ int iwl_mvm_mac_sched_scan_stop(struct ieee80211_hw *hw,
 	 * not running.
 	*/
 	if (!(mvm->scan_status & IWL_MVM_SCAN_SCHED)) {
-		mutex_unlock(&mvm->mutex);
+		mutex_unlock_dbg(&mvm->mutex);
 		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 		return 0;
 	}
 
 	ret = iwl_mvm_scan_stop(mvm, IWL_MVM_SCAN_SCHED, false);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 	iwl_mvm_wait_for_async_handlers(mvm);
 
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
@@ -4801,9 +4801,9 @@ static bool iwl_mvm_rx_aux_roc(struct iwl_notif_wait_data *notif_wait,
 	IWL_DEBUG_TE(mvm, "TIME_EVENT_CMD response - UID = 0x%x\n",
 		     te_data->uid);
 
-	spin_lock_bh(&mvm->time_event_lock);
-	list_add_tail(&te_data->list, &mvm->aux_roc_te_list);
-	spin_unlock_bh(&mvm->time_event_lock);
+	spin_lock_bh_dbg(&mvm->time_event_lock);
+	list_add_tail_dbg(&te_data->list, &mvm->aux_roc_te_list);
+	spin_unlock_bh_dbg(&mvm->time_event_lock);
 
 	return true;
 }
@@ -4854,10 +4854,10 @@ static int iwl_mvm_send_aux_roc_cmd(struct iwl_mvm *mvm,
 
 	lockdep_assert_held(&mvm->mutex);
 
-	spin_lock_bh(&mvm->time_event_lock);
+	spin_lock_bh_dbg(&mvm->time_event_lock);
 
 	if (WARN_ON(te_data->id == HOT_SPOT_CMD)) {
-		spin_unlock_bh(&mvm->time_event_lock);
+		spin_unlock_bh_dbg(&mvm->time_event_lock);
 		return -EIO;
 	}
 
@@ -4865,7 +4865,7 @@ static int iwl_mvm_send_aux_roc_cmd(struct iwl_mvm *mvm,
 	te_data->duration = duration;
 	te_data->id = HOT_SPOT_CMD;
 
-	spin_unlock_bh(&mvm->time_event_lock);
+	spin_unlock_bh_dbg(&mvm->time_event_lock);
 
 	/*
 	 * Use a notification wait, which really just processes the
@@ -4899,9 +4899,9 @@ static int iwl_mvm_send_aux_roc_cmd(struct iwl_mvm *mvm,
 
 	if (res) {
  out_clear_te:
-		spin_lock_bh(&mvm->time_event_lock);
+		spin_lock_bh_dbg(&mvm->time_event_lock);
 		iwl_mvm_te_clear_data(mvm, te_data);
-		spin_unlock_bh(&mvm->time_event_lock);
+		spin_unlock_bh_dbg(&mvm->time_event_lock);
 	}
 
 	return res;
@@ -6146,7 +6146,7 @@ void iwl_mvm_mac_flush(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 	/* Make sure we're done with the deferred traffic before flushing */
 	flush_work_dbg(&mvm->add_stream_wk);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	/* flush the AP-station and all TDLS peers */
 	for (i = 0; i < mvm->fw->ucode_capa.num_stations; i++) {
@@ -6177,7 +6177,7 @@ void iwl_mvm_mac_flush(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 		}
 	}
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	/* this can take a while, and we may need/want other operations
 	 * to succeed while doing this, so do it without the mutex held
@@ -6224,7 +6224,7 @@ static int iwl_mvm_mac_get_acs_survey(struct iwl_mvm *mvm, int idx,
 	enum nl80211_band band;
 	int ret;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	if (!mvm->acs_survey) {
 		ret = -ENOENT;
@@ -6271,7 +6271,7 @@ static int iwl_mvm_mac_get_acs_survey(struct iwl_mvm *mvm, int idx,
 	ret = -ENOENT;
 
 out:
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return ret;
 }
@@ -6765,9 +6765,9 @@ iwl_mvm_mac_get_ftm_responder_stats(struct ieee80211_hw *hw,
 		return -EINVAL;
 	}
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	*stats = mvm->ftm_resp_stats;
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 
 	stats->filled = BIT(NL80211_FTM_STATS_SUCCESS_NUM) |
 			BIT(NL80211_FTM_STATS_PARTIAL_NUM) |

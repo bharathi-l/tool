@@ -616,11 +616,11 @@ static void iwl_mvm_del_ba(struct iwl_mvm *mvm, int queue,
 	reorder_buf = &ba_data->reorder_buf[queue];
 
 	/* release all frames that are in the reorder buffer to the stack */
-	spin_lock_bh(&reorder_buf->lock);
+	spin_lock_bh_dbg(&reorder_buf->lock);
 	iwl_mvm_release_frames(mvm, sta, NULL, ba_data, reorder_buf,
 			       ieee80211_sn_add(reorder_buf->head_sn,
 						ba_data->buf_size));
-	spin_unlock_bh(&reorder_buf->lock);
+	spin_unlock_bh_dbg(&reorder_buf->lock);
 
 out:
 	rcu_read_unlock();
@@ -656,10 +656,10 @@ static void iwl_mvm_release_frames_from_notif(struct iwl_mvm *mvm,
 
 	reorder_buf = &ba_data->reorder_buf[queue];
 
-	spin_lock_bh(&reorder_buf->lock);
+	spin_lock_bh_dbg(&reorder_buf->lock);
 	iwl_mvm_release_frames(mvm, sta, napi, ba_data,
 			       reorder_buf, nssn);
-	spin_unlock_bh(&reorder_buf->lock);
+	spin_unlock_bh_dbg(&reorder_buf->lock);
 
 out:
 	rcu_read_unlock();
@@ -796,11 +796,11 @@ static bool iwl_mvm_reorder(struct iwl_mvm *mvm,
 	buffer = &baid_data->reorder_buf[queue];
 	entries = &baid_data->entries[queue * baid_data->entries_per_queue];
 
-	spin_lock_bh(&buffer->lock);
+	spin_lock_bh_dbg(&buffer->lock);
 
 	if (!buffer->valid) {
 		if (reorder & IWL_RX_MPDU_REORDER_BA_OLD_SN) {
-			spin_unlock_bh(&buffer->lock);
+			spin_unlock_bh_dbg(&buffer->lock);
 			return false;
 		}
 		buffer->valid = true;
@@ -819,7 +819,7 @@ static bool iwl_mvm_reorder(struct iwl_mvm *mvm,
 		if (!amsdu || last_subframe)
 			buffer->head_sn = nssn;
 		/* No need to update AMSDU last SN - we are moving the head */
-		spin_unlock_bh(&buffer->lock);
+		spin_unlock_bh_dbg(&buffer->lock);
 		return false;
 	}
 
@@ -836,7 +836,7 @@ static bool iwl_mvm_reorder(struct iwl_mvm *mvm,
 			buffer->head_sn = ieee80211_sn_inc(buffer->head_sn);
 
 		/* No need to update AMSDU last SN - we are moving the head */
-		spin_unlock_bh(&buffer->lock);
+		spin_unlock_bh_dbg(&buffer->lock);
 		return false;
 	}
 
@@ -865,13 +865,13 @@ static bool iwl_mvm_reorder(struct iwl_mvm *mvm,
 		iwl_mvm_release_frames(mvm, sta, napi, baid_data,
 				       buffer, nssn);
 
-	spin_unlock_bh(&buffer->lock);
+	spin_unlock_bh_dbg(&buffer->lock);
 	return true;
 
 drop:
 	printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 	kfree_skb(skb);
-	spin_unlock_bh(&buffer->lock);
+	spin_unlock_bh_dbg(&buffer->lock);
 	return true;
 }
 

@@ -985,7 +985,7 @@ static void iwl_bg_start_internal_scan(struct work_struct *work)
 
 	IWL_DEBUG_SCAN(priv, "Start internal scan\n");
 
-	mutex_lock(&priv->mutex);
+	mutex_lock_dbg(&priv->mutex);
 
 	if (priv->scan_type == IWL_SCAN_RADIO_RESET) {
 		IWL_DEBUG_SCAN(priv, "Internal scan already in progress\n");
@@ -1000,7 +1000,7 @@ static void iwl_bg_start_internal_scan(struct work_struct *work)
 	if (iwl_scan_initiate(priv, NULL, IWL_SCAN_RADIO_RESET, priv->band))
 		IWL_DEBUG_SCAN(priv, "failed to start internal short scan\n");
  unlock:
-	mutex_unlock(&priv->mutex);
+	mutex_unlock_dbg(&priv->mutex);
 }
 
 static void iwl_bg_scan_check(struct work_struct *data)
@@ -1013,9 +1013,9 @@ static void iwl_bg_scan_check(struct work_struct *data)
 	/* Since we are here firmware does not finish scan and
 	 * most likely is in bad shape, so we don't bother to
 	 * send abort command, just force scan complete to mac80211 */
-	mutex_lock(&priv->mutex);
+	mutex_lock_dbg(&priv->mutex);
 	iwl_force_scan_end(priv);
-	mutex_unlock(&priv->mutex);
+	mutex_unlock_dbg(&priv->mutex);
 }
 
 static void iwl_bg_abort_scan(struct work_struct *work)
@@ -1026,9 +1026,9 @@ static void iwl_bg_abort_scan(struct work_struct *work)
 
 	/* We keep scan_check work queued in case when firmware will not
 	 * report back scan completed notification */
-	mutex_lock(&priv->mutex);
+	mutex_lock_dbg(&priv->mutex);
 	iwl_scan_cancel_timeout(priv, 200);
-	mutex_unlock(&priv->mutex);
+	mutex_unlock_dbg(&priv->mutex);
 }
 
 static void iwl_bg_scan_completed(struct work_struct *work)
@@ -1036,9 +1036,9 @@ static void iwl_bg_scan_completed(struct work_struct *work)
 	struct iwl_priv *priv =
 		container_of(work, struct iwl_priv, scan_completed);
 
-	mutex_lock(&priv->mutex);
+	mutex_lock_dbg(&priv->mutex);
 	iwl_process_scan_complete(priv);
-	mutex_unlock(&priv->mutex);
+	mutex_unlock_dbg(&priv->mutex);
 }
 
 void iwl_setup_scan_deferred_work(struct iwl_priv *priv)
@@ -1055,9 +1055,12 @@ void iwl_cancel_scan_deferred_work(struct iwl_priv *priv)
 	cancel_work_sync_dbg(&priv->abort_scan);
 	cancel_work_sync_dbg(&priv->scan_completed);
 
-	if (cancel_delayed_work_sync_dbg(&priv->scan_check)) {
-		mutex_lock(&priv->mutex);
+	bool ret = cancel_delayed_work_sync_dbg(&priv->scan_check);
+
+	if (!ret) {
+		mutex_lock_dbg(&priv->mutex);
 		iwl_force_scan_end(priv);
-		mutex_unlock(&priv->mutex);
+		mutex_unlock_dbg(&priv->mutex);
 	}
+
 }

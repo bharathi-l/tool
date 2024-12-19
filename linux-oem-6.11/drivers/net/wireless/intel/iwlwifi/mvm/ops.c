@@ -780,14 +780,14 @@ static void iwl_mvm_fwrt_dump_start(void *ctx)
 {
 	struct iwl_mvm *mvm = ctx;
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 }
 
 static void iwl_mvm_fwrt_dump_end(void *ctx)
 {
 	struct iwl_mvm *mvm = ctx;
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 }
 
 static int iwl_mvm_fwrt_send_hcmd(void *ctx, struct iwl_host_cmd *host_cmd)
@@ -843,11 +843,11 @@ static int iwl_mvm_start_get_nvm(struct iwl_mvm *mvm)
 get_nvm_from_fw:
 	rtnl_lock();
 	wiphy_lock(mvm->hw->wiphy);
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 
 	ret = iwl_trans_start_hw(mvm->trans);
 	if (ret) {
-		mutex_unlock(&mvm->mutex);
+		mutex_unlock_dbg(&mvm->mutex);
 		wiphy_unlock(mvm->hw->wiphy);
 		rtnl_unlock();
 		return ret;
@@ -863,7 +863,7 @@ get_nvm_from_fw:
 
 	iwl_mvm_stop_device(mvm);
 
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 	wiphy_unlock(mvm->hw->wiphy);
 	rtnl_unlock();
 
@@ -1199,12 +1199,12 @@ static void iwl_mvm_trig_link_selection(struct wiphy *wiphy,
 	struct iwl_mvm *mvm =
 		container_of(wk, struct iwl_mvm, trig_link_selection_wk);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	ieee80211_iterate_active_interfaces(mvm->hw,
 					    IEEE80211_IFACE_ITER_NORMAL,
 					    iwl_mvm_find_link_selection_vif,
 					    NULL);
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 }
 
 static struct iwl_op_mode *
@@ -1317,12 +1317,12 @@ iwl_op_mode_mvm_start(struct iwl_trans *trans, const struct iwl_cfg *cfg,
 		iwl_fw_set_current_image(&mvm->fwrt, IWL_UCODE_INIT);
 	mvm->drop_bcn_ap_mode = true;
 
-	mutex_init(&mvm->mutex);
-	spin_lock_init(&mvm->async_handlers_lock);
+	mutex_init_dbg(&mvm->mutex);
+	spin_lock_init_dbg(&mvm->async_handlers_lock);
 	INIT_LIST_HEAD(&mvm->time_event_list);
 	INIT_LIST_HEAD(&mvm->aux_roc_te_list);
 	INIT_LIST_HEAD(&mvm->async_handlers_list);
-	spin_lock_init(&mvm->time_event_lock);
+	spin_lock_init_dbg(&mvm->time_event_lock);
 	INIT_LIST_HEAD(&mvm->ftm_initiator.loc_list);
 	INIT_LIST_HEAD(&mvm->ftm_initiator.pasn_list);
 	INIT_LIST_HEAD(&mvm->resp_pasn_list);
@@ -1334,7 +1334,7 @@ iwl_op_mode_mvm_start(struct iwl_trans *trans, const struct iwl_cfg *cfg,
 	INIT_DELAYED_WORK(&mvm->scan_timeout_dwork, iwl_mvm_scan_timeout_wk);
 	INIT_WORK(&mvm->add_stream_wk, iwl_mvm_add_new_dqa_stream_wk);
 	INIT_LIST_HEAD(&mvm->add_stream_txqs);
-	spin_lock_init(&mvm->add_stream_lock);
+	spin_lock_init_dbg(&mvm->add_stream_lock);
 
 	wiphy_work_init_dbg(&mvm->async_handlers_wiphy_wk,
 			iwl_mvm_async_handlers_wiphy_wk);
@@ -1348,7 +1348,7 @@ iwl_op_mode_mvm_start(struct iwl_trans *trans, const struct iwl_cfg *cfg,
 
 	SET_IEEE80211_DEV(mvm->hw, mvm->trans->dev);
 
-	spin_lock_init(&mvm->tcm.lock);
+	spin_lock_init_dbg(&mvm->tcm.lock);
 	INIT_DELAYED_WORK(&mvm->tcm.work, iwl_mvm_tcm_work);
 	mvm->tcm.ts = jiffies;
 	mvm->tcm.ll_ts = jiffies;
@@ -1581,7 +1581,7 @@ static void iwl_op_mode_mvm_stop(struct iwl_op_mode *op_mode)
 	cancel_delayed_work_sync_dbg(&mvm->tcm.work);
 
 	iwl_fw_runtime_free(&mvm->fwrt);
-	mutex_destroy(&mvm->mutex);
+	mutex_destroy_dbg(&mvm->mutex);
 
 	if (mvm->mei_registered)
 		iwl_mei_unregister_complete();
@@ -1600,13 +1600,13 @@ void iwl_mvm_async_handlers_purge(struct iwl_mvm *mvm)
 {
 	struct iwl_async_handler_entry *entry, *tmp;
 
-	spin_lock_bh(&mvm->async_handlers_lock);
+	spin_lock_bh_dbg(&mvm->async_handlers_lock);
 	list_for_each_entry_safe(entry, tmp, &mvm->async_handlers_list, list) {
 		iwl_free_rxb(&entry->rxb);
-		list_del(&entry->list);
+		list_del_dbg(&entry->list);
 		kfree(entry);
 	}
-	spin_unlock_bh(&mvm->async_handlers_lock);
+	spin_unlock_bh_dbg(&mvm->async_handlers_lock);
 }
 
 /*
@@ -1624,23 +1624,23 @@ static void iwl_mvm_async_handlers_by_context(struct iwl_mvm *mvm,
 	 * wanted contexts from this list, add them to a local one (lock free),
 	 * and then handle them.
 	 */
-	spin_lock_bh(&mvm->async_handlers_lock);
+	spin_lock_bh_dbg(&mvm->async_handlers_lock);
 	list_for_each_entry_safe(entry, tmp, &mvm->async_handlers_list, list) {
 		if (!(BIT(entry->context) & contexts))
 			continue;
-		list_del(&entry->list);
-		list_add_tail(&entry->list, &local_list);
+		list_del_dbg(&entry->list);
+		list_add_tail_dbg(&entry->list, &local_list);
 	}
-	spin_unlock_bh(&mvm->async_handlers_lock);
+	spin_unlock_bh_dbg(&mvm->async_handlers_lock);
 
 	list_for_each_entry_safe(entry, tmp, &local_list, list) {
 		if (entry->context != RX_HANDLER_ASYNC_UNLOCKED)
-			mutex_lock(&mvm->mutex);
+			mutex_lock_dbg(&mvm->mutex);
 		entry->fn(mvm, &entry->rxb);
 		iwl_free_rxb(&entry->rxb);
-		list_del(&entry->list);
+		list_del_dbg(&entry->list);
 		if (entry->context != RX_HANDLER_ASYNC_UNLOCKED)
-			mutex_unlock(&mvm->mutex);
+			mutex_unlock_dbg(&mvm->mutex);
 		kfree(entry);
 	}
 }
@@ -1695,20 +1695,6 @@ static inline void iwl_mvm_rx_check_trigger(struct iwl_mvm *mvm,
 	}
 }
 
-#ifdef HANDLERS_DBG_PRINT
-void debug_handler_print(const struct iwl_rx_handlers* handlers, size_t num_handlers) 
-{
-	for (size_t i = 0; i < num_handlers; ++i) {
-		printk("[MODULE -> %s], [THREAD -> %s] [HANDLER -> %zu] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), i+1, __func__, __LINE__);
-		printk("[MODULE -> %s], [THREAD -> %s] [CMD_ID -> %x] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), handlers[i].cmd_id, __func__, __LINE__);
-		printk("[MODULE -> %s], [THREAD -> %s] [FN -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), handlers[i].fn, __func__, __LINE__);
-		printk("[MODULE -> %s], [THREAD -> %s] [CONTEXT -> %d] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), handlers[i].context, __func__, __LINE__);
-		printk("[MODULE -> %s], [THREAD -> %s] [MIN_SIZE -> %u] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), handlers[i].min_size, __func__, __LINE__);
-	}
-
-}
-#endif
-
 static void iwl_mvm_rx_common(struct iwl_mvm *mvm,
 			      struct iwl_rx_cmd_buffer *rxb,
 			      struct iwl_rx_packet *pkt)
@@ -1717,9 +1703,6 @@ static void iwl_mvm_rx_common(struct iwl_mvm *mvm,
 	int i;
 	union iwl_dbg_tlv_tp_data tp_data = { .fw_pkt = pkt };
 
-#ifdef HANDLERS_DBG_PRINT
-	size_t num_handlers = sizeof(iwl_mvm_rx_handlers) / sizeof(iwl_mvm_rx_handlers[0]);
-#endif	
 	iwl_dbg_tlv_time_point(&mvm->fwrt,
 			       IWL_FW_INI_TIME_POINT_FW_RSP_OR_NOTIF, &tp_data);
 	iwl_mvm_rx_check_trigger(mvm, pkt);
@@ -1744,9 +1727,6 @@ static void iwl_mvm_rx_common(struct iwl_mvm *mvm,
 			return;
 
 		if (rx_h->context == RX_HANDLER_SYNC) {
-#ifdef HANDLERS_DBG_PRINT
-    			debug_handler_print(iwl_mvm_rx_handlers, num_handlers);	
-#endif			
 			rx_h->fn(mvm, rxb);
 			return;
 		}
@@ -1761,9 +1741,9 @@ static void iwl_mvm_rx_common(struct iwl_mvm *mvm,
 		entry->rxb._rx_page_order = rxb->_rx_page_order;
 		entry->fn = rx_h->fn;
 		entry->context = rx_h->context;
-		spin_lock(&mvm->async_handlers_lock);
-		list_add_tail(&entry->list, &mvm->async_handlers_list);
-		spin_unlock(&mvm->async_handlers_lock);
+		spin_lock_dbg(&mvm->async_handlers_lock);
+		list_add_tail_dbg(&entry->list, &mvm->async_handlers_list);
+		spin_unlock_dbg(&mvm->async_handlers_lock);
 		if (rx_h->context == RX_HANDLER_ASYNC_LOCKED_WIPHY) {
 			wiphy_work_queue_dbg(mvm->hw->wiphy,
 					 &mvm->async_handlers_wiphy_wk);
@@ -2119,14 +2099,14 @@ static void iwl_op_mode_mvm_device_powered_off(struct iwl_op_mode *op_mode)
 {
 	struct iwl_mvm *mvm = IWL_OP_MODE_GET_MVM(op_mode);
 
-	mutex_lock(&mvm->mutex);
+	mutex_lock_dbg(&mvm->mutex);
 	clear_bit(IWL_MVM_STATUS_IN_D3, &mvm->status);
 	mvm->trans->system_pm_mode = IWL_PLAT_PM_MODE_DISABLED;
 	iwl_mvm_stop_device(mvm);
 #ifdef CONFIG_PM
 	mvm->fast_resume = false;
 #endif
-	mutex_unlock(&mvm->mutex);
+	mutex_unlock_dbg(&mvm->mutex);
 }
 
 #define IWL_MVM_COMMON_OPS					\
