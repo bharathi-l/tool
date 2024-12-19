@@ -97,7 +97,7 @@ static void bss_free(struct cfg80211_internal_bss *bss)
 	 * really matter any more save for completeness
 	 */
 	if (!list_empty(&bss->hidden_list))
-		list_del(&bss->hidden_list);
+		list_del_dbg(&bss->hidden_list);
 
 	kfree(bss);
 }
@@ -160,11 +160,11 @@ static bool __cfg80211_unlink_bss(struct cfg80211_registered_device *rdev,
 		 * if it's a probe response entry break its
 		 * link to the other entries in the group
 		 */
-		list_del_init(&bss->hidden_list);
+		list_del_init_dbg(&bss->hidden_list);
 	}
 
-	list_del_init(&bss->list);
-	list_del_init(&bss->pub.nontrans_list);
+	list_del_init_dbg(&bss->list);
+	list_del_init_dbg(&bss->pub.nontrans_list);
 	rb_erase(&bss->rbn, &rdev->bss_tree);
 	rdev->bss_entries--;
 	WARN_ONCE((rdev->bss_entries == 0) ^ list_empty(&rdev->bss_list),
@@ -437,7 +437,7 @@ cfg80211_add_nontrans_list(struct cfg80211_bss *trans_bss,
 		return -EINVAL;
 
 	/* add to the list */
-	list_add_tail(&nontrans_bss->nontrans_list, &trans_bss->nontrans_list);
+	list_add_tail_dbg(&nontrans_bss->nontrans_list, &trans_bss->nontrans_list);
 	return 0;
 }
 
@@ -534,7 +534,7 @@ cfg80211_free_coloc_ap_list(struct list_head *coloc_ap_list)
 	struct cfg80211_colocated_ap *ap, *tmp_ap;
 
 	list_for_each_entry_safe(ap, tmp_ap, coloc_ap_list, list) {
-		list_del(&ap->list);
+		list_del_dbg(&ap->list);
 		kfree(ap);
 	}
 }
@@ -715,7 +715,7 @@ cfg80211_parse_colocated_ap_iter(void *_data, u8 type,
 	if (!cfg80211_parse_ap_info(entry, tbtt_info, tbtt_info_len,
 				    data->ssid_elem, data->s_ssid_tmp)) {
 		data->n_coloc++;
-		list_add_tail(&entry->list, &data->ap_list);
+		list_add_tail_dbg(&entry->list, &data->ap_list);
 	} else {
 		kfree(entry);
 	}
@@ -742,7 +742,7 @@ cfg80211_parse_colocated_ap(const struct cfg80211_bss_ies *ies,
 		return 0;
 	}
 
-	list_splice_tail(&data.ap_list, list);
+	list_splice_tail_dbg(&data.ap_list, list);
 	return data.n_coloc;
 }
 EXPORT_SYMBOL_IF_CFG80211_KUNIT(cfg80211_parse_colocated_ap);
@@ -830,7 +830,7 @@ static int cfg80211_scan_6ghz(struct cfg80211_registered_device *rdev)
 	if (rdev_req->flags & NL80211_SCAN_FLAG_COLOCATED_6GHZ) {
 		struct cfg80211_internal_bss *intbss;
 
-		spin_lock_bh(&rdev->bss_lock);
+		spin_lock_bh_dbg(&rdev->bss_lock);
 		list_for_each_entry(intbss, &rdev->bss_list, list) {
 			struct cfg80211_bss *res = &intbss->pub;
 			const struct cfg80211_bss_ies *ies;
@@ -873,10 +873,10 @@ static int cfg80211_scan_6ghz(struct cfg80211_registered_device *rdev)
 			entry->short_ssid_valid = true;
 			entry->center_freq = res->channel->center_freq;
 
-			list_add_tail(&entry->list, &coloc_ap_list);
+			list_add_tail_dbg(&entry->list, &coloc_ap_list);
 			count++;
 		}
-		spin_unlock_bh(&rdev->bss_lock);
+		spin_unlock_bh_dbg(&rdev->bss_lock);
 	}
 
 	size = struct_size(request, channels, n_channels);
@@ -1105,9 +1105,9 @@ void ___cfg80211_scan_done(struct cfg80211_registered_device *rdev,
 	if (!request->info.aborted &&
 	    request->flags & NL80211_SCAN_FLAG_FLUSH) {
 		/* flush entries from previous scans */
-		spin_lock_bh(&rdev->bss_lock);
+		spin_lock_bh_dbg(&rdev->bss_lock);
 		__cfg80211_bss_expire(rdev, request->scan_start);
-		spin_unlock_bh(&rdev->bss_lock);
+		spin_unlock_bh_dbg(&rdev->bss_lock);
 	}
 
 	msg = nl80211_build_scan_msg(rdev, wdev, request->info.aborted);
@@ -1176,7 +1176,7 @@ void cfg80211_add_sched_scan_req(struct cfg80211_registered_device *rdev,
 {
 	lockdep_assert_held(&rdev->wiphy.mtx);
 
-	list_add_rcu(&req->list, &rdev->sched_scan_req_list);
+	list_add_rcu_dbg(&req->list, &rdev->sched_scan_req_list);
 }
 
 static void cfg80211_del_sched_scan_req(struct cfg80211_registered_device *rdev,
@@ -1184,7 +1184,7 @@ static void cfg80211_del_sched_scan_req(struct cfg80211_registered_device *rdev,
 {
 	lockdep_assert_held(&rdev->wiphy.mtx);
 
-	list_del_rcu(&req->list);
+	list_del_rcu_dbg(&req->list);
 	kfree_rcu(req, rcu_head);
 }
 
@@ -1248,9 +1248,9 @@ void cfg80211_sched_scan_results_wk(struct work_struct *work)
 			req->report_results = false;
 			if (req->flags & NL80211_SCAN_FLAG_FLUSH) {
 				/* flush entries from previous scans */
-				spin_lock_bh(&rdev->bss_lock);
+				spin_lock_bh_dbg(&rdev->bss_lock);
 				__cfg80211_bss_expire(rdev, req->scan_start);
-				spin_unlock_bh(&rdev->bss_lock);
+				spin_unlock_bh_dbg(&rdev->bss_lock);
 				req->scan_start = jiffies;
 			}
 			nl80211_send_sched_scan(req,
@@ -1342,10 +1342,10 @@ void cfg80211_bss_age(struct cfg80211_registered_device *rdev,
 	struct cfg80211_internal_bss *bss;
 	unsigned long age_jiffies = msecs_to_jiffies(age_secs * MSEC_PER_SEC);
 
-	spin_lock_bh(&rdev->bss_lock);
+	spin_lock_bh_dbg(&rdev->bss_lock);
 	list_for_each_entry(bss, &rdev->bss_list, list)
 		bss->ts -= age_jiffies;
-	spin_unlock_bh(&rdev->bss_lock);
+	spin_unlock_bh_dbg(&rdev->bss_lock);
 }
 
 void cfg80211_bss_expire(struct cfg80211_registered_device *rdev)
@@ -1357,9 +1357,9 @@ void cfg80211_bss_flush(struct wiphy *wiphy)
 {
 	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wiphy);
 
-	spin_lock_bh(&rdev->bss_lock);
+	spin_lock_bh_dbg(&rdev->bss_lock);
 	__cfg80211_bss_expire(rdev, jiffies);
-	spin_unlock_bh(&rdev->bss_lock);
+	spin_unlock_bh_dbg(&rdev->bss_lock);
 }
 EXPORT_SYMBOL(cfg80211_bss_flush);
 
@@ -1577,7 +1577,7 @@ struct cfg80211_bss *__cfg80211_get_bss(struct wiphy *wiphy,
 	trace_cfg80211_get_bss(wiphy, channel, bssid, ssid, ssid_len, bss_type,
 			       privacy);
 
-	spin_lock_bh(&rdev->bss_lock);
+	spin_lock_bh_dbg(&rdev->bss_lock);
 
 	list_for_each_entry(bss, &rdev->bss_list, list) {
 		if (!cfg80211_bss_type_match(bss->pub.capability,
@@ -1605,7 +1605,7 @@ struct cfg80211_bss *__cfg80211_get_bss(struct wiphy *wiphy,
 		}
 	}
 
-	spin_unlock_bh(&rdev->bss_lock);
+	spin_unlock_bh_dbg(&rdev->bss_lock);
 	if (!res)
 		return NULL;
 	trace_cfg80211_return_bss(&res->pub);
@@ -1674,7 +1674,7 @@ static void cfg80211_insert_bss(struct cfg80211_registered_device *rdev,
 
 	if (!rb_insert_bss(rdev, bss))
 		return;
-	list_add_tail(&bss->list, &rdev->bss_list);
+	list_add_tail_dbg(&bss->list, &rdev->bss_list);
 	rdev->bss_entries++;
 }
 
@@ -1685,11 +1685,11 @@ static void cfg80211_rehash_bss(struct cfg80211_registered_device *rdev,
 
 	rb_erase(&bss->rbn, &rdev->bss_tree);
 	if (!rb_insert_bss(rdev, bss)) {
-		list_del(&bss->list);
+		list_del_dbg(&bss->list);
 		if (!list_empty(&bss->hidden_list))
-			list_del_init(&bss->hidden_list);
+			list_del_init_dbg(&bss->hidden_list);
 		if (!list_empty(&bss->pub.nontrans_list))
-			list_del_init(&bss->pub.nontrans_list);
+			list_del_init_dbg(&bss->pub.nontrans_list);
 		rdev->bss_entries--;
 	}
 	rdev->bss_generation++;
@@ -1750,9 +1750,9 @@ static bool cfg80211_combine_bsses(struct cfg80211_registered_device *rdev,
 		if (WARN_ON_ONCE(bss->pub.hidden_beacon_bss))
 			continue;
 		if (WARN_ON_ONCE(!list_empty(&bss->hidden_list)))
-			list_del(&bss->hidden_list);
+			list_del_dbg(&bss->hidden_list);
 		/* combine them */
-		list_add(&bss->hidden_list, &new->hidden_list);
+		list_add_dbg(&bss->hidden_list, &new->hidden_list);
 		bss->pub.hidden_beacon_bss = &new->pub;
 		new->refcount += bss->refcount;
 		rcu_assign_pointer(bss->pub.beacon_ies,
@@ -1972,7 +1972,7 @@ __cfg80211_bss_update(struct cfg80211_registered_device *rdev,
 						     BSS_CMP_HIDE_NUL);
 			if (hidden) {
 				new->pub.hidden_beacon_bss = &hidden->pub;
-				list_add(&new->hidden_list,
+				list_add_dbg(&new->hidden_list,
 					 &hidden->hidden_list);
 				hidden->refcount++;
 
@@ -2034,9 +2034,9 @@ cfg80211_bss_update(struct cfg80211_registered_device *rdev,
 {
 	struct cfg80211_internal_bss *res;
 
-	spin_lock_bh(&rdev->bss_lock);
+	spin_lock_bh_dbg(&rdev->bss_lock);
 	res = __cfg80211_bss_update(rdev, tmp, signal_valid, ts);
-	spin_unlock_bh(&rdev->bss_lock);
+	spin_unlock_bh_dbg(&rdev->bss_lock);
 
 	return res;
 }
@@ -2336,7 +2336,7 @@ cfg80211_inform_single_bss_data(struct wiphy *wiphy,
 	rcu_assign_pointer(tmp.pub.ies, ies);
 
 	signal_valid = drv_data->chan == channel;
-	spin_lock_bh(&rdev->bss_lock);
+	spin_lock_bh_dbg(&rdev->bss_lock);
 	res = __cfg80211_bss_update(rdev, &tmp, signal_valid, ts);
 	if (!res)
 		goto drop;
@@ -2357,14 +2357,14 @@ cfg80211_inform_single_bss_data(struct wiphy *wiphy,
 		if (!res)
 			goto drop;
 	}
-	spin_unlock_bh(&rdev->bss_lock);
+	spin_unlock_bh_dbg(&rdev->bss_lock);
 
 	trace_cfg80211_return_bss(&res->pub);
 	/* __cfg80211_bss_update gives us a referenced result */
 	return &res->pub;
 
 drop:
-	spin_unlock_bh(&rdev->bss_lock);
+	spin_unlock_bh_dbg(&rdev->bss_lock);
 	return NULL;
 }
 
@@ -3274,9 +3274,9 @@ void cfg80211_ref_bss(struct wiphy *wiphy, struct cfg80211_bss *pub)
 	if (!pub)
 		return;
 
-	spin_lock_bh(&rdev->bss_lock);
+	spin_lock_bh_dbg(&rdev->bss_lock);
 	bss_ref_get(rdev, bss_from_pub(pub));
-	spin_unlock_bh(&rdev->bss_lock);
+	spin_unlock_bh_dbg(&rdev->bss_lock);
 }
 EXPORT_SYMBOL(cfg80211_ref_bss);
 
@@ -3287,9 +3287,9 @@ void cfg80211_put_bss(struct wiphy *wiphy, struct cfg80211_bss *pub)
 	if (!pub)
 		return;
 
-	spin_lock_bh(&rdev->bss_lock);
+	spin_lock_bh_dbg(&rdev->bss_lock);
 	bss_ref_put(rdev, bss_from_pub(pub));
-	spin_unlock_bh(&rdev->bss_lock);
+	spin_unlock_bh_dbg(&rdev->bss_lock);
 }
 EXPORT_SYMBOL(cfg80211_put_bss);
 
@@ -3304,7 +3304,7 @@ void cfg80211_unlink_bss(struct wiphy *wiphy, struct cfg80211_bss *pub)
 
 	bss = bss_from_pub(pub);
 
-	spin_lock_bh(&rdev->bss_lock);
+	spin_lock_bh_dbg(&rdev->bss_lock);
 	if (list_empty(&bss->list))
 		goto out;
 
@@ -3319,7 +3319,7 @@ void cfg80211_unlink_bss(struct wiphy *wiphy, struct cfg80211_bss *pub)
 	if (__cfg80211_unlink_bss(rdev, bss))
 		rdev->bss_generation++;
 out:
-	spin_unlock_bh(&rdev->bss_lock);
+	spin_unlock_bh_dbg(&rdev->bss_lock);
 }
 EXPORT_SYMBOL(cfg80211_unlink_bss);
 
@@ -3333,7 +3333,7 @@ void cfg80211_bss_iter(struct wiphy *wiphy,
 	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wiphy);
 	struct cfg80211_internal_bss *bss;
 
-	spin_lock_bh(&rdev->bss_lock);
+	spin_lock_bh_dbg(&rdev->bss_lock);
 
 	list_for_each_entry(bss, &rdev->bss_list, list) {
 		if (!chandef || cfg80211_is_sub_chan(chandef, bss->pub.channel,
@@ -3341,7 +3341,7 @@ void cfg80211_bss_iter(struct wiphy *wiphy,
 			iter(wiphy, &bss->pub, iter_data);
 	}
 
-	spin_unlock_bh(&rdev->bss_lock);
+	spin_unlock_bh_dbg(&rdev->bss_lock);
 }
 EXPORT_SYMBOL(cfg80211_bss_iter);
 
@@ -3357,7 +3357,7 @@ void cfg80211_update_assoc_bss_entry(struct wireless_dev *wdev,
 	struct cfg80211_bss *nontrans_bss;
 	struct cfg80211_bss *tmp;
 
-	spin_lock_bh(&rdev->bss_lock);
+	spin_lock_bh_dbg(&rdev->bss_lock);
 
 	/*
 	 * Some APs use CSA also for bandwidth changes, i.e., without actually
@@ -3416,7 +3416,7 @@ void cfg80211_update_assoc_bss_entry(struct wireless_dev *wdev,
 	}
 
 done:
-	spin_unlock_bh(&rdev->bss_lock);
+	spin_unlock_bh_dbg(&rdev->bss_lock);
 }
 
 #ifdef CONFIG_CFG80211_WEXT
@@ -3899,7 +3899,7 @@ static int ieee80211_scan_results(struct cfg80211_registered_device *rdev,
 	struct cfg80211_internal_bss *bss;
 	int err = 0;
 
-	spin_lock_bh(&rdev->bss_lock);
+	spin_lock_bh_dbg(&rdev->bss_lock);
 	cfg80211_bss_expire(rdev);
 
 	list_for_each_entry(bss, &rdev->bss_list, list) {
@@ -3914,7 +3914,7 @@ static int ieee80211_scan_results(struct cfg80211_registered_device *rdev,
 			break;
 		}
 	}
-	spin_unlock_bh(&rdev->bss_lock);
+	spin_unlock_bh_dbg(&rdev->bss_lock);
 
 	if (err)
 		return err;

@@ -16,10 +16,10 @@
 #include <linux/wireless.h>
 #include <net/cfg80211.h>
 #include <net/iw_handler.h>
-#include <linux/drv_dbg.h>
 #include "core.h"
 #include "nl80211.h"
 #include "rdev-ops.h"
+#include <linux/drv_dbg.h>
 
 void cfg80211_rx_assoc_resp(struct net_device *dev,
 			    const struct cfg80211_rx_assoc_resp_data *data)
@@ -604,9 +604,9 @@ static void cfg80211_mgmt_registrations_update(struct wireless_dev *wdev)
 
 	lockdep_assert_held(&rdev->wiphy.mtx);
 
-	spin_lock_bh(&rdev->mgmt_registrations_lock);
+	spin_lock_bh_dbg(&rdev->mgmt_registrations_lock);
 	if (!wdev->mgmt_registrations_need_update) {
-		spin_unlock_bh(&rdev->mgmt_registrations_lock);
+		spin_unlock_bh_dbg(&rdev->mgmt_registrations_lock);
 		return;
 	}
 
@@ -631,7 +631,7 @@ static void cfg80211_mgmt_registrations_update(struct wireless_dev *wdev)
 	rcu_read_unlock();
 
 	wdev->mgmt_registrations_need_update = 0;
-	spin_unlock_bh(&rdev->mgmt_registrations_lock);
+	spin_unlock_bh_dbg(&rdev->mgmt_registrations_lock);
 
 	rdev_update_mgmt_frame_registrations(rdev, wdev, &upd);
 }
@@ -701,7 +701,7 @@ int cfg80211_mlme_register_mgmt(struct wireless_dev *wdev, u32 snd_portid,
 	if (!nreg)
 		return -ENOMEM;
 
-	spin_lock_bh(&rdev->mgmt_registrations_lock);
+	spin_lock_bh_dbg(&rdev->mgmt_registrations_lock);
 
 	list_for_each_entry(reg, &wdev->mgmt_registrations, list) {
 		int mlen = min(match_len, reg->match_len);
@@ -733,10 +733,10 @@ int cfg80211_mlme_register_mgmt(struct wireless_dev *wdev, u32 snd_portid,
 		nreg->frame_type = cpu_to_le16(frame_type);
 		nreg->wdev = wdev;
 		nreg->multicast_rx = multicast_rx;
-		list_add(&nreg->list, &wdev->mgmt_registrations);
+		list_add_dbg(&nreg->list, &wdev->mgmt_registrations);
 	}
 	wdev->mgmt_registrations_need_update = 1;
-	spin_unlock_bh(&rdev->mgmt_registrations_lock);
+	spin_unlock_bh_dbg(&rdev->mgmt_registrations_lock);
 
 	cfg80211_mgmt_registrations_update(wdev);
 
@@ -744,7 +744,7 @@ int cfg80211_mlme_register_mgmt(struct wireless_dev *wdev, u32 snd_portid,
 
  out:
 	kfree(nreg);
-	spin_unlock_bh(&rdev->mgmt_registrations_lock);
+	spin_unlock_bh_dbg(&rdev->mgmt_registrations_lock);
 
 	return err;
 }
@@ -755,20 +755,20 @@ void cfg80211_mlme_unregister_socket(struct wireless_dev *wdev, u32 nlportid)
 	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wiphy);
 	struct cfg80211_mgmt_registration *reg, *tmp;
 
-	spin_lock_bh(&rdev->mgmt_registrations_lock);
+	spin_lock_bh_dbg(&rdev->mgmt_registrations_lock);
 
 	list_for_each_entry_safe(reg, tmp, &wdev->mgmt_registrations, list) {
 		if (reg->nlportid != nlportid)
 			continue;
 
-		list_del(&reg->list);
+		list_del_dbg(&reg->list);
 		kfree(reg);
 
 		wdev->mgmt_registrations_need_update = 1;
 		schedule_work_dbg(&rdev->mgmt_registrations_update_wk);
 	}
 
-	spin_unlock_bh(&rdev->mgmt_registrations_lock);
+	spin_unlock_bh_dbg(&rdev->mgmt_registrations_lock);
 
 	if (nlportid && rdev->crit_proto_nlportid == nlportid) {
 		rdev->crit_proto_nlportid = 0;
@@ -784,13 +784,13 @@ void cfg80211_mlme_purge_registrations(struct wireless_dev *wdev)
 	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wdev->wiphy);
 	struct cfg80211_mgmt_registration *reg, *tmp;
 
-	spin_lock_bh(&rdev->mgmt_registrations_lock);
+	spin_lock_bh_dbg(&rdev->mgmt_registrations_lock);
 	list_for_each_entry_safe(reg, tmp, &wdev->mgmt_registrations, list) {
-		list_del(&reg->list);
+		list_del_dbg(&reg->list);
 		kfree(reg);
 	}
 	wdev->mgmt_registrations_need_update = 1;
-	spin_unlock_bh(&rdev->mgmt_registrations_lock);
+	spin_unlock_bh_dbg(&rdev->mgmt_registrations_lock);
 
 	cfg80211_mgmt_registrations_update(wdev);
 }
@@ -978,7 +978,7 @@ bool cfg80211_rx_mgmt_ext(struct wireless_dev *wdev,
 	data = info->buf + ieee80211_hdrlen(mgmt->frame_control);
 	data_len = info->len - ieee80211_hdrlen(mgmt->frame_control);
 
-	spin_lock_bh(&rdev->mgmt_registrations_lock);
+	spin_lock_bh_dbg(&rdev->mgmt_registrations_lock);
 
 	list_for_each_entry(reg, &wdev->mgmt_registrations, list) {
 		if (reg->frame_type != ftype)
@@ -1001,7 +1001,7 @@ bool cfg80211_rx_mgmt_ext(struct wireless_dev *wdev,
 		break;
 	}
 
-	spin_unlock_bh(&rdev->mgmt_registrations_lock);
+	spin_unlock_bh_dbg(&rdev->mgmt_registrations_lock);
 
 	trace_cfg80211_return_bool(result);
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
@@ -1167,51 +1167,6 @@ void cfg80211_cac_event(struct net_device *netdev,
 }
 EXPORT_SYMBOL(cfg80211_cac_event);
 
-
-#if 0
-static void
-__cfg80211_background_cac_event(struct cfg80211_registered_device *rdev,
-				struct wireless_dev *wdev,
-				const struct cfg80211_chan_def *chandef,
-				enum nl80211_radar_event event)
-{
-	struct wiphy *wiphy = &rdev->wiphy;
-	struct net_device *netdev;
-
-	lockdep_assert_wiphy(&rdev->wiphy);
-
-	if (!cfg80211_chandef_valid(chandef))
-		return;
-
-	if (!rdev->background_radar_wdev)
-		return;
-
-	switch (event) {
-	case NL80211_RADAR_CAC_FINISHED:
-		cfg80211_set_dfs_state(wiphy, chandef, NL80211_DFS_AVAILABLE);
-		memcpy(&rdev->cac_done_chandef, chandef, sizeof(*chandef));
-		queue_work_dbg(cfg80211_wq, &rdev->propagate_cac_done_wk);
-		cfg80211_sched_dfs_chan_update(rdev);
-		wdev = rdev->background_radar_wdev;
-		break;
-	case NL80211_RADAR_CAC_ABORTED:
-		if (!cancel_delayed_work_dbg(&rdev->background_cac_done_wk)) {
-			return;
-		}
-		wdev = rdev->background_radar_wdev;
-		break;
-	case NL80211_RADAR_CAC_STARTED:
-		break;
-	default:
-		return;
-	}
-
-	netdev = wdev ? wdev->netdev : NULL;
-	nl80211_radar_notify(rdev, chandef, event, netdev, GFP_KERNEL);
-}
-#endif
-
-
 static void
 __cfg80211_background_cac_event(struct cfg80211_registered_device *rdev,
                                 struct wireless_dev *wdev,
@@ -1220,6 +1175,7 @@ __cfg80211_background_cac_event(struct cfg80211_registered_device *rdev,
 {
         struct wiphy *wiphy = &rdev->wiphy;
         struct net_device *netdev;
+	bool ret;
 
         lockdep_assert_wiphy(&rdev->wiphy);
 
@@ -1233,13 +1189,20 @@ __cfg80211_background_cac_event(struct cfg80211_registered_device *rdev,
         case NL80211_RADAR_CAC_FINISHED:
                 cfg80211_set_dfs_state(wiphy, chandef, NL80211_DFS_AVAILABLE);
                 memcpy(&rdev->cac_done_chandef, chandef, sizeof(*chandef));
-                queue_work(cfg80211_wq, &rdev->propagate_cac_done_wk);
+                queue_work_dbg(cfg80211_wq, &rdev->propagate_cac_done_wk);
                 cfg80211_sched_dfs_chan_update(rdev);
                 wdev = rdev->background_radar_wdev;
                 break;
         case NL80211_RADAR_CAC_ABORTED:
+#if 0
 		if (!cancel_delayed_work_dbg(&rdev->background_cac_done_wk))
 			return;
+#endif
+		ret = cancel_delayed_work_dbg(&rdev->background_cac_done_wk);
+
+		if (!ret)
+			return;
+
 		wdev = rdev->background_radar_wdev;
                 break;
         case NL80211_RADAR_CAC_STARTED:

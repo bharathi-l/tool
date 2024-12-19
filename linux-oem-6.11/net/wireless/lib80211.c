@@ -90,12 +90,12 @@ static void lib80211_crypt_deinit_entries(struct lib80211_crypt_info *info,
 	struct lib80211_crypt_data *entry, *next;
 	unsigned long flags;
 
-	spin_lock_irqsave(info->lock, flags);
+	spin_lock_irqsave_dbg(info->lock, flags);
 	list_for_each_entry_safe(entry, next, &info->crypt_deinit_list, list) {
 		if (atomic_read(&entry->refcnt) != 0 && !force)
 			continue;
 
-		list_del(&entry->list);
+		list_del_dbg(&entry->list);
 
 		if (entry->ops) {
 			entry->ops->deinit(entry->priv);
@@ -103,7 +103,7 @@ static void lib80211_crypt_deinit_entries(struct lib80211_crypt_info *info,
 		}
 		kfree(entry);
 	}
-	spin_unlock_irqrestore(info->lock, flags);
+	spin_unlock_irqrestore_dbg(info->lock, flags);
 }
 
 /* After this, crypt_deinit_list won't accept new members */
@@ -111,9 +111,9 @@ static void lib80211_crypt_quiescing(struct lib80211_crypt_info *info)
 {
 	unsigned long flags;
 
-	spin_lock_irqsave(info->lock, flags);
+	spin_lock_irqsave_dbg(info->lock, flags);
 	info->crypt_quiesced = 1;
-	spin_unlock_irqrestore(info->lock, flags);
+	spin_unlock_irqrestore_dbg(info->lock, flags);
 }
 
 static void lib80211_crypt_deinit_handler(struct timer_list *t)
@@ -124,14 +124,14 @@ static void lib80211_crypt_deinit_handler(struct timer_list *t)
 
 	lib80211_crypt_deinit_entries(info, 0);
 
-	spin_lock_irqsave(info->lock, flags);
+	spin_lock_irqsave_dbg(info->lock, flags);
 	if (!list_empty(&info->crypt_deinit_list) && !info->crypt_quiesced) {
 		printk(KERN_DEBUG "%s: entries remaining in delayed crypt "
 		       "deletion list\n", info->name);
 		info->crypt_deinit_timer.expires = jiffies + HZ;
 		add_timer_dbg(&info->crypt_deinit_timer);
 	}
-	spin_unlock_irqrestore(info->lock, flags);
+	spin_unlock_irqrestore_dbg(info->lock, flags);
 }
 
 void lib80211_crypt_delayed_deinit(struct lib80211_crypt_info *info,
@@ -150,15 +150,15 @@ void lib80211_crypt_delayed_deinit(struct lib80211_crypt_info *info,
 	 * decrypt operations. Use a list of delayed deinits to avoid needing
 	 * locking. */
 
-	spin_lock_irqsave(info->lock, flags);
+	spin_lock_irqsave_dbg(info->lock, flags);
 	if (!info->crypt_quiesced) {
-		list_add(&tmp->list, &info->crypt_deinit_list);
+		list_add_dbg(&tmp->list, &info->crypt_deinit_list);
 		if (!timer_pending(&info->crypt_deinit_timer)) {
 			info->crypt_deinit_timer.expires = jiffies + HZ;
 			add_timer_dbg(&info->crypt_deinit_timer);
 		}
 	}
-	spin_unlock_irqrestore(info->lock, flags);
+	spin_unlock_irqrestore_dbg(info->lock, flags);
 }
 EXPORT_SYMBOL(lib80211_crypt_delayed_deinit);
 
@@ -173,9 +173,9 @@ int lib80211_register_crypto_ops(struct lib80211_crypto_ops *ops)
 
 	alg->ops = ops;
 
-	spin_lock_irqsave(&lib80211_crypto_lock, flags);
-	list_add(&alg->list, &lib80211_crypto_algs);
-	spin_unlock_irqrestore(&lib80211_crypto_lock, flags);
+	spin_lock_irqsave_dbg(&lib80211_crypto_lock, flags);
+	list_add_dbg(&alg->list, &lib80211_crypto_algs);
+	spin_unlock_irqrestore_dbg(&lib80211_crypto_lock, flags);
 
 	printk(KERN_DEBUG "lib80211_crypt: registered algorithm '%s'\n",
 	       ops->name);
@@ -189,19 +189,19 @@ int lib80211_unregister_crypto_ops(struct lib80211_crypto_ops *ops)
 	struct lib80211_crypto_alg *alg;
 	unsigned long flags;
 
-	spin_lock_irqsave(&lib80211_crypto_lock, flags);
+	spin_lock_irqsave_dbg(&lib80211_crypto_lock, flags);
 	list_for_each_entry(alg, &lib80211_crypto_algs, list) {
 		if (alg->ops == ops)
 			goto found;
 	}
-	spin_unlock_irqrestore(&lib80211_crypto_lock, flags);
+	spin_unlock_irqrestore_dbg(&lib80211_crypto_lock, flags);
 	return -EINVAL;
 
       found:
 	printk(KERN_DEBUG "lib80211_crypt: unregistered algorithm '%s'\n",
 	       ops->name);
-	list_del(&alg->list);
-	spin_unlock_irqrestore(&lib80211_crypto_lock, flags);
+	list_del_dbg(&alg->list);
+	spin_unlock_irqrestore_dbg(&lib80211_crypto_lock, flags);
 	kfree(alg);
 	return 0;
 }
@@ -212,16 +212,16 @@ struct lib80211_crypto_ops *lib80211_get_crypto_ops(const char *name)
 	struct lib80211_crypto_alg *alg;
 	unsigned long flags;
 
-	spin_lock_irqsave(&lib80211_crypto_lock, flags);
+	spin_lock_irqsave_dbg(&lib80211_crypto_lock, flags);
 	list_for_each_entry(alg, &lib80211_crypto_algs, list) {
 		if (strcmp(alg->ops->name, name) == 0)
 			goto found;
 	}
-	spin_unlock_irqrestore(&lib80211_crypto_lock, flags);
+	spin_unlock_irqrestore_dbg(&lib80211_crypto_lock, flags);
 	return NULL;
 
       found:
-	spin_unlock_irqrestore(&lib80211_crypto_lock, flags);
+	spin_unlock_irqrestore_dbg(&lib80211_crypto_lock, flags);
 	return alg->ops;
 }
 EXPORT_SYMBOL(lib80211_get_crypto_ops);

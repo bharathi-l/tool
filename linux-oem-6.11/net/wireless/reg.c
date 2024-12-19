@@ -489,17 +489,17 @@ static void reg_regdb_apply(struct work_struct *work)
 
 	rtnl_lock();
 
-	mutex_lock(&reg_regdb_apply_mutex);
+	mutex_lock_dbg(&reg_regdb_apply_mutex);
 	while (!list_empty(&reg_regdb_apply_list)) {
 		request = list_first_entry(&reg_regdb_apply_list,
 					   struct reg_regdb_apply_request,
 					   list);
-		list_del(&request->list);
+		list_del_dbg(&request->list);
 
 		set_regdom(request->regdom, REGD_SOURCE_INTERNAL_DB);
 		kfree(request);
 	}
-	mutex_unlock(&reg_regdb_apply_mutex);
+	mutex_unlock_dbg(&reg_regdb_apply_mutex);
 
 	rtnl_unlock();
 }
@@ -518,9 +518,9 @@ static int reg_schedule_apply(const struct ieee80211_regdomain *regdom)
 
 	request->regdom = regdom;
 
-	mutex_lock(&reg_regdb_apply_mutex);
-	list_add_tail(&request->list, &reg_regdb_apply_list);
-	mutex_unlock(&reg_regdb_apply_mutex);
+	mutex_lock_dbg(&reg_regdb_apply_mutex);
+	list_add_tail_dbg(&request->list, &reg_regdb_apply_list);
+	mutex_unlock_dbg(&reg_regdb_apply_mutex);
 
 	schedule_work_dbg(&reg_regdb_work);
 	return 0;
@@ -2668,10 +2668,10 @@ static void reg_set_request_processed(void)
 
 	lr->processed = true;
 
-	spin_lock(&reg_requests_lock);
+	spin_lock_dbg(&reg_requests_lock);
 	if (!list_empty(&reg_requests_list))
 		need_more_processing = true;
-	spin_unlock(&reg_requests_lock);
+	spin_unlock_dbg(&reg_requests_lock);
 
 	cancel_crda_timeout();
 
@@ -3110,19 +3110,19 @@ static void reg_process_pending_hints(void)
 		return;
 	}
 
-	spin_lock(&reg_requests_lock);
+	spin_lock_dbg(&reg_requests_lock);
 
 	if (list_empty(&reg_requests_list)) {
-		spin_unlock(&reg_requests_lock);
+		spin_unlock_dbg(&reg_requests_lock);
 		return;
 	}
 
 	reg_request = list_first_entry(&reg_requests_list,
 				       struct regulatory_request,
 				       list);
-	list_del_init(&reg_request->list);
+	list_del_init_dbg(&reg_request->list);
 
-	spin_unlock(&reg_requests_lock);
+	spin_unlock_dbg(&reg_requests_lock);
 
 	notify_self_managed_wiphys(reg_request);
 
@@ -3130,10 +3130,10 @@ static void reg_process_pending_hints(void)
 
 	lr = get_last_request();
 
-	spin_lock(&reg_requests_lock);
+	spin_lock_dbg(&reg_requests_lock);
 	if (!list_empty(&reg_requests_list) && lr && lr->processed)
 		schedule_work_dbg(&reg_work);
-	spin_unlock(&reg_requests_lock);
+	spin_unlock_dbg(&reg_requests_lock);
 }
 
 /* Processes beacon hints -- this has nothing to do with country IEs */
@@ -3143,21 +3143,21 @@ static void reg_process_pending_beacon_hints(void)
 	struct reg_beacon *pending_beacon, *tmp;
 
 	/* This goes through the _pending_ beacon list */
-	spin_lock_bh(&reg_pending_beacons_lock);
+	spin_lock_bh_dbg(&reg_pending_beacons_lock);
 
 	list_for_each_entry_safe(pending_beacon, tmp,
 				 &reg_pending_beacons, list) {
-		list_del_init(&pending_beacon->list);
+		list_del_init_dbg(&pending_beacon->list);
 
 		/* Applies the beacon hint to current wiphys */
 		for_each_rdev(rdev)
 			wiphy_update_new_beacon(&rdev->wiphy, pending_beacon);
 
 		/* Remembers the beacon hint for new wiphys or reg changes */
-		list_add_tail(&pending_beacon->list, &reg_beacon_list);
+		list_add_tail_dbg(&pending_beacon->list, &reg_beacon_list);
 	}
 
-	spin_unlock_bh(&reg_pending_beacons_lock);
+	spin_unlock_bh_dbg(&reg_pending_beacons_lock);
 }
 
 static void reg_process_self_managed_hint(struct wiphy *wiphy)
@@ -3171,10 +3171,10 @@ static void reg_process_self_managed_hint(struct wiphy *wiphy)
 	ASSERT_RTNL();
 	lockdep_assert_wiphy(wiphy);
 
-	spin_lock(&reg_requests_lock);
+	spin_lock_dbg(&reg_requests_lock);
 	regd = rdev->requested_regd;
 	rdev->requested_regd = NULL;
-	spin_unlock(&reg_requests_lock);
+	spin_unlock_dbg(&reg_requests_lock);
 
 	if (!regd)
 		return;
@@ -3228,9 +3228,9 @@ static void queue_regulatory_request(struct regulatory_request *request)
 	request->alpha2[0] = toupper(request->alpha2[0]);
 	request->alpha2[1] = toupper(request->alpha2[1]);
 
-	spin_lock(&reg_requests_lock);
-	list_add_tail(&request->list, &reg_requests_list);
-	spin_unlock(&reg_requests_lock);
+	spin_lock_dbg(&reg_requests_lock);
+	list_add_tail_dbg(&request->list, &reg_requests_list);
+	spin_unlock_dbg(&reg_requests_lock);
 
 	schedule_work_dbg(&reg_work);
 }
@@ -3289,7 +3289,7 @@ int regulatory_hint_user(const char *alpha2,
 
 void regulatory_hint_indoor(bool is_indoor, u32 portid)
 {
-	spin_lock(&reg_indoor_lock);
+	spin_lock_dbg(&reg_indoor_lock);
 
 	/* It is possible that more than one user space process is trying to
 	 * configure the indoor setting. To handle such cases, clear the indoor
@@ -3306,7 +3306,7 @@ void regulatory_hint_indoor(bool is_indoor, u32 portid)
 		reg_is_indoor_portid = 0;
 	}
 
-	spin_unlock(&reg_indoor_lock);
+	spin_unlock_dbg(&reg_indoor_lock);
 
 	if (!is_indoor)
 		reg_check_channels();
@@ -3314,17 +3314,17 @@ void regulatory_hint_indoor(bool is_indoor, u32 portid)
 
 void regulatory_netlink_notify(u32 portid)
 {
-	spin_lock(&reg_indoor_lock);
+	spin_lock_dbg(&reg_indoor_lock);
 
 	if (reg_is_indoor_portid != portid) {
-		spin_unlock(&reg_indoor_lock);
+		spin_unlock_dbg(&reg_indoor_lock);
 		return;
 	}
 
 	reg_is_indoor = false;
 	reg_is_indoor_portid = 0;
 
-	spin_unlock(&reg_indoor_lock);
+	spin_unlock_dbg(&reg_indoor_lock);
 
 	reg_check_channels();
 }
@@ -3506,12 +3506,12 @@ static void restore_regulatory_settings(bool reset_user, bool cached)
 	 * space, as otherwise there is no guarantee that the device is still
 	 * operating in an indoor environment.
 	 */
-	spin_lock(&reg_indoor_lock);
+	spin_lock_dbg(&reg_indoor_lock);
 	if (reg_is_indoor && !reg_is_indoor_portid) {
 		reg_is_indoor = false;
 		reg_check_channels();
 	}
-	spin_unlock(&reg_indoor_lock);
+	spin_unlock_dbg(&reg_indoor_lock);
 
 	reset_regdomains(true, &world_regdom);
 	restore_alpha2(alpha2, reset_user);
@@ -3522,20 +3522,20 @@ static void restore_regulatory_settings(bool reset_user, bool cached)
 	 * add then after we've restored regulatory
 	 * settings.
 	 */
-	spin_lock(&reg_requests_lock);
-	list_splice_tail_init(&reg_requests_list, &tmp_reg_req_list);
-	spin_unlock(&reg_requests_lock);
+	spin_lock_dbg(&reg_requests_lock);
+	list_splice_tail_init_dbg(&reg_requests_list, &tmp_reg_req_list);
+	spin_unlock_dbg(&reg_requests_lock);
 
 	/* Clear beacon hints */
-	spin_lock_bh(&reg_pending_beacons_lock);
+	spin_lock_bh_dbg(&reg_pending_beacons_lock);
 	list_for_each_entry_safe(reg_beacon, btmp, &reg_pending_beacons, list) {
-		list_del(&reg_beacon->list);
+		list_del_dbg(&reg_beacon->list);
 		kfree(reg_beacon);
 	}
-	spin_unlock_bh(&reg_pending_beacons_lock);
+	spin_unlock_bh_dbg(&reg_pending_beacons_lock);
 
 	list_for_each_entry_safe(reg_beacon, btmp, &reg_beacon_list, list) {
-		list_del(&reg_beacon->list);
+		list_del_dbg(&reg_beacon->list);
 		kfree(reg_beacon);
 	}
 
@@ -3562,12 +3562,12 @@ static void restore_regulatory_settings(bool reset_user, bool cached)
 		    !regulatory_hint_user(alpha2, NL80211_USER_REG_HINT_USER)) {
 			struct regulatory_request *ureq;
 
-			spin_lock(&reg_requests_lock);
+			spin_lock_dbg(&reg_requests_lock);
 			ureq = list_last_entry(&reg_requests_list,
 					       struct regulatory_request,
 					       list);
-			list_del(&ureq->list);
-			spin_unlock(&reg_requests_lock);
+			list_del_dbg(&ureq->list);
+			spin_unlock_dbg(&reg_requests_lock);
 
 			notify_self_managed_wiphys(ureq);
 			reg_update_last_request(ureq);
@@ -3586,9 +3586,9 @@ static void restore_regulatory_settings(bool reset_user, bool cached)
 			regulatory_hint_user(alpha2, NL80211_USER_REG_HINT_USER);
 	}
 
-	spin_lock(&reg_requests_lock);
-	list_splice_tail_init(&tmp_reg_req_list, &reg_requests_list);
-	spin_unlock(&reg_requests_lock);
+	spin_lock_dbg(&reg_requests_lock);
+	list_splice_tail_init_dbg(&tmp_reg_req_list, &reg_requests_list);
+	spin_unlock_dbg(&reg_requests_lock);
 
 	pr_debug("Kicking the queue\n");
 
@@ -3626,17 +3626,17 @@ void regulatory_hint_disconnect(void)
 		if (is_wiphy_all_set_reg_flag(REGULATORY_DISABLE_BEACON_HINTS))
 			return;
 
-		spin_lock_bh(&reg_pending_beacons_lock);
+		spin_lock_bh_dbg(&reg_pending_beacons_lock);
 		list_for_each_entry_safe(reg_beacon, btmp,
 					 &reg_pending_beacons, list) {
-			list_del(&reg_beacon->list);
+			list_del_dbg(&reg_beacon->list);
 			kfree(reg_beacon);
 		}
-		spin_unlock_bh(&reg_pending_beacons_lock);
+		spin_unlock_bh_dbg(&reg_pending_beacons_lock);
 
 		list_for_each_entry_safe(reg_beacon, btmp,
 					 &reg_beacon_list, list) {
-			list_del(&reg_beacon->list);
+			list_del_dbg(&reg_beacon->list);
 			kfree(reg_beacon);
 		}
 
@@ -3680,9 +3680,9 @@ void regulatory_hint_found_beacon(struct wiphy *wiphy,
 	     !freq_is_chan_12_13_14(beacon_chan->center_freq)))
 		return;
 
-	spin_lock_bh(&reg_pending_beacons_lock);
+	spin_lock_bh_dbg(&reg_pending_beacons_lock);
 	processing = pending_reg_beacon(beacon_chan);
-	spin_unlock_bh(&reg_pending_beacons_lock);
+	spin_unlock_bh_dbg(&reg_pending_beacons_lock);
 
 	if (processing)
 		return;
@@ -3702,11 +3702,11 @@ void regulatory_hint_found_beacon(struct wiphy *wiphy,
 
 	/*
 	 * Since we can be called from BH or and non-BH context
-	 * we must use spin_lock_bh()
+	 * we must use spin_lock_bh_dbg()
 	 */
-	spin_lock_bh(&reg_pending_beacons_lock);
-	list_add_tail(&reg_beacon->list, &reg_pending_beacons);
-	spin_unlock_bh(&reg_pending_beacons_lock);
+	spin_lock_bh_dbg(&reg_pending_beacons_lock);
+	list_add_tail_dbg(&reg_beacon->list, &reg_pending_beacons);
+	spin_unlock_bh_dbg(&reg_pending_beacons_lock);
 
 	schedule_work_dbg(&reg_work);
 }
@@ -4058,10 +4058,10 @@ static int __regulatory_set_wiphy_regd(struct wiphy *wiphy,
 
 	rdev = wiphy_to_rdev(wiphy);
 
-	spin_lock(&reg_requests_lock);
+	spin_lock_dbg(&reg_requests_lock);
 	prev_regd = rdev->requested_regd;
 	rdev->requested_regd = regd;
-	spin_unlock(&reg_requests_lock);
+	spin_unlock_dbg(&reg_requests_lock);
 
 	kfree(prev_regd);
 	return 0;
@@ -4377,17 +4377,17 @@ void regulatory_exit(void)
 	platform_device_unregister(reg_pdev);
 
 	list_for_each_entry_safe(reg_beacon, btmp, &reg_pending_beacons, list) {
-		list_del(&reg_beacon->list);
+		list_del_dbg(&reg_beacon->list);
 		kfree(reg_beacon);
 	}
 
 	list_for_each_entry_safe(reg_beacon, btmp, &reg_beacon_list, list) {
-		list_del(&reg_beacon->list);
+		list_del_dbg(&reg_beacon->list);
 		kfree(reg_beacon);
 	}
 
 	list_for_each_entry_safe(reg_request, tmp, &reg_requests_list, list) {
-		list_del(&reg_request->list);
+		list_del_dbg(&reg_request->list);
 		kfree(reg_request);
 	}
 

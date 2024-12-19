@@ -1066,9 +1066,9 @@ void cfg80211_connect_done(struct net_device *dev,
 	ev->cr.status = params->status;
 	ev->cr.timeout_reason = params->timeout_reason;
 
-	spin_lock_irqsave(&wdev->event_lock, flags);
-	list_add_tail(&ev->list, &wdev->event_list);
-	spin_unlock_irqrestore(&wdev->event_lock, flags);
+	spin_lock_irqsave_dbg(&wdev->event_lock, flags);
+	list_add_tail_dbg(&ev->list, &wdev->event_list);
+	spin_unlock_irqrestore_dbg(&wdev->event_lock, flags);
 	queue_work_dbg(cfg80211_wq, &rdev->event_work);
 }
 EXPORT_SYMBOL(cfg80211_connect_done);
@@ -1271,9 +1271,9 @@ void cfg80211_roamed(struct net_device *dev, struct cfg80211_roam_info *info,
 		}
 	}
 
-	spin_lock_irqsave(&wdev->event_lock, flags);
-	list_add_tail(&ev->list, &wdev->event_list);
-	spin_unlock_irqrestore(&wdev->event_lock, flags);
+	spin_lock_irqsave_dbg(&wdev->event_lock, flags);
+	list_add_tail_dbg(&ev->list, &wdev->event_list);
+	spin_unlock_irqrestore_dbg(&wdev->event_lock, flags);
 	queue_work_dbg(cfg80211_wq, &rdev->event_work);
 
 	return;
@@ -1331,9 +1331,9 @@ void cfg80211_port_authorized(struct net_device *dev, const u8 *peer_addr,
 	 * Use the wdev event list so that if there are pending
 	 * connected/roamed events, they will be reported first.
 	 */
-	spin_lock_irqsave(&wdev->event_lock, flags);
-	list_add_tail(&ev->list, &wdev->event_list);
-	spin_unlock_irqrestore(&wdev->event_lock, flags);
+	spin_lock_irqsave_dbg(&wdev->event_lock, flags);
+	list_add_tail_dbg(&ev->list, &wdev->event_list);
+	spin_unlock_irqrestore_dbg(&wdev->event_lock, flags);
 	queue_work_dbg(cfg80211_wq, &rdev->event_work);
 }
 EXPORT_SYMBOL(cfg80211_port_authorized);
@@ -1422,9 +1422,9 @@ void cfg80211_disconnected(struct net_device *dev, u16 reason,
 	ev->dc.reason = reason;
 	ev->dc.locally_generated = locally_generated;
 
-	spin_lock_irqsave(&wdev->event_lock, flags);
-	list_add_tail(&ev->list, &wdev->event_list);
-	spin_unlock_irqrestore(&wdev->event_lock, flags);
+	spin_lock_irqsave_dbg(&wdev->event_lock, flags);
+	list_add_tail_dbg(&ev->list, &wdev->event_list);
+	spin_unlock_irqrestore_dbg(&wdev->event_lock, flags);
 	queue_work_dbg(cfg80211_wq, &rdev->event_work);
 }
 EXPORT_SYMBOL(cfg80211_disconnected);

@@ -432,7 +432,7 @@ static void cfg80211_wiphy_work(struct work_struct *work)
 	wk = list_first_entry_or_null(&rdev->wiphy_work_list,
 				      struct wiphy_work, entry);
 	if (wk) {
-		list_del_init(&wk->entry);
+		list_del_init_dbg(&wk->entry);
 		if (!list_empty(&rdev->wiphy_work_list))
 			queue_work_dbg(system_unbound_wq, work);
 		spin_unlock_irq(&rdev->wiphy_work_lock);
@@ -526,11 +526,11 @@ use_default_name:
 		}
 	}
 
-	mutex_init(&rdev->wiphy.mtx);
+	mutex_init_dbg(&rdev->wiphy.mtx);
 	INIT_LIST_HEAD(&rdev->wiphy.wdev_list);
 	INIT_LIST_HEAD(&rdev->beacon_registrations);
-	spin_lock_init(&rdev->beacon_registrations_lock);
-	spin_lock_init(&rdev->bss_lock);
+	spin_lock_init_dbg(&rdev->beacon_registrations_lock);
+	spin_lock_init_dbg(&rdev->bss_lock);
 	INIT_LIST_HEAD(&rdev->bss_list);
 	INIT_LIST_HEAD(&rdev->sched_scan_req_list);
 	wiphy_work_init_dbg(&rdev->scan_done_wk, __cfg80211_scan_done);
@@ -553,7 +553,7 @@ use_default_name:
 	INIT_WORK(&rdev->propagate_cac_done_wk, cfg80211_propagate_cac_done_wk);
 	INIT_WORK(&rdev->mgmt_registrations_update_wk,
 		  cfg80211_mgmt_registrations_update_wk);
-	spin_lock_init(&rdev->mgmt_registrations_lock);
+	spin_lock_init_dbg(&rdev->mgmt_registrations_lock);
 
 #ifdef CONFIG_CFG80211_DEFAULT_PS
 	rdev->wiphy.flags |= WIPHY_FLAG_PS_ON_BY_DEFAULT;
@@ -573,7 +573,7 @@ use_default_name:
 
 	INIT_WORK(&rdev->wiphy_work, cfg80211_wiphy_work);
 	INIT_LIST_HEAD(&rdev->wiphy_work_list);
-	spin_lock_init(&rdev->wiphy_work_lock);
+	spin_lock_init_dbg(&rdev->wiphy_work_lock);
 	INIT_WORK(&rdev->rfkill_block, cfg80211_rfkill_block_work);
 	INIT_WORK(&rdev->conn_work, cfg80211_conn_work);
 	INIT_WORK(&rdev->event_work, cfg80211_event_work);
@@ -972,7 +972,7 @@ int wiphy_register(struct wiphy *wiphy)
 		return res;
 	}
 
-	list_add_rcu(&rdev->list, &cfg80211_rdev_list);
+	list_add_rcu_dbg(&rdev->list, &cfg80211_rdev_list);
 	cfg80211_rdev_list_generation++;
 
 	/* add to debugfs */
@@ -1061,19 +1061,19 @@ void cfg80211_process_wiphy_works(struct cfg80211_registered_device *rdev,
 
 	lockdep_assert_held(&rdev->wiphy.mtx);
 
-	spin_lock_irqsave(&rdev->wiphy_work_lock, flags);
+	spin_lock_irqsave_dbg(&rdev->wiphy_work_lock, flags);
 	while (!list_empty(&rdev->wiphy_work_list)) {
 		struct wiphy_work *wk;
 
 		wk = list_first_entry(&rdev->wiphy_work_list,
 				      struct wiphy_work, entry);
-		list_del_init(&wk->entry);
-		spin_unlock_irqrestore(&rdev->wiphy_work_lock, flags);
+		list_del_init_dbg(&wk->entry);
+		spin_unlock_irqrestore_dbg(&rdev->wiphy_work_lock, flags);
 
 		trace_wiphy_work_run(&rdev->wiphy, wk);
 		wk->func(&rdev->wiphy, wk);
 
-		spin_lock_irqsave(&rdev->wiphy_work_lock, flags);
+		spin_lock_irqsave_dbg(&rdev->wiphy_work_lock, flags);
 
 		if (wk == end)
 			break;
@@ -1081,7 +1081,7 @@ void cfg80211_process_wiphy_works(struct cfg80211_registered_device *rdev,
 		if (WARN_ON(--runaway_limit == 0))
 			INIT_LIST_HEAD(&rdev->wiphy_work_list);
 	}
-	spin_unlock_irqrestore(&rdev->wiphy_work_lock, flags);
+	spin_unlock_irqrestore_dbg(&rdev->wiphy_work_lock, flags);
 }
 
 void wiphy_unregister(struct wiphy *wiphy)
@@ -1110,7 +1110,7 @@ void wiphy_unregister(struct wiphy *wiphy)
 	 * it impossible to find from userspace.
 	 */
 	debugfs_remove_recursive(rdev->wiphy.debugfsdir);
-	list_del_rcu(&rdev->list);
+	list_del_rcu_dbg(&rdev->list);
 	synchronize_rcu();
 
 	/*
@@ -1157,12 +1157,12 @@ void cfg80211_dev_free(struct cfg80211_registered_device *rdev)
 	struct cfg80211_beacon_registration *reg, *treg;
 	rfkill_destroy(rdev->wiphy.rfkill);
 	list_for_each_entry_safe(reg, treg, &rdev->beacon_registrations, list) {
-		list_del(&reg->list);
+		list_del_dbg(&reg->list);
 		kfree(reg);
 	}
 	list_for_each_entry_safe(scan, tmp, &rdev->bss_list, list)
 		cfg80211_put_bss(&rdev->wiphy, &scan->pub);
-	mutex_destroy(&rdev->wiphy.mtx);
+	mutex_destroy_dbg(&rdev->wiphy.mtx);
 
 	/*
 	 * The 'regd' can only be non-NULL if we never finished
@@ -1212,7 +1212,7 @@ static void _cfg80211_unregister_wdev(struct wireless_dev *wdev,
 			unregister_netdevice(wdev->netdev);
 	}
 
-	list_del_rcu(&wdev->list);
+	list_del_rcu_dbg(&wdev->list);
 	synchronize_net();
 	rdev->devlist_generation++;
 
@@ -1356,9 +1356,9 @@ void cfg80211_stop_iface(struct wiphy *wiphy, struct wireless_dev *wdev,
 
 	ev->type = EVENT_STOPPED;
 
-	spin_lock_irqsave(&wdev->event_lock, flags);
-	list_add_tail(&ev->list, &wdev->event_list);
-	spin_unlock_irqrestore(&wdev->event_lock, flags);
+	spin_lock_irqsave_dbg(&wdev->event_lock, flags);
+	list_add_tail_dbg(&ev->list, &wdev->event_list);
+	spin_unlock_irqrestore_dbg(&wdev->event_lock, flags);
 	queue_work_dbg(cfg80211_wq, &rdev->event_work);
 }
 EXPORT_SYMBOL(cfg80211_stop_iface);
@@ -1366,10 +1366,10 @@ EXPORT_SYMBOL(cfg80211_stop_iface);
 void cfg80211_init_wdev(struct wireless_dev *wdev)
 {
 	INIT_LIST_HEAD(&wdev->event_list);
-	spin_lock_init(&wdev->event_lock);
+	spin_lock_init_dbg(&wdev->event_lock);
 	INIT_LIST_HEAD(&wdev->mgmt_registrations);
 	INIT_LIST_HEAD(&wdev->pmsr_list);
-	spin_lock_init(&wdev->pmsr_lock);
+	spin_lock_init_dbg(&wdev->pmsr_lock);
 	INIT_WORK(&wdev->pmsr_free_wk, cfg80211_pmsr_free_wk);
 
 #ifdef CONFIG_CFG80211_WEXT
@@ -1410,7 +1410,7 @@ void cfg80211_register_wdev(struct cfg80211_registered_device *rdev,
 	 */
 	if (!wdev->identifier)
 		wdev->identifier = ++rdev->wdev_id;
-	list_add_rcu(&wdev->list, &rdev->wiphy.wdev_list);
+	list_add_rcu_dbg(&wdev->list, &rdev->wiphy.wdev_list);
 	rdev->devlist_generation++;
 	wdev->registered = true;
 
@@ -1618,10 +1618,10 @@ void wiphy_work_queue(struct wiphy *wiphy, struct wiphy_work *work)
 
 	trace_wiphy_work_queue(wiphy, work);
 
-	spin_lock_irqsave(&rdev->wiphy_work_lock, flags);
+	spin_lock_irqsave_dbg(&rdev->wiphy_work_lock, flags);
 	if (list_empty(&work->entry))
-		list_add_tail(&work->entry, &rdev->wiphy_work_list);
-	spin_unlock_irqrestore(&rdev->wiphy_work_lock, flags);
+		list_add_tail_dbg(&work->entry, &rdev->wiphy_work_list);
+	spin_unlock_irqrestore_dbg(&rdev->wiphy_work_lock, flags);
 
 	queue_work_dbg(system_unbound_wq, &rdev->wiphy_work);
 }
@@ -1636,10 +1636,10 @@ void wiphy_work_cancel(struct wiphy *wiphy, struct wiphy_work *work)
 
 	trace_wiphy_work_cancel(wiphy, work);
 
-	spin_lock_irqsave(&rdev->wiphy_work_lock, flags);
+	spin_lock_irqsave_dbg(&rdev->wiphy_work_lock, flags);
 	if (!list_empty(&work->entry))
-		list_del_init(&work->entry);
-	spin_unlock_irqrestore(&rdev->wiphy_work_lock, flags);
+		list_del_init_dbg(&work->entry);
+	spin_unlock_irqrestore_dbg(&rdev->wiphy_work_lock, flags);
 }
 EXPORT_SYMBOL_GPL(wiphy_work_cancel);
 
@@ -1651,9 +1651,9 @@ void wiphy_work_flush(struct wiphy *wiphy, struct wiphy_work *work)
 
 	trace_wiphy_work_flush(wiphy, work);
 
-	spin_lock_irqsave(&rdev->wiphy_work_lock, flags);
+	spin_lock_irqsave_dbg(&rdev->wiphy_work_lock, flags);
 	run = !work || !list_empty(&work->entry);
-	spin_unlock_irqrestore(&rdev->wiphy_work_lock, flags);
+	spin_unlock_irqrestore_dbg(&rdev->wiphy_work_lock, flags);
 
 	if (run)
 		cfg80211_process_wiphy_works(rdev, work);

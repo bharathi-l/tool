@@ -77,9 +77,9 @@ void cfg80211_ibss_joined(struct net_device *dev, const u8 *bssid,
 	memcpy(ev->ij.bssid, bssid, ETH_ALEN);
 	ev->ij.channel = channel;
 
-	spin_lock_irqsave(&wdev->event_lock, flags);
-	list_add_tail(&ev->list, &wdev->event_list);
-	spin_unlock_irqrestore(&wdev->event_lock, flags);
+	spin_lock_irqsave_dbg(&wdev->event_lock, flags);
+	list_add_tail_dbg(&ev->list, &wdev->event_list);
+	spin_unlock_irqrestore_dbg(&wdev->event_lock, flags);
 	queue_work_dbg(cfg80211_wq, &rdev->event_work);
 }
 EXPORT_SYMBOL(cfg80211_ibss_joined);

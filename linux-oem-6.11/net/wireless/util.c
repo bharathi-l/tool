@@ -1098,12 +1098,12 @@ void cfg80211_process_wdev_events(struct wireless_dev *wdev)
 	struct cfg80211_event *ev;
 	unsigned long flags;
 
-	spin_lock_irqsave(&wdev->event_lock, flags);
+	spin_lock_irqsave_dbg(&wdev->event_lock, flags);
 	while (!list_empty(&wdev->event_list)) {
 		ev = list_first_entry(&wdev->event_list,
 				      struct cfg80211_event, list);
-		list_del(&ev->list);
-		spin_unlock_irqrestore(&wdev->event_lock, flags);
+		list_del_dbg(&ev->list);
+		spin_unlock_irqrestore_dbg(&wdev->event_lock, flags);
 
 		switch (ev->type) {
 		case EVENT_CONNECT_RESULT:
@@ -1137,9 +1137,9 @@ void cfg80211_process_wdev_events(struct wireless_dev *wdev)
 
 		kfree(ev);
 
-		spin_lock_irqsave(&wdev->event_lock, flags);
+		spin_lock_irqsave_dbg(&wdev->event_lock, flags);
 	}
-	spin_unlock_irqrestore(&wdev->event_lock, flags);
+	spin_unlock_irqrestore_dbg(&wdev->event_lock, flags);
 }
 
 void cfg80211_process_rdev_events(struct cfg80211_registered_device *rdev)

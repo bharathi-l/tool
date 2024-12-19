@@ -1015,7 +1015,7 @@ static int nl80211_prepare_wdev_dump(struct netlink_callback *cb,
 			return PTR_ERR(*wdev);
 		}
 		*rdev = wiphy_to_rdev((*wdev)->wiphy);
-		mutex_lock(&(*rdev)->wiphy.mtx);
+		mutex_lock_dbg(&(*rdev)->wiphy.mtx);
 		rtnl_unlock();
 		/* 0 is the first index - add 1 to parse only once */
 		cb->args[0] = (*rdev)->wiphy_idx + 1;
@@ -1045,7 +1045,7 @@ static int nl80211_prepare_wdev_dump(struct netlink_callback *cb,
 			rtnl_unlock();
 			return -ENODEV;
 		}
-		mutex_lock(&(*rdev)->wiphy.mtx);
+		mutex_lock_dbg(&(*rdev)->wiphy.mtx);
 		rtnl_unlock();
 	}
 
@@ -4542,7 +4542,7 @@ static int nl80211_del_interface(struct sk_buff *skb, struct genl_info *info)
 	 * but don't know if we get there from here or from some other
 	 * place (e.g. "ip link set ... down").
 	 */
-	mutex_unlock(&rdev->wiphy.mtx);
+	mutex_unlock_dbg(&rdev->wiphy.mtx);
 
 	/*
 	 * If we remove a wireless device without a netdev then clear
@@ -4556,7 +4556,7 @@ static int nl80211_del_interface(struct sk_buff *skb, struct genl_info *info)
 	else
 		dev_close(wdev->netdev);
 
-	mutex_lock(&rdev->wiphy.mtx);
+	mutex_lock_dbg(&rdev->wiphy.mtx);
 
 	ret = cfg80211_remove_virtual_intf(rdev, wdev);
     	printk("[MODULE -> %s], [THREAD -> %s] [NL80211_CMD_DEL_INTERFACE] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
@@ -11047,7 +11047,7 @@ static int nl80211_dump_scan(struct sk_buff *skb, struct netlink_callback *cb)
 		attrbuf[NL80211_ATTR_BSS_DUMP_INCLUDE_USE_DATA];
 	kfree(attrbuf);
 
-	spin_lock_bh(&rdev->bss_lock);
+	spin_lock_bh_dbg(&rdev->bss_lock);
 
 	/*
 	 * dump_scan will be called multiple times to break up the scan results
@@ -11074,7 +11074,7 @@ static int nl80211_dump_scan(struct sk_buff *skb, struct netlink_callback *cb)
 		}
 	}
 
-	spin_unlock_bh(&rdev->bss_lock);
+	spin_unlock_bh_dbg(&rdev->bss_lock);
 
 	cb->args[2] = idx;
 	wiphy_unlock(&rdev->wiphy);
@@ -15320,7 +15320,7 @@ static int nl80211_register_beacons(struct sk_buff *skb, struct genl_info *info)
 	}
 
 	/* First, check if already registered. */
-	spin_lock_bh(&rdev->beacon_registrations_lock);
+	spin_lock_bh_dbg(&rdev->beacon_registrations_lock);
 	list_for_each_entry(reg, &rdev->beacon_registrations, list) {
 		if (reg->nlportid == info->snd_portid) {
 			rv = -EALREADY;
@@ -15329,13 +15329,13 @@ static int nl80211_register_beacons(struct sk_buff *skb, struct genl_info *info)
 	}
 	/* Add it to the list */
 	nreg->nlportid = info->snd_portid;
-	list_add(&nreg->list, &rdev->beacon_registrations);
+	list_add_dbg(&nreg->list, &rdev->beacon_registrations);
 
-	spin_unlock_bh(&rdev->beacon_registrations_lock);
+	spin_unlock_bh_dbg(&rdev->beacon_registrations_lock);
 	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return 0;
 out_err:
-	spin_unlock_bh(&rdev->beacon_registrations_lock);
+	spin_unlock_bh_dbg(&rdev->beacon_registrations_lock);
 	kfree(nreg);
 	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
 	return rv;
@@ -21204,11 +21204,11 @@ void cfg80211_report_obss_beacon_khz(struct wiphy *wiphy, const u8 *frame,
 
 	trace_cfg80211_report_obss_beacon(wiphy, frame, len, freq, sig_dbm);
 
-	spin_lock_bh(&rdev->beacon_registrations_lock);
+	spin_lock_bh_dbg(&rdev->beacon_registrations_lock);
 	list_for_each_entry(reg, &rdev->beacon_registrations, list) {
 		msg = nlmsg_new(len + 100, GFP_ATOMIC);
 		if (!msg) {
-			spin_unlock_bh(&rdev->beacon_registrations_lock);
+			spin_unlock_bh_dbg(&rdev->beacon_registrations_lock);
 			return;
 		}
 
@@ -21231,11 +21231,11 @@ void cfg80211_report_obss_beacon_khz(struct wiphy *wiphy, const u8 *frame,
 
 		genlmsg_unicast(wiphy_net(&rdev->wiphy), msg, reg->nlportid);
 	}
-	spin_unlock_bh(&rdev->beacon_registrations_lock);
+	spin_unlock_bh_dbg(&rdev->beacon_registrations_lock);
 	return;
 
  nla_put_failure:
-	spin_unlock_bh(&rdev->beacon_registrations_lock);
+	spin_unlock_bh_dbg(&rdev->beacon_registrations_lock);
 	nlmsg_free(msg);
 }
 EXPORT_SYMBOL(cfg80211_report_obss_beacon_khz);
@@ -21501,16 +21501,16 @@ static int nl80211_netlink_notify(struct notifier_block * nb,
 			cfg80211_release_pmsr(wdev, notify->portid);
 		}
 
-		spin_lock_bh(&rdev->beacon_registrations_lock);
+		spin_lock_bh_dbg(&rdev->beacon_registrations_lock);
 		list_for_each_entry_safe(reg, tmp, &rdev->beacon_registrations,
 					 list) {
 			if (reg->nlportid == notify->portid) {
-				list_del(&reg->list);
+				list_del_dbg(&reg->list);
 				kfree(reg);
 				break;
 			}
 		}
-		spin_unlock_bh(&rdev->beacon_registrations_lock);
+		spin_unlock_bh_dbg(&rdev->beacon_registrations_lock);
 	}
 
 	rcu_read_unlock();

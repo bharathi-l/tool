@@ -351,7 +351,7 @@ void wireless_nlevent_flush(void)
 
 	down_read(&net_rwsem);
 	for_each_net(net) {
-		while ((skb = skb_dequeue(&net->wext_nlevents)))
+		while ((skb = skb_dequeue_dbg(&net->wext_nlevents)))
 			rtnl_notify(skb, net, 0, RTNLGRP_LINK, NULL,
 				    GFP_KERNEL);
 	}

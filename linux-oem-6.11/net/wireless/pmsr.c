@@ -349,7 +349,7 @@ int nl80211_pmsr_start(struct sk_buff *skb, struct genl_info *info)
 	if (err)
 		goto out_err;
 
-	list_add_tail(&req->list, &wdev->pmsr_list);
+	list_add_tail_dbg(&req->list, &wdev->pmsr_list);
 
 	nl_set_extack_cookie_u64(info->extack, req->cookie);
 	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
@@ -395,7 +395,7 @@ void cfg80211_pmsr_complete(struct wireless_dev *wdev,
 free_msg:
 	nlmsg_free(msg);
 free_request:
-	spin_lock_bh(&wdev->pmsr_lock);
+	spin_lock_bh_dbg(&wdev->pmsr_lock);
 	/*
 	 * cfg80211_pmsr_process_abort() may have already moved this request
 	 * to the free list, and will free it later. In this case, don't free
@@ -403,12 +403,12 @@ free_request:
 	 */
 	list_for_each_entry_safe(tmp, prev, &wdev->pmsr_list, list) {
 		if (tmp == req) {
-			list_del(&req->list);
+			list_del_dbg(&req->list);
 			to_free = req;
 			break;
 		}
 	}
-	spin_unlock_bh(&wdev->pmsr_lock);
+	spin_unlock_bh_dbg(&wdev->pmsr_lock);
 	kfree(to_free);
 }
 EXPORT_SYMBOL_GPL(cfg80211_pmsr_complete);
@@ -624,13 +624,13 @@ static void cfg80211_pmsr_process_abort(struct wireless_dev *wdev)
 
 	lockdep_assert_wiphy(wdev->wiphy);
 
-	spin_lock_bh(&wdev->pmsr_lock);
+	spin_lock_bh_dbg(&wdev->pmsr_lock);
 	list_for_each_entry_safe(req, tmp, &wdev->pmsr_list, list) {
 		if (req->nl_portid)
 			continue;
-		list_move_tail(&req->list, &free_list);
+		list_move_tail_dbg(&req->list, &free_list);
 	}
-	spin_unlock_bh(&wdev->pmsr_lock);
+	spin_unlock_bh_dbg(&wdev->pmsr_lock);
 
 	list_for_each_entry_safe(req, tmp, &free_list, list) {
 		rdev_abort_pmsr(rdev, wdev, req);
@@ -654,12 +654,12 @@ void cfg80211_pmsr_wdev_down(struct wireless_dev *wdev)
 	struct cfg80211_pmsr_request *req;
 	bool found = false;
 
-	spin_lock_bh(&wdev->pmsr_lock);
+	spin_lock_bh_dbg(&wdev->pmsr_lock);
 	list_for_each_entry(req, &wdev->pmsr_list, list) {
 		found = true;
 		req->nl_portid = 0;
 	}
-	spin_unlock_bh(&wdev->pmsr_lock);
+	spin_unlock_bh_dbg(&wdev->pmsr_lock);
 
 	if (found)
 		cfg80211_pmsr_process_abort(wdev);
@@ -671,12 +671,12 @@ void cfg80211_release_pmsr(struct wireless_dev *wdev, u32 portid)
 {
 	struct cfg80211_pmsr_request *req;
 
-	spin_lock_bh(&wdev->pmsr_lock);
+	spin_lock_bh_dbg(&wdev->pmsr_lock);
 	list_for_each_entry(req, &wdev->pmsr_list, list) {
 		if (req->nl_portid == portid) {
 			req->nl_portid = 0;
 			schedule_work_dbg(&wdev->pmsr_free_wk);
 		}
 	}
-	spin_unlock_bh(&wdev->pmsr_lock);
+	spin_unlock_bh_dbg(&wdev->pmsr_lock);
 }
