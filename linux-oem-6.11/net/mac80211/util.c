@@ -471,10 +471,11 @@ static void __ieee80211_wake_queue(struct ieee80211_hw *hw, int queue,
 	 * release someone's lock, but it is fine because all the callers of
 	 * __ieee80211_wake_queue call it right before releasing the lock.
 	 */
-	if (reason == IEEE80211_QUEUE_STOP_REASON_DRIVER)
+	if (reason == IEEE80211_QUEUE_STOP_REASON_DRIVER) {
 		tasklet_schedule_dbg(&local->wake_txqs_tasklet);
-	else
+	} else {
 		_ieee80211_wake_txqs(local, flags);
+	}
 }
 
 void ieee80211_wake_queue_by_reason(struct ieee80211_hw *hw, int queue,
