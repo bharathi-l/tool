@@ -44,7 +44,7 @@ copy_folders()
 			sudo cp -rvf "$copy_fold" $HOME/tool/linux-oem-6.11/drivers/net/wireless/intel/
 		else
 			echo "========== COPYING FOLDER : $copy_fold =============="
-	
+
 			sudo cp -rvf "$copy_fold" $HOME/tool/linux-oem-6.11/net
 		fi
 	done
@@ -54,6 +54,27 @@ copy_folders()
 	else
 		echo "---------- FAILED TO COPY FOLDERS --------"
 		exit
+	fi
+}
+
+copy_file_hdr()
+{
+	echo "======= COPY HEADER FIEL AT GIT LOCAL ============"
+
+	cd $HOME/Downloads/temp/git_x/linux-oem-6.11/include/linux
+
+	file="drv_dbg.h"
+
+	if [ -f "$file" ]; then
+
+		echo "---------- COPYING HEADER FILE: $file --------"
+
+		sudo cp -vf "$file" $HOME/tool/linux-oem-6.11/include/linux
+
+		echo "---------- COPIED HEADER FILE SUCCESSFULLY: $file --------"
+	else
+		echo "---------- FILE NOT FOUND: $file --------"
+		exit 
 	fi
 }
 
@@ -82,5 +103,6 @@ check_git_status()
 
 delete_folders
 copy_folders
+copy_file_hdr
 remove_dot_files
 check_git_status
