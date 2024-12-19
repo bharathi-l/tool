@@ -8,6 +8,9 @@
 #include <linux/ieee80211.h> 
 #include <linux/if_ether.h>
 
+#define HANDLERS_DBG_PRINT 1
+#define ETH_P_EAPOL 0x888E
+
 #define wiphy_work_queue_dbg(p1, p2)                           \
 {                                                               \
     pr_info("[MODULE -> %s], [THREAD -> %s] [ACTIVATED_WORK_QUEUE %s, %s] [%s] [%d]\n",  \
@@ -46,23 +49,16 @@
 #define tasklet_setup_dbg(p1, p2)                           \
 {                                                               \
     pr_info("[MODULE -> %s], [THREAD -> %s] [TASKLET_SETUP %s, %s] [%s] [%d]\n",  \
-            THIS_MODULE->name, get_thread_name(), #p1, #p2 __func__, __LINE__);    \
+            THIS_MODULE->name, get_thread_name(), #p1, #p2, __func__, __LINE__);    \
     tasklet_setup(p1, p2);                                   \
 }
 
-#define alloc_ordered_workqueue_dbg(fmt, ...)                                 \
-({                                                                            \
-    pr_info("[MODULE -> %s], [THREAD -> %s] [ALLOC_ORDERED_WORK_QUEUE %s] [%s] [%d] " fmt, \
-            THIS_MODULE->name, get_thread_name(), #fmt, __func__, __LINE__, __VA_ARGS__); \
-    alloc_ordered_workqueue(__VA_ARGS__);                                      \
+#define alloc_workqueue_dbg(p1, p2, p3) ({                                \
+    struct workqueue_struct *wq = alloc_workqueue(p1, p2, p3);            \
+    pr_info("[MODULE -> %s], [THREAD -> %s] [ALLOC_WORK %s, %s, %s] [%s] [%d]\n",  \
+            THIS_MODULE->name, get_thread_name(), #p1, #p2, #p3, __func__, __LINE__);    \
+    wq;                                                                     \
 })
-
-#define alloc_workqueue_dbg(p1, p2, p3)                       \
-{                                                                     \
-    pr_info("[MODULE -> %s], [THREAD -> %s] [ALLOC_WORK_QUEUE %s, %s, %s] [%s] [%d]\n", \
-            THIS_MODULE->name, get_thread_name(), #p1, #p2, #p3, __func__, __LINE__); \
-    trans_pcie->rba.alloc_wq = alloc_workqueue(p1, p2, p3);    \
-}
 
 #define wiphy_delayed_work_cancel_dbg(p1, p2)                           \
 {                                                               \
@@ -113,6 +109,13 @@
     wiphy_work_init(p1, p2);                                   \
 }
 
+#define cancel_delayed_work_dbg(p1) ({                                \
+    bool result = cancel_delayed_work(p1);                            \
+    pr_info("[MODULE -> %s], [THREAD -> %s] [CANCEL_DELAYED_WORK %s] [%s] [%d]\n",  \
+            THIS_MODULE->name, get_thread_name(), #p1, __func__, __LINE__);    \
+    result ? 1 : 0;                                                   \
+})
+
 #define schedule_work_dbg(p1)                           \
 {                                                               \
     pr_info("[MODULE -> %s], [THREAD -> %s] [ACTIVATED_SCHEDULE_WORK %s] [%s] [%d]\n",  \
@@ -153,13 +156,6 @@
     pr_info("[MODULE -> %s], [THREAD -> %s] [MOD_DELAYED_WORK %s, %s, %s] [%s] [%d]\n", \
             THIS_MODULE->name, get_thread_name(), #p1, #p2, #p3, __func__, __LINE__); \
     mod_delayed_work(p1, p2, p3);    \
-}
-
-#define cancel_delayed_work_dbg(p1)                           \
-{                                                               \
-    pr_info("[MODULE -> %s], [THREAD -> %s] [CANCEL_DELAYED_WORK %s] [%s] [%d]\n",  \
-            THIS_MODULE->name, get_thread_name(), #p1, __func__, __LINE__);    \
-    cancel_delayed_work(p1);                                   \
 }
 
 #define cancel_work_sync_dbg(p1)                           \
@@ -232,17 +228,11 @@
     mod_timer(p1, p2);                                   \
 }
 
-
-
-
-
-
-
-
-
-
-#define HANDLERS_DBG_PRINT 1
-#define ETH_P_EAPOL 0x888E
+#define cancel_delayed_work_sync_dbg(p1) ({                                \
+    cancel_delayed_work_sync(p1);                                          \
+    pr_info("[MODULE -> %s], [THREAD -> %s] [CANCEL_DELAYED_WORK_SYNC %s] [%s] [%d]\n",  \
+            THIS_MODULE->name, get_thread_name(), #p1, __func__, __LINE__);    \
+})
 
 struct iwl_rx_handlers;
 
