@@ -1627,7 +1627,7 @@ void wiphy_work_queue(struct wiphy *wiphy, struct wiphy_work *work)
 }
 EXPORT_SYMBOL_GPL(wiphy_work_queue);
 
-void wiphy_work_cancel_dbg(struct wiphy *wiphy, struct wiphy_work *work)
+void wiphy_work_cancel(struct wiphy *wiphy, struct wiphy_work *work)
 {
 	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wiphy);
 	unsigned long flags;
@@ -1641,9 +1641,9 @@ void wiphy_work_cancel_dbg(struct wiphy *wiphy, struct wiphy_work *work)
 		list_del_init(&work->entry);
 	spin_unlock_irqrestore(&rdev->wiphy_work_lock, flags);
 }
-EXPORT_SYMBOL_GPL(wiphy_work_cancel_dbg);
+EXPORT_SYMBOL_GPL(wiphy_work_cancel);
 
-void wiphy_work_flush_dbg(struct wiphy *wiphy, struct wiphy_work *work)
+void wiphy_work_flush(struct wiphy *wiphy, struct wiphy_work *work)
 {
 	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wiphy);
 	unsigned long flags;
@@ -1658,7 +1658,7 @@ void wiphy_work_flush_dbg(struct wiphy *wiphy, struct wiphy_work *work)
 	if (run)
 		cfg80211_process_wiphy_works(rdev, work);
 }
-EXPORT_SYMBOL_GPL(wiphy_work_flush_dbg);
+EXPORT_SYMBOL_GPL(wiphy_work_flush);
 
 void wiphy_delayed_work_timer(struct timer_list *t)
 {
@@ -1668,7 +1668,7 @@ void wiphy_delayed_work_timer(struct timer_list *t)
 }
 EXPORT_SYMBOL(wiphy_delayed_work_timer);
 
-void wiphy_delayed_work_queue_dbg(struct wiphy *wiphy,
+void wiphy_delayed_work_queue(struct wiphy *wiphy,
 			      struct wiphy_delayed_work *dwork,
 			      unsigned long delay)
 {
@@ -1683,7 +1683,7 @@ void wiphy_delayed_work_queue_dbg(struct wiphy *wiphy,
 	dwork->wiphy = wiphy;
 	mod_timer_dbg(&dwork->timer, jiffies + delay);
 }
-EXPORT_SYMBOL_GPL(wiphy_delayed_work_queue_dbg);
+EXPORT_SYMBOL_GPL(wiphy_delayed_work_queue);
 
 void wiphy_delayed_work_cancel(struct wiphy *wiphy,
 			       struct wiphy_delayed_work *dwork)
@@ -1731,7 +1731,7 @@ static int __init cfg80211_init(void)
 	if (err)
 		goto out_fail_reg;
 
-	cfg80211_wq = alloc_ordered_workqueue_dbg("cfg80211", WQ_MEM_RECLAIM);
+	cfg80211_wq = alloc_ordered_workqueue("cfg80211", WQ_MEM_RECLAIM);
 	if (!cfg80211_wq) {
 		err = -ENOMEM;
 		goto out_fail_wq;

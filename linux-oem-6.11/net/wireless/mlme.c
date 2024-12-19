@@ -16,10 +16,10 @@
 #include <linux/wireless.h>
 #include <net/cfg80211.h>
 #include <net/iw_handler.h>
+#include <linux/drv_dbg.h>
 #include "core.h"
 #include "nl80211.h"
 #include "rdev-ops.h"
-#include <linux/drv_dbg.h>
 
 void cfg80211_rx_assoc_resp(struct net_device *dev,
 			    const struct cfg80211_rx_assoc_resp_data *data)
@@ -1167,6 +1167,8 @@ void cfg80211_cac_event(struct net_device *netdev,
 }
 EXPORT_SYMBOL(cfg80211_cac_event);
 
+
+#if 0
 static void
 __cfg80211_background_cac_event(struct cfg80211_registered_device *rdev,
 				struct wireless_dev *wdev,
@@ -1193,8 +1195,9 @@ __cfg80211_background_cac_event(struct cfg80211_registered_device *rdev,
 		wdev = rdev->background_radar_wdev;
 		break;
 	case NL80211_RADAR_CAC_ABORTED:
-		if (!cancel_delayed_work_dbg(&rdev->background_cac_done_wk))
+		if (!cancel_delayed_work_dbg(&rdev->background_cac_done_wk)) {
 			return;
+		}
 		wdev = rdev->background_radar_wdev;
 		break;
 	case NL80211_RADAR_CAC_STARTED:
@@ -1205,6 +1208,48 @@ __cfg80211_background_cac_event(struct cfg80211_registered_device *rdev,
 
 	netdev = wdev ? wdev->netdev : NULL;
 	nl80211_radar_notify(rdev, chandef, event, netdev, GFP_KERNEL);
+}
+#endif
+
+
+static void
+__cfg80211_background_cac_event(struct cfg80211_registered_device *rdev,
+                                struct wireless_dev *wdev,
+                                const struct cfg80211_chan_def *chandef,
+                                enum nl80211_radar_event event)
+{
+        struct wiphy *wiphy = &rdev->wiphy;
+        struct net_device *netdev;
+
+        lockdep_assert_wiphy(&rdev->wiphy);
+
+        if (!cfg80211_chandef_valid(chandef))
+                return;
+
+        if (!rdev->background_radar_wdev)
+                return;
+
+        switch (event) {
+        case NL80211_RADAR_CAC_FINISHED:
+                cfg80211_set_dfs_state(wiphy, chandef, NL80211_DFS_AVAILABLE);
+                memcpy(&rdev->cac_done_chandef, chandef, sizeof(*chandef));
+                queue_work(cfg80211_wq, &rdev->propagate_cac_done_wk);
+                cfg80211_sched_dfs_chan_update(rdev);
+                wdev = rdev->background_radar_wdev;
+                break;
+        case NL80211_RADAR_CAC_ABORTED:
+		if (!cancel_delayed_work_dbg(&rdev->background_cac_done_wk))
+			return;
+		wdev = rdev->background_radar_wdev;
+                break;
+        case NL80211_RADAR_CAC_STARTED:
+                break;
+        default:
+                return;
+        }
+
+        netdev = wdev ? wdev->netdev : NULL;
+        nl80211_radar_notify(rdev, chandef, event, netdev, GFP_KERNEL);
 }
 
 static void
