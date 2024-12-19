@@ -14,6 +14,7 @@
 #include "rate.h"
 #include "ieee80211_i.h"
 #include "debugfs.h"
+#include <linux/drv_dbg.h>
 
 struct rate_control_alg {
 	struct list_head list;
@@ -59,10 +60,10 @@ void rate_control_rate_init(struct sta_info *sta)
 		return;
 	}
 
-	spin_lock_bh(&sta->rate_ctrl_lock);
+	spin_lock_bh_dbg(&sta->rate_ctrl_lock);
 	ref->ops->rate_init(ref->priv, sband, &chanctx_conf->def, ista,
 			    priv_sta);
-	spin_unlock_bh(&sta->rate_ctrl_lock);
+	spin_unlock_bh_dbg(&sta->rate_ctrl_lock);
 	rcu_read_unlock();
 	set_sta_flag(sta, WLAN_STA_RATE_CONTROL);
 }
@@ -80,7 +81,7 @@ void rate_control_tx_status(struct ieee80211_local *local,
 
 	sband = local->hw.wiphy->bands[st->info->band];
 
-	spin_lock_bh(&sta->rate_ctrl_lock);
+	spin_lock_bh_dbg(&sta->rate_ctrl_lock);
 	if (ref->ops->tx_status_ext)
 		ref->ops->tx_status_ext(ref->priv, sband, priv_sta, st);
 	else if (st->skb)
@@ -88,7 +89,7 @@ void rate_control_tx_status(struct ieee80211_local *local,
 	else
 		WARN_ON_ONCE(1);
 
-	spin_unlock_bh(&sta->rate_ctrl_lock);
+	spin_unlock_bh_dbg(&sta->rate_ctrl_lock);
 }
 
 void rate_control_rate_update(struct ieee80211_local *local,
@@ -112,10 +113,10 @@ void rate_control_rate_update(struct ieee80211_local *local,
 			return;
 		}
 
-		spin_lock_bh(&sta->rate_ctrl_lock);
+		spin_lock_bh_dbg(&sta->rate_ctrl_lock);
 		ref->ops->rate_update(ref->priv, sband, &chanctx_conf->def,
 				      ista, priv_sta, changed);
-		spin_unlock_bh(&sta->rate_ctrl_lock);
+		spin_unlock_bh_dbg(&sta->rate_ctrl_lock);
 		rcu_read_unlock();
 	}
 
@@ -130,25 +131,25 @@ int ieee80211_rate_control_register(const struct rate_control_ops *ops)
 	if (!ops->name)
 		return -EINVAL;
 
-	mutex_lock(&rate_ctrl_mutex);
+	mutex_lock_dbg(&rate_ctrl_mutex);
 	list_for_each_entry(alg, &rate_ctrl_algs, list) {
 		if (!strcmp(alg->ops->name, ops->name)) {
 			/* don't register an algorithm twice */
 			WARN_ON(1);
-			mutex_unlock(&rate_ctrl_mutex);
+			mutex_unlock_dbg(&rate_ctrl_mutex);
 			return -EALREADY;
 		}
 	}
 
 	alg = kzalloc(sizeof(*alg), GFP_KERNEL);
 	if (alg == NULL) {
-		mutex_unlock(&rate_ctrl_mutex);
+		mutex_unlock_dbg(&rate_ctrl_mutex);
 		return -ENOMEM;
 	}
 	alg->ops = ops;
 
-	list_add_tail(&alg->list, &rate_ctrl_algs);
-	mutex_unlock(&rate_ctrl_mutex);
+	list_add_tail_dbg(&alg->list, &rate_ctrl_algs);
+	mutex_unlock_dbg(&rate_ctrl_mutex);
 
 	return 0;
 }
@@ -158,15 +159,15 @@ void ieee80211_rate_control_unregister(const struct rate_control_ops *ops)
 {
 	struct rate_control_alg *alg;
 
-	mutex_lock(&rate_ctrl_mutex);
+	mutex_lock_dbg(&rate_ctrl_mutex);
 	list_for_each_entry(alg, &rate_ctrl_algs, list) {
 		if (alg->ops == ops) {
-			list_del(&alg->list);
+			list_del_dbg(&alg->list);
 			kfree(alg);
 			break;
 		}
 	}
-	mutex_unlock(&rate_ctrl_mutex);
+	mutex_unlock_dbg(&rate_ctrl_mutex);
 }
 EXPORT_SYMBOL(ieee80211_rate_control_unregister);
 
@@ -179,14 +180,14 @@ ieee80211_try_rate_control_ops_get(const char *name)
 	if (!name)
 		return NULL;
 
-	mutex_lock(&rate_ctrl_mutex);
+	mutex_lock_dbg(&rate_ctrl_mutex);
 	list_for_each_entry(alg, &rate_ctrl_algs, list) {
 		if (!strcmp(alg->ops->name, name)) {
 			ops = alg->ops;
 			break;
 		}
 	}
-	mutex_unlock(&rate_ctrl_mutex);
+	mutex_unlock_dbg(&rate_ctrl_mutex);
 	return ops;
 }
 
@@ -930,9 +931,9 @@ void rate_control_get_rate(struct ieee80211_sub_if_data *sdata,
 	}
 
 	if (ista) {
-		spin_lock_bh(&sta->rate_ctrl_lock);
+		spin_lock_bh_dbg(&sta->rate_ctrl_lock);
 		ref->ops->get_rate(ref->priv, ista, priv_sta, txrc);
-		spin_unlock_bh(&sta->rate_ctrl_lock);
+		spin_unlock_bh_dbg(&sta->rate_ctrl_lock);
 	} else {
 		rate_control_send_low(NULL, txrc);
 	}

@@ -15,6 +15,7 @@
 #include "debugfs_sta.h"
 #include "sta_info.h"
 #include "driver-ops.h"
+#include <linux/drv_dbg.h>
 
 /* sta attributes */
 
@@ -149,7 +150,7 @@ static ssize_t sta_aqm_read(struct file *file, char __user *userbuf,
 	if (!buf)
 		return -ENOMEM;
 
-	spin_lock_bh(&local->fq.lock);
+	spin_lock_bh_dbg(&local->fq.lock);
 	rcu_read_lock();
 
 	p += scnprintf(p,
@@ -187,7 +188,7 @@ static ssize_t sta_aqm_read(struct file *file, char __user *userbuf,
 	}
 
 	rcu_read_unlock();
-	spin_unlock_bh(&local->fq.lock);
+	spin_unlock_bh_dbg(&local->fq.lock);
 
 	rv = simple_read_from_buffer(userbuf, count, ppos, buf, p - buf);
 	kfree(buf);
@@ -211,11 +212,11 @@ static ssize_t sta_airtime_read(struct file *file, char __user *userbuf,
 		return -ENOMEM;
 
 	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
-		spin_lock_bh(&local->active_txq_lock[ac]);
+		spin_lock_bh_dbg(&local->active_txq_lock[ac]);
 		rx_airtime += sta->airtime[ac].rx_airtime;
 		tx_airtime += sta->airtime[ac].tx_airtime;
 		deficit[ac] = sta->airtime[ac].deficit;
-		spin_unlock_bh(&local->active_txq_lock[ac]);
+		spin_unlock_bh_dbg(&local->active_txq_lock[ac]);
 	}
 
 	p += scnprintf(p, bufsz + buf - p,
@@ -237,11 +238,11 @@ static ssize_t sta_airtime_write(struct file *file, const char __user *userbuf,
 	int ac;
 
 	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
-		spin_lock_bh(&local->active_txq_lock[ac]);
+		spin_lock_bh_dbg(&local->active_txq_lock[ac]);
 		sta->airtime[ac].rx_airtime = 0;
 		sta->airtime[ac].tx_airtime = 0;
 		sta->airtime[ac].deficit = sta->airtime_weight;
-		spin_unlock_bh(&local->active_txq_lock[ac]);
+		spin_unlock_bh_dbg(&local->active_txq_lock[ac]);
 	}
 
 	return count;
@@ -264,10 +265,10 @@ static ssize_t sta_aql_read(struct file *file, char __user *userbuf,
 		return -ENOMEM;
 
 	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
-		spin_lock_bh(&local->active_txq_lock[ac]);
+		spin_lock_bh_dbg(&local->active_txq_lock[ac]);
 		q_limit_l[ac] = sta->airtime[ac].aql_limit_low;
 		q_limit_h[ac] = sta->airtime[ac].aql_limit_high;
-		spin_unlock_bh(&local->active_txq_lock[ac]);
+		spin_unlock_bh_dbg(&local->active_txq_lock[ac]);
 		q_depth[ac] = atomic_read(&sta->airtime[ac].aql_tx_pending);
 	}
 

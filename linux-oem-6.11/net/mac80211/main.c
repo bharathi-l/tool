@@ -69,11 +69,11 @@ void ieee80211_configure_filter(struct ieee80211_local *local)
 	if (local->rx_mcast_action_reg)
 		new_flags |= FIF_MCAST_ACTION;
 
-	spin_lock_bh(&local->filter_lock);
+	spin_lock_bh_dbg(&local->filter_lock);
 	changed_flags = local->filter_flags ^ new_flags;
 
 	mc = drv_prepare_multicast(local, &local->mc_list);
-	spin_unlock_bh(&local->filter_lock);
+	spin_unlock_bh_dbg(&local->filter_lock);
 
 	/* be a bit nasty */
 	new_flags |= (1<<31);
@@ -953,14 +953,14 @@ struct ieee80211_hw *ieee80211_alloc_hw_nm(size_t priv_data_len,
 
 	__hw_addr_init(&local->mc_list);
 
-	mutex_init(&local->iflist_mtx);
-	spin_lock_init(&local->filter_lock);
-	spin_lock_init(&local->rx_path_lock);
-	spin_lock_init(&local->queue_stop_reason_lock);
+	mutex_init_dbg(&local->iflist_mtx);
+	spin_lock_init_dbg(&local->filter_lock);
+	spin_lock_init_dbg(&local->rx_path_lock);
+	spin_lock_init_dbg(&local->queue_stop_reason_lock);
 
 	for (i = 0; i < IEEE80211_NUM_ACS; i++) {
 		INIT_LIST_HEAD(&local->active_txqs[i]);
-		spin_lock_init(&local->active_txq_lock[i]);
+		spin_lock_init_dbg(&local->active_txq_lock[i]);
 		local->aql_txq_limit_low[i] = IEEE80211_DEFAULT_AQL_TXQ_LIMIT_L;
 		local->aql_txq_limit_high[i] =
 			IEEE80211_DEFAULT_AQL_TXQ_LIMIT_H;
@@ -971,7 +971,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_nm(size_t priv_data_len,
 	local->aql_threshold = IEEE80211_AQL_THRESHOLD;
 	atomic_set(&local->aql_total_pending_airtime, 0);
 
-	spin_lock_init(&local->handle_wake_tx_queue_lock);
+	spin_lock_init_dbg(&local->handle_wake_tx_queue_lock);
 
 	INIT_LIST_HEAD(&local->chanctx_list);
 
@@ -993,7 +993,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_nm(size_t priv_data_len,
 	wiphy_work_init_dbg(&local->sched_scan_stopped_work,
 			ieee80211_sched_scan_stopped_work);
 
-	spin_lock_init(&local->ack_status_lock);
+	spin_lock_init_dbg(&local->ack_status_lock);
 	idr_init(&local->ack_status_frames);
 
 	for (i = 0; i < IEEE80211_MAX_QUEUES; i++) {
@@ -1715,7 +1715,7 @@ void ieee80211_free_hw(struct ieee80211_hw *hw)
 	struct ieee80211_local *local = hw_to_local(hw);
 	enum nl80211_band band;
 
-	mutex_destroy(&local->iflist_mtx);
+	mutex_destroy_dbg(&local->iflist_mtx);
 
 	if (local->wiphy_ciphers_allocated) {
 		kfree(local->hw.wiphy->cipher_suites);

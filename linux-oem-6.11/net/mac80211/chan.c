@@ -614,7 +614,7 @@ ieee80211_find_chanctx(struct ieee80211_local *local,
 		 * context to actually be removed.
 		 */
 		link->reserved_chanctx = ctx;
-		list_add(&link->reserved_chanctx_list,
+		list_add_dbg(&link->reserved_chanctx_list,
 			 &ctx->reserved_links);
 
 		ieee80211_change_chanctx(local, ctx, ctx, compat);
@@ -735,7 +735,7 @@ ieee80211_new_chanctx(struct ieee80211_local *local,
 	/* We ignored a driver error, see _ieee80211_set_active_links */
 	WARN_ON_ONCE(err && !local->in_reconfig);
 
-	list_add_rcu(&ctx->list, &local->chanctx_list);
+	list_add_rcu_dbg(&ctx->list, &local->chanctx_list);
 	return ctx;
 }
 
@@ -761,7 +761,7 @@ static void ieee80211_free_chanctx(struct ieee80211_local *local,
 
 	WARN_ON_ONCE(ieee80211_chanctx_refcount(local, ctx) != 0);
 
-	list_del_rcu(&ctx->list);
+	list_del_rcu_dbg(&ctx->list);
 	ieee80211_del_chanctx(local, ctx, skip_idle_recalc);
 	kfree_rcu(ctx, rcu_head);
 }
@@ -871,7 +871,7 @@ static int ieee80211_assign_link_chanctx(struct ieee80211_link_data *link,
 
 		drv_unassign_vif_chanctx(local, sdata, link->conf, curr_ctx);
 		conf = NULL;
-		list_del(&link->assigned_chanctx_list);
+		list_del_dbg(&link->assigned_chanctx_list);
 	}
 
 	if (new_ctx) {
@@ -886,7 +886,7 @@ static int ieee80211_assign_link_chanctx(struct ieee80211_link_data *link,
 
 			/* succeeded, so commit it to the data structures */
 			conf = &new_ctx->conf;
-			list_add(&link->assigned_chanctx_list,
+			list_add_dbg(&link->assigned_chanctx_list,
 				 &new_ctx->assigned_links);
 		}
 	} else {
@@ -1065,7 +1065,7 @@ int ieee80211_link_unreserve_chanctx(struct ieee80211_link_data *link)
 	if (WARN_ON(!ctx))
 		return -EINVAL;
 
-	list_del(&link->reserved_chanctx_list);
+	list_del_dbg(&link->reserved_chanctx_list);
 	link->reserved_chanctx = NULL;
 
 	if (ieee80211_chanctx_refcount(sdata->local, ctx) == 0) {
@@ -1081,7 +1081,7 @@ int ieee80211_link_unreserve_chanctx(struct ieee80211_link_data *link)
 			ctx->replace_ctx->replace_state =
 					IEEE80211_CHANCTX_REPLACE_NONE;
 
-			list_del_rcu(&ctx->list);
+			list_del_rcu_dbg(&ctx->list);
 			kfree_rcu(ctx, rcu_head);
 		} else {
 			ieee80211_free_chanctx(sdata->local, ctx, false);
@@ -1159,7 +1159,7 @@ ieee80211_replace_chanctx(struct ieee80211_local *local,
 	curr_ctx->replace_ctx = new_ctx;
 	curr_ctx->replace_state = IEEE80211_CHANCTX_WILL_BE_REPLACED;
 
-	list_add_rcu(&new_ctx->list, &local->chanctx_list);
+	list_add_rcu_dbg(&new_ctx->list, &local->chanctx_list);
 
 	return new_ctx;
 }
@@ -1221,7 +1221,7 @@ int ieee80211_link_reserve_chanctx(struct ieee80211_link_data *link,
 			return PTR_ERR(new_ctx);
 	}
 
-	list_add(&link->reserved_chanctx_list, &new_ctx->reserved_links);
+	list_add_dbg(&link->reserved_chanctx_list, &new_ctx->reserved_links);
 	link->reserved_chanctx = new_ctx;
 	link->reserved = *chanreq;
 	link->reserved_radar_required = radar_required;
@@ -1335,7 +1335,7 @@ ieee80211_link_use_reserved_reassign(struct ieee80211_link_data *link)
 	vif_chsw[0].new_ctx = &new_ctx->conf;
 	vif_chsw[0].link_conf = link->conf;
 
-	list_del(&link->reserved_chanctx_list);
+	list_del_dbg(&link->reserved_chanctx_list);
 	link->reserved_chanctx = NULL;
 
 	err = drv_switch_vif_chanctx(local, vif_chsw, 1,
@@ -1404,7 +1404,7 @@ ieee80211_link_use_reserved_assign(struct ieee80211_link_data *link)
 
 	ieee80211_change_chanctx(local, new_ctx, new_ctx, chanreq);
 
-	list_del(&link->reserved_chanctx_list);
+	list_del_dbg(&link->reserved_chanctx_list);
 	link->reserved_chanctx = NULL;
 
 	err = ieee80211_assign_link_chanctx(link, new_ctx, false);
@@ -1723,7 +1723,7 @@ static int ieee80211_vif_use_reserved_switch(struct ieee80211_local *local)
 			if (ieee80211_link_get_chanctx(link) != ctx)
 				continue;
 
-			list_del(&link->reserved_chanctx_list);
+			list_del_dbg(&link->reserved_chanctx_list);
 			list_move(&link->assigned_chanctx_list,
 				  &ctx->assigned_links);
 			link->reserved_chanctx = NULL;
@@ -1779,7 +1779,7 @@ static int ieee80211_vif_use_reserved_switch(struct ieee80211_local *local)
 		ctx->replace_ctx->replace_state =
 				IEEE80211_CHANCTX_REPLACE_NONE;
 
-		list_del_rcu(&ctx->list);
+		list_del_rcu_dbg(&ctx->list);
 		kfree_rcu(ctx, rcu_head);
 	}
 
@@ -1899,7 +1899,7 @@ int _ieee80211_link_use_channel(struct ieee80211_link_data *link,
 		/* remove reservation */
 		WARN_ON(link->reserved_chanctx != ctx);
 		link->reserved_chanctx = NULL;
-		list_del(&link->reserved_chanctx_list);
+		list_del_dbg(&link->reserved_chanctx_list);
 	}
 
 	if (ret) {

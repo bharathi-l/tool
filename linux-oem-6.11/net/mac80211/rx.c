@@ -1266,7 +1266,7 @@ static bool ieee80211_sta_manage_reorder_buf(struct ieee80211_sub_if_data *sdata
 	int index;
 	bool ret = true;
 
-	spin_lock(&tid_agg_rx->reorder_lock);
+	spin_lock_dbg(&tid_agg_rx->reorder_lock);
 
 	/*
 	 * Offloaded BA sessions have no known starting sequence number so pick
@@ -1347,7 +1347,7 @@ static bool ieee80211_sta_manage_reorder_buf(struct ieee80211_sub_if_data *sdata
 	}
 
  out:
-	spin_unlock(&tid_agg_rx->reorder_lock);
+	spin_unlock_dbg(&tid_agg_rx->reorder_lock);
 	return ret;
 }
 
@@ -1597,10 +1597,10 @@ static void sta_ps_start(struct sta_info *sta)
 		struct ieee80211_txq *txq = sta->sta.txq[tid];
 		struct txq_info *txqi = to_txq_info(txq);
 
-		spin_lock(&local->active_txq_lock[txq->ac]);
+		spin_lock_dbg(&local->active_txq_lock[txq->ac]);
 		if (!list_empty(&txqi->schedule_order))
-			list_del_init(&txqi->schedule_order);
-		spin_unlock(&local->active_txq_lock[txq->ac]);
+			list_del_init_dbg(&txqi->schedule_order);
+		spin_unlock_dbg(&local->active_txq_lock[txq->ac]);
 
 		if (txq_has_queue(txq))
 			set_bit(tid, &sta->txq_buffered_tids);
@@ -2662,9 +2662,9 @@ static void ieee80211_deliver_skb_to_local_stack(struct sk_buff *skb,
 			ether_addr_copy(ehdr->h_dest, sdata->vif.addr);
 
 		/* deliver to local stack */
-		if (rx->list)
-			list_add_tail(&skb->list, rx->list);
-		else {
+		if (rx->list) {
+			list_add_tail_dbg(&skb->list, rx->list);
+		} else {
 			printk("[MODULE -> %s], [THREAD -> %s] [NETIF_RECV_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 			netif_receive_skb(skb);
 		}
@@ -2909,13 +2909,13 @@ ieee80211_rx_mesh_data(struct ieee80211_sub_if_data *sdata, struct sta_info *sta
 		if (!mppath) {
 			mpp_path_add(sdata, proxied_addr, eth->h_source);
 		} else {
-			spin_lock_bh(&mppath->state_lock);
+			spin_lock_bh_dbg(&mppath->state_lock);
 			if (!ether_addr_equal(mppath->mpp, eth->h_source)) {
 				memcpy(mppath->mpp, eth->h_source, ETH_ALEN);
 				update = true;
 			}
 			mppath->exp_time = jiffies;
-			spin_unlock_bh(&mppath->state_lock);
+			spin_unlock_bh_dbg(&mppath->state_lock);
 		}
 
 		/* flush fast xmit cache if the address path changed */
@@ -3310,11 +3310,11 @@ ieee80211_rx_h_ctrl(struct ieee80211_rx_data *rx, struct sk_buff_head *frames)
 			mod_timer_dbg(&tid_agg_rx->session_timer,
 				  TU_TO_EXP_TIME(tid_agg_rx->timeout));
 
-		spin_lock(&tid_agg_rx->reorder_lock);
+		spin_lock_dbg(&tid_agg_rx->reorder_lock);
 		/* release stored frames up to start of BAR */
 		ieee80211_release_reorder_frames(rx->sdata, tid_agg_rx,
 						 start_seq_num, frames);
-		spin_unlock(&tid_agg_rx->reorder_lock);
+		spin_unlock_dbg(&tid_agg_rx->reorder_lock);
 
 		drv_event_callback(rx->local, rx->sdata, &event);
 
@@ -4200,7 +4200,7 @@ static void ieee80211_rx_handlers(struct ieee80211_rx_data *rx,
 	 * from the timer, potentially concurrently with RX from the
 	 * driver.
 	 */
-	spin_lock_bh(&rx->local->rx_path_lock);
+	spin_lock_bh_dbg(&rx->local->rx_path_lock);
 
 	while ((skb = __skb_dequeue(frames))) {
 		/*
@@ -4242,7 +4242,7 @@ static void ieee80211_rx_handlers(struct ieee80211_rx_data *rx,
 #undef CALL_RXH
 	}
 
-	spin_unlock_bh(&rx->local->rx_path_lock);
+	spin_unlock_bh_dbg(&rx->local->rx_path_lock);
 }
 
 static void ieee80211_invoke_rx_handlers(struct ieee80211_rx_data *rx)
@@ -4347,9 +4347,9 @@ void ieee80211_release_reorder_timeout(struct sta_info *sta, int tid)
 
 	__skb_queue_head_init(&frames);
 
-	spin_lock(&tid_agg_rx->reorder_lock);
+	spin_lock_dbg(&tid_agg_rx->reorder_lock);
 	ieee80211_sta_reorder_release(sta->sdata, tid_agg_rx, &frames);
-	spin_unlock(&tid_agg_rx->reorder_lock);
+	spin_unlock_dbg(&tid_agg_rx->reorder_lock);
 
 	if (!skb_queue_empty(&frames)) {
 		struct ieee80211_event event = {
@@ -4398,7 +4398,7 @@ void ieee80211_mark_rx_ba_filtered_frames(struct ieee80211_sta *pubsta, u8 tid,
 	if (!tid_agg_rx)
 		goto out;
 
-	spin_lock_bh(&tid_agg_rx->reorder_lock);
+	spin_lock_bh_dbg(&tid_agg_rx->reorder_lock);
 
 	if (received_mpdus >= IEEE80211_SN_MODULO >> 1) {
 		int release;
@@ -4438,7 +4438,7 @@ void ieee80211_mark_rx_ba_filtered_frames(struct ieee80211_sta *pubsta, u8 tid,
 	ieee80211_sta_reorder_release(sta->sdata, tid_agg_rx, &frames);
 
 release:
-	spin_unlock_bh(&tid_agg_rx->reorder_lock);
+	spin_unlock_bh_dbg(&tid_agg_rx->reorder_lock);
 
 	ieee80211_rx_handlers(&rx, &frames);
 
@@ -4739,10 +4739,10 @@ void ieee80211_check_fast_rx(struct sta_info *sta)
 	if (set_offload)
 		drv_sta_set_decap_offload(local, sdata, &sta->sta, assign);
 
-	spin_lock_bh(&sta->lock);
+	spin_lock_bh_dbg(&sta->lock);
 	old = rcu_dereference_protected(sta->fast_rx, true);
 	rcu_assign_pointer(sta->fast_rx, new);
-	spin_unlock_bh(&sta->lock);
+	spin_unlock_bh_dbg(&sta->lock);
 
 	if (old)
 		kfree_rcu(old, rcu_head);
@@ -4752,10 +4752,10 @@ void ieee80211_clear_fast_rx(struct sta_info *sta)
 {
 	struct ieee80211_fast_rx *old;
 
-	spin_lock_bh(&sta->lock);
+	spin_lock_bh_dbg(&sta->lock);
 	old = rcu_dereference_protected(sta->fast_rx, true);
 	RCU_INIT_POINTER(sta->fast_rx, NULL);
-	spin_unlock_bh(&sta->lock);
+	spin_unlock_bh_dbg(&sta->lock);
 
 	if (old)
 		kfree_rcu(old, rcu_head);

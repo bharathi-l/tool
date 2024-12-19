@@ -188,7 +188,7 @@ static void ieee80211_roc_notify_destroy(struct ieee80211_roc_work *roc)
 					 roc->mgmt_tx_cookie,
 					 roc->chan, GFP_KERNEL);
 
-	list_del(&roc->list);
+	list_del_dbg(&roc->list);
 	kfree(roc);
 }
 
@@ -553,7 +553,7 @@ ieee80211_coalesce_hw_started_roc(struct ieee80211_local *local,
 		return false;
 
 	/* add just after the current one so we combine their finish later */
-	list_add(&new_roc->list, &cur_roc->list);
+	list_add_dbg(&new_roc->list, &cur_roc->list);
 
 	/* if the existing one has already begun then let this one also
 	 * begin, otherwise they'll both be marked properly by the work
@@ -626,7 +626,7 @@ static int ieee80211_start_roc_work(struct ieee80211_local *local,
 	    !local->scanning && !ieee80211_is_radar_required(local)) {
 		/* if not HW assist, just queue & schedule work */
 		if (!local->ops->remain_on_channel) {
-			list_add_tail(&roc->list, &local->roc_list);
+			list_add_tail_dbg(&roc->list, &local->roc_list);
 			wiphy_delayed_work_queue_dbg(local->hw.wiphy,
 						 &local->roc_work, 0);
 		} else {
@@ -640,7 +640,7 @@ static int ieee80211_start_roc_work(struct ieee80211_local *local,
 				return ret;
 			}
 			roc->started = true;
-			list_add_tail(&roc->list, &local->roc_list);
+			list_add_tail_dbg(&roc->list, &local->roc_list);
 		}
 
 		return 0;
@@ -657,7 +657,7 @@ static int ieee80211_start_roc_work(struct ieee80211_local *local,
 		 * just after the new one to combine.
 		 */
 		if (!tmp->started) {
-			list_add(&roc->list, &tmp->list);
+			list_add_dbg(&roc->list, &tmp->list);
 			queued = true;
 			break;
 		}
@@ -685,7 +685,7 @@ static int ieee80211_start_roc_work(struct ieee80211_local *local,
 				continue;
 			}
 
-			list_add(&roc->list, &tmp->list);
+			list_add_dbg(&roc->list, &tmp->list);
 			queued = true;
 			roc->on_channel = tmp->on_channel;
 			ieee80211_handle_roc_started(roc, now);
@@ -705,7 +705,7 @@ static int ieee80211_start_roc_work(struct ieee80211_local *local,
 	}
 
 	if (!queued)
-		list_add_tail(&roc->list, &local->roc_list);
+		list_add_tail_dbg(&roc->list, &local->roc_list);
 
 	return 0;
 }

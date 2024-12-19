@@ -107,9 +107,9 @@ void __ieee80211_stop_rx_ba_session(struct sta_info *sta, u16 tid,
 	del_timer_sync_dbg(&tid_rx->session_timer);
 
 	/* make sure ieee80211_sta_reorder_release() doesn't re-arm the timer */
-	spin_lock_bh(&tid_rx->reorder_lock);
+	spin_lock_bh_dbg(&tid_rx->reorder_lock);
 	tid_rx->removed = true;
-	spin_unlock_bh(&tid_rx->reorder_lock);
+	spin_unlock_bh_dbg(&tid_rx->reorder_lock);
 	del_timer_sync_dbg(&tid_rx->reorder_timer);
 
 	call_rcu(&tid_rx->rcu_head, ieee80211_free_tid_rx);
@@ -370,7 +370,7 @@ void __ieee80211_start_rx_ba_session(struct sta_info *sta,
 	if (!tid_agg_rx)
 		goto end;
 
-	spin_lock_init(&tid_agg_rx->reorder_lock);
+	spin_lock_init_dbg(&tid_agg_rx->reorder_lock);
 
 	/* rx timer */
 	timer_setup_dbg(&tid_agg_rx->session_timer,

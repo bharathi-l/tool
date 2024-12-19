@@ -495,7 +495,7 @@ ieee80211_tx_h_unicast_ps_buf(struct ieee80211_tx_data *tx)
 			purge_old_ps_buffers(tx->local);
 
 		/* sync with ieee80211_sta_ps_deliver_wakeup */
-		spin_lock(&sta->ps_lock);
+		spin_lock_dbg(&sta->ps_lock);
 		/*
 		 * STA woke up the meantime and all the frames on ps_tx_buf have
 		 * been queued to pending queue. No reordering can happen, go
@@ -504,7 +504,7 @@ ieee80211_tx_h_unicast_ps_buf(struct ieee80211_tx_data *tx)
 		if (!test_sta_flag(sta, WLAN_STA_PS_STA) &&
 		    !test_sta_flag(sta, WLAN_STA_PS_DRIVER) &&
 		    !test_sta_flag(sta, WLAN_STA_PS_DELIVER)) {
-			spin_unlock(&sta->ps_lock);
+			spin_unlock_dbg(&sta->ps_lock);
 			return TX_CONTINUE;
 		}
 
@@ -522,7 +522,7 @@ ieee80211_tx_h_unicast_ps_buf(struct ieee80211_tx_data *tx)
 		info->control.flags |= IEEE80211_TX_INTCFL_NEED_TXPROCESSING;
 		info->flags &= ~IEEE80211_TX_TEMPORARY_FLAGS;
 		skb_queue_tail(&sta->ps_tx_buf[ac], tx->skb);
-		spin_unlock(&sta->ps_lock);
+		spin_unlock_dbg(&sta->ps_lock);
 
 		if (!timer_pending(&local->sta_cleanup))
 			mod_timer_dbg(&local->sta_cleanup,
@@ -1124,7 +1124,7 @@ static bool ieee80211_tx_prep_agg(struct ieee80211_tx_data *tx,
 		 * but that might still fail with the driver
 		 */
 	} else if (!tx->sta->sta.txq[tid]) {
-		spin_lock(&tx->sta->lock);
+		spin_lock_dbg(&tx->sta->lock);
 		/*
 		 * Need to re-check now, because we may get here
 		 *
@@ -1164,7 +1164,7 @@ static bool ieee80211_tx_prep_agg(struct ieee80211_tx_data *tx,
 			if (skb_queue_len(&tid_tx->pending) > STA_MAX_TX_BUFFER)
 				purge_skb = __skb_dequeue(&tid_tx->pending);
 		}
-		spin_unlock(&tx->sta->lock);
+		spin_unlock_dbg(&tx->sta->lock);
 
 		if (purge_skb)
 			ieee80211_free_txskb(&tx->local->hw, purge_skb);
@@ -1452,7 +1452,7 @@ static void ieee80211_txq_enqueue(struct ieee80211_local *local,
 
 	ieee80211_set_skb_enqueue_time(skb);
 
-	spin_lock_bh(&fq->lock);
+	spin_lock_bh_dbg(&fq->lock);
 	/*
 	 * For management frames, don't really apply codel etc.,
 	 * we don't want to apply any shaping or anything we just
@@ -1467,7 +1467,7 @@ static void ieee80211_txq_enqueue(struct ieee80211_local *local,
 		fq_tin_enqueue(fq, tin, flow_idx, skb,
 			       fq_skb_free_func);
 	}
-	spin_unlock_bh(&fq->lock);
+	spin_unlock_bh_dbg(&fq->lock);
 }
 
 static bool fq_vlan_filter_func(struct fq *fq, struct fq_tin *tin,
@@ -1498,10 +1498,10 @@ void ieee80211_txq_remove_vlan(struct ieee80211_local *local,
 	txqi = to_txq_info(ap->vif.txq);
 	tin = &txqi->tin;
 
-	spin_lock_bh(&fq->lock);
+	spin_lock_bh_dbg(&fq->lock);
 	fq_tin_filter(fq, tin, fq_vlan_filter_func, &sdata->vif,
 		      fq_skb_free_func);
-	spin_unlock_bh(&fq->lock);
+	spin_unlock_bh_dbg(&fq->lock);
 }
 
 void ieee80211_txq_init(struct ieee80211_sub_if_data *sdata,
@@ -1551,14 +1551,14 @@ void ieee80211_txq_purge(struct ieee80211_local *local,
 	struct fq *fq = &local->fq;
 	struct fq_tin *tin = &txqi->tin;
 
-	spin_lock_bh(&fq->lock);
+	spin_lock_bh_dbg(&fq->lock);
 	fq_tin_reset(fq, tin, fq_skb_free_func);
 	ieee80211_purge_tx_queue(&local->hw, &txqi->frags);
-	spin_unlock_bh(&fq->lock);
+	spin_unlock_bh_dbg(&fq->lock);
 
-	spin_lock_bh(&local->active_txq_lock[txqi->txq.ac]);
-	list_del_init(&txqi->schedule_order);
-	spin_unlock_bh(&local->active_txq_lock[txqi->txq.ac]);
+	spin_lock_bh_dbg(&local->active_txq_lock[txqi->txq.ac]);
+	list_del_init_dbg(&txqi->schedule_order);
+	spin_unlock_bh_dbg(&local->active_txq_lock[txqi->txq.ac]);
 }
 
 void ieee80211_txq_set_params(struct ieee80211_local *local)
@@ -1616,9 +1616,9 @@ int ieee80211_txq_setup_flows(struct ieee80211_local *local)
 	local->cvars = kvcalloc(fq->flows_cnt, sizeof(local->cvars[0]),
 				GFP_KERNEL);
 	if (!local->cvars) {
-		spin_lock_bh(&fq->lock);
+		spin_lock_bh_dbg(&fq->lock);
 		fq_reset(fq, fq_skb_free_func);
-		spin_unlock_bh(&fq->lock);
+		spin_unlock_bh_dbg(&fq->lock);
 		return -ENOMEM;
 	}
 
@@ -1637,9 +1637,9 @@ void ieee80211_txq_teardown_flows(struct ieee80211_local *local)
 	kvfree(local->cvars);
 	local->cvars = NULL;
 
-	spin_lock_bh(&fq->lock);
+	spin_lock_bh_dbg(&fq->lock);
 	fq_reset(fq, fq_skb_free_func);
-	spin_unlock_bh(&fq->lock);
+	spin_unlock_bh_dbg(&fq->lock);
 }
 
 static bool ieee80211_queue_skb(struct ieee80211_local *local,
@@ -1692,7 +1692,7 @@ static bool ieee80211_tx_frags(struct ieee80211_local *local,
 		}
 #endif
 
-		spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+		spin_lock_irqsave_dbg(&local->queue_stop_reason_lock, flags);
 		if (local->queue_stop_reasons[q] ||
 		    (!txpending && !skb_queue_empty(&local->pending[q]))) {
 			if (unlikely(info->flags &
@@ -1705,7 +1705,7 @@ static bool ieee80211_tx_frags(struct ieee80211_local *local,
 					 * than off-channel operation. Never
 					 * queue them.
 					 */
-					spin_unlock_irqrestore(
+					spin_unlock_irqrestore_dbg(
 						&local->queue_stop_reason_lock,
 						flags);
 					ieee80211_purge_tx_queue(&local->hw,
@@ -1726,12 +1726,12 @@ static bool ieee80211_tx_frags(struct ieee80211_local *local,
 					skb_queue_splice_tail_init(skbs,
 								   &local->pending[q]);
 
-				spin_unlock_irqrestore(&local->queue_stop_reason_lock,
+				spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock,
 						       flags);
 				return false;
 			}
 		}
-		spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+		spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock, flags);
 
 		info->control.vif = vif;
 		control.sta = sta ? &sta->sta : NULL;
@@ -2558,10 +2558,10 @@ static u16 ieee80211_store_ack_skb(struct ieee80211_local *local,
 		unsigned long flags;
 		int id;
 
-		spin_lock_irqsave(&local->ack_status_lock, flags);
+		spin_lock_irqsave_dbg(&local->ack_status_lock, flags);
 		id = idr_alloc(&local->ack_status_frames, ack_skb,
 			       1, 0x2000, GFP_ATOMIC);
-		spin_unlock_irqrestore(&local->ack_status_lock, flags);
+		spin_unlock_irqrestore_dbg(&local->ack_status_lock, flags);
 
 		if (id >= 0) {
 			info_id = id;
@@ -3057,7 +3057,7 @@ void ieee80211_check_fast_xmit(struct sta_info *sta)
 	 * modifies the key will either wait or other one will see the key
 	 * cleared/changed already.
 	 */
-	spin_lock_bh(&sta->lock);
+	spin_lock_bh_dbg(&sta->lock);
 	if (ieee80211_hw_check(&local->hw, SUPPORTS_PS) &&
 	    !ieee80211_hw_check(&local->hw, SUPPORTS_DYNAMIC_PS) &&
 	    sdata->vif.type == NL80211_IFTYPE_STATION)
@@ -3275,7 +3275,7 @@ void ieee80211_check_fast_xmit(struct sta_info *sta)
 	rcu_assign_pointer(sta->fast_tx, fast_tx);
 	if (old)
 		kfree_rcu(old, rcu_head);
-	spin_unlock_bh(&sta->lock);
+	spin_unlock_bh_dbg(&sta->lock);
 }
 
 void ieee80211_check_fast_xmit_all(struct ieee80211_local *local)
@@ -3309,11 +3309,11 @@ void ieee80211_clear_fast_xmit(struct sta_info *sta)
 {
 	struct ieee80211_fast_tx *fast_tx;
 
-	spin_lock_bh(&sta->lock);
+	spin_lock_bh_dbg(&sta->lock);
 	fast_tx = rcu_dereference_protected(sta->fast_tx,
 					    lockdep_is_held(&sta->lock));
 	RCU_INIT_POINTER(sta->fast_tx, NULL);
-	spin_unlock_bh(&sta->lock);
+	spin_unlock_bh_dbg(&sta->lock);
 
 	if (fast_tx)
 		kfree_rcu(fast_tx, rcu_head);
@@ -3458,7 +3458,7 @@ static bool ieee80211_amsdu_aggregate(struct ieee80211_sub_if_data *sdata,
 
 	flow_idx = fq_flow_idx(fq, skb);
 
-	spin_lock_bh(&fq->lock);
+	spin_lock_bh_dbg(&fq->lock);
 
 	/* TODO: Ideally aggregation should be done on dequeue to remain
 	 * responsive to environment changes.
@@ -3543,7 +3543,7 @@ out_recalc:
 		tin->backlog_bytes += head->len - orig_len;
 	}
 out:
-	spin_unlock_bh(&fq->lock);
+	spin_unlock_bh_dbg(&fq->lock);
 
 	return ret;
 }
@@ -3835,9 +3835,9 @@ struct sk_buff *ieee80211_tx_dequeue(struct ieee80211_hw *hw,
 		return NULL;
 
 begin:
-	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+	spin_lock_irqsave_dbg(&local->queue_stop_reason_lock, flags);
 	q_stopped = local->queue_stop_reasons[q];
-	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+	spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock, flags);
 
 	if (unlikely(q_stopped)) {
 		/* mark for waking later */
@@ -3845,7 +3845,7 @@ begin:
 		return NULL;
 	}
 
-	spin_lock_bh(&fq->lock);
+	spin_lock_bh_dbg(&fq->lock);
 
 	/* Make sure fragments stay together. */
 	skb = __skb_dequeue(&txqi->frags);
@@ -3865,7 +3865,7 @@ begin:
 	if (!skb)
 		goto out;
 
-	spin_unlock_bh(&fq->lock);
+	spin_unlock_bh_dbg(&fq->lock);
 
 	hdr = (struct ieee80211_hdr *)skb->data;
 	info = IEEE80211_SKB_CB(skb);
@@ -3946,9 +3946,9 @@ begin:
 		info = IEEE80211_SKB_CB(skb);
 
 		if (!skb_queue_empty(&tx.skbs)) {
-			spin_lock_bh(&fq->lock);
+			spin_lock_bh_dbg(&fq->lock);
 			skb_queue_splice_tail(&tx.skbs, &txqi->frags);
-			spin_unlock_bh(&fq->lock);
+			spin_unlock_bh_dbg(&fq->lock);
 		}
 	}
 
@@ -4011,7 +4011,7 @@ encap_out:
 	return skb;
 
 out:
-	spin_unlock_bh(&fq->lock);
+	spin_unlock_bh_dbg(&fq->lock);
 
 	return skb;
 }
@@ -4058,7 +4058,7 @@ struct ieee80211_txq *ieee80211_next_txq(struct ieee80211_hw *hw, u8 ac)
 	struct txq_info *txqi = NULL, *head = NULL;
 	bool found_eligible_txq = false;
 
-	spin_lock_bh(&local->active_txq_lock[ac]);
+	spin_lock_bh_dbg(&local->active_txq_lock[ac]);
 
 	if (!local->schedule_round[ac])
 		goto out;
@@ -4094,7 +4094,7 @@ struct ieee80211_txq *ieee80211_next_txq(struct ieee80211_hw *hw, u8 ac)
 				sta->airtime_weight;
 
 		if (deficit < 0 || !aql_check) {
-			list_move_tail(&txqi->schedule_order,
+			list_move_tail_dbg(&txqi->schedule_order,
 				       &local->active_txqs[txqi->txq.ac]);
 			goto begin;
 		}
@@ -4103,12 +4103,12 @@ struct ieee80211_txq *ieee80211_next_txq(struct ieee80211_hw *hw, u8 ac)
 	if (txqi->schedule_round == local->schedule_round[ac])
 		goto out;
 
-	list_del_init(&txqi->schedule_order);
+	list_del_init_dbg(&txqi->schedule_order);
 	txqi->schedule_round = local->schedule_round[ac];
 	ret = &txqi->txq;
 
 out:
-	spin_unlock_bh(&local->active_txq_lock[ac]);
+	spin_unlock_bh_dbg(&local->active_txq_lock[ac]);
 	return ret;
 }
 EXPORT_SYMBOL(ieee80211_next_txq);
@@ -4121,7 +4121,7 @@ void __ieee80211_schedule_txq(struct ieee80211_hw *hw,
 	struct txq_info *txqi = to_txq_info(txq);
 	bool has_queue;
 
-	spin_lock_bh(&local->active_txq_lock[txq->ac]);
+	spin_lock_bh_dbg(&local->active_txq_lock[txq->ac]);
 
 	has_queue = force || txq_has_queue(txq);
 	if (list_empty(&txqi->schedule_order) &&
@@ -4135,17 +4135,18 @@ void __ieee80211_schedule_txq(struct ieee80211_hw *hw,
 		 */
 		if (txqi->txq.sta && local->airtime_flags && has_queue &&
 		    wiphy_ext_feature_isset(local->hw.wiphy,
-					    NL80211_EXT_FEATURE_AIRTIME_FAIRNESS))
-			list_add(&txqi->schedule_order,
+					    NL80211_EXT_FEATURE_AIRTIME_FAIRNESS)) {
+			list_add_dbg(&txqi->schedule_order,
 				 &local->active_txqs[txq->ac]);
-		else
-			list_add_tail(&txqi->schedule_order,
+		} else {
+			list_add_tail_dbg(&txqi->schedule_order,
 				      &local->active_txqs[txq->ac]);
+		}
 		if (has_queue)
 			ieee80211_txq_set_active(txqi);
 	}
 
-	spin_unlock_bh(&local->active_txq_lock[txq->ac]);
+	spin_unlock_bh_dbg(&local->active_txq_lock[txq->ac]);
 }
 EXPORT_SYMBOL(__ieee80211_schedule_txq);
 
@@ -4211,7 +4212,7 @@ bool ieee80211_txq_may_transmit(struct ieee80211_hw *hw,
 	struct sta_info *sta;
 	u8 ac = txq->ac;
 
-	spin_lock_bh(&local->active_txq_lock[ac]);
+	spin_lock_bh_dbg(&local->active_txq_lock[ac]);
 
 	if (!txqi->txq.sta)
 		goto out;
@@ -4228,14 +4229,14 @@ bool ieee80211_txq_may_transmit(struct ieee80211_hw *hw,
 			break;
 
 		if (!iter->txq.sta) {
-			list_move_tail(&iter->schedule_order,
+			list_move_tail_dbg(&iter->schedule_order,
 				       &local->active_txqs[ac]);
 			continue;
 		}
 		sta = container_of(iter->txq.sta, struct sta_info, sta);
 		if (ieee80211_sta_deficit(sta, ac) < 0)
 			sta->airtime[ac].deficit += sta->airtime_weight;
-		list_move_tail(&iter->schedule_order, &local->active_txqs[ac]);
+		list_move_tail_dbg(&iter->schedule_order, &local->active_txqs[ac]);
 	}
 
 	sta = container_of(txqi->txq.sta, struct sta_info, sta);
@@ -4243,14 +4244,14 @@ bool ieee80211_txq_may_transmit(struct ieee80211_hw *hw,
 		goto out;
 
 	sta->airtime[ac].deficit += sta->airtime_weight;
-	list_move_tail(&txqi->schedule_order, &local->active_txqs[ac]);
-	spin_unlock_bh(&local->active_txq_lock[ac]);
+	list_move_tail_dbg(&txqi->schedule_order, &local->active_txqs[ac]);
+	spin_unlock_bh_dbg(&local->active_txq_lock[ac]);
 
 	return false;
 out:
 	if (!list_empty(&txqi->schedule_order))
-		list_del_init(&txqi->schedule_order);
-	spin_unlock_bh(&local->active_txq_lock[ac]);
+		list_del_init_dbg(&txqi->schedule_order);
+	spin_unlock_bh_dbg(&local->active_txq_lock[ac]);
 
 	return true;
 }
@@ -4260,7 +4261,7 @@ void ieee80211_txq_schedule_start(struct ieee80211_hw *hw, u8 ac)
 {
 	struct ieee80211_local *local = hw_to_local(hw);
 
-	spin_lock_bh(&local->active_txq_lock[ac]);
+	spin_lock_bh_dbg(&local->active_txq_lock[ac]);
 
 	if (ieee80211_txq_schedule_airtime_check(local, ac)) {
 		local->schedule_round[ac]++;
@@ -4270,7 +4271,7 @@ void ieee80211_txq_schedule_start(struct ieee80211_hw *hw, u8 ac)
 		local->schedule_round[ac] = 0;
 	}
 
-	spin_unlock_bh(&local->active_txq_lock[ac]);
+	spin_unlock_bh_dbg(&local->active_txq_lock[ac]);
 }
 EXPORT_SYMBOL(ieee80211_txq_schedule_start);
 
@@ -4571,7 +4572,7 @@ static bool __ieee80211_tx_8023(struct ieee80211_sub_if_data *sdata,
 
 	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 
-	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+	spin_lock_irqsave_dbg(&local->queue_stop_reason_lock, flags);
 
 	if (local->queue_stop_reasons[q] ||
 	    (!txpending && !skb_queue_empty(&local->pending[q]))) {
@@ -4580,13 +4581,13 @@ static bool __ieee80211_tx_8023(struct ieee80211_sub_if_data *sdata,
 		else
 			skb_queue_tail(&local->pending[q], skb);
 
-		spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+		spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock, flags);
 
 		printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, current->comm, __func__, __LINE__);
 		return false;
 	}
 
-	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+	spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock, flags);
 
 	if (sta && sta->uploaded)
 		pubsta = &sta->sta;
@@ -4880,7 +4881,7 @@ void ieee80211_tx_pending(struct tasklet_struct *t)
 
 	rcu_read_lock();
 
-	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+	spin_lock_irqsave_dbg(&local->queue_stop_reason_lock, flags);
 	for (i = 0; i < local->hw.queues; i++) {
 		/*
 		 * If queue is stopped by something other than due to pending
@@ -4899,17 +4900,17 @@ void ieee80211_tx_pending(struct tasklet_struct *t)
 				continue;
 			}
 
-			spin_unlock_irqrestore(&local->queue_stop_reason_lock,
+			spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock,
 						flags);
 
 			txok = ieee80211_tx_pending_skb(local, skb);
-			spin_lock_irqsave(&local->queue_stop_reason_lock,
+			spin_lock_irqsave_dbg(&local->queue_stop_reason_lock,
 					  flags);
 			if (!txok)
 				break;
 		}
 	}
-	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+	spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock, flags);
 
 	rcu_read_unlock();
 }
@@ -5004,9 +5005,9 @@ static int ieee80211_beacon_add_tim(struct ieee80211_sub_if_data *sdata,
 	if (local->tim_in_locked_section) {
 		__ieee80211_beacon_add_tim(sdata, link, ps, skb, is_template);
 	} else {
-		spin_lock_bh(&local->tim_lock);
+		spin_lock_bh_dbg(&local->tim_lock);
 		__ieee80211_beacon_add_tim(sdata, link, ps, skb, is_template);
-		spin_unlock_bh(&local->tim_lock);
+		spin_unlock_bh_dbg(&local->tim_lock);
 	}
 
 	return 0;

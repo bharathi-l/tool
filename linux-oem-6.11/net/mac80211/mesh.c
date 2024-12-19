@@ -1794,8 +1794,8 @@ void ieee80211_mesh_init_sdata(struct ieee80211_sub_if_data *sdata)
 		    ieee80211_mesh_path_root_timer, 0);
 	INIT_LIST_HEAD(&ifmsh->preq_queue.list);
 	skb_queue_head_init(&ifmsh->ps.bc_buf);
-	spin_lock_init(&ifmsh->mesh_preq_queue_lock);
-	spin_lock_init(&ifmsh->sync_offset_lock);
+	spin_lock_init_dbg(&ifmsh->mesh_preq_queue_lock);
+	spin_lock_init_dbg(&ifmsh->sync_offset_lock);
 	RCU_INIT_POINTER(ifmsh->beacon, NULL);
 
 	sdata->vif.bss_conf.bssid = zero_addr;

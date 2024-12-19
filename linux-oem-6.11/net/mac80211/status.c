@@ -542,7 +542,7 @@ static void ieee80211_tdls_td_tx_handle(struct ieee80211_local *local,
 	bool is_teardown = false;
 
 	/* Get the teardown data we need and free the lock */
-	spin_lock(&sdata->u.mgd.teardown_lock);
+	spin_lock_dbg(&sdata->u.mgd.teardown_lock);
 	teardown_skb = sdata->u.mgd.teardown_skb;
 	orig_teardown_skb = sdata->u.mgd.orig_teardown_skb;
 	if ((skb == orig_teardown_skb) && teardown_skb) {
@@ -550,7 +550,7 @@ static void ieee80211_tdls_td_tx_handle(struct ieee80211_local *local,
 		sdata->u.mgd.orig_teardown_skb = NULL;
 		is_teardown = true;
 	}
-	spin_unlock(&sdata->u.mgd.teardown_lock);
+	spin_unlock_dbg(&sdata->u.mgd.teardown_lock);
 
 	if (is_teardown) {
 		/* This mechanism relies on being able to get ACKs */
@@ -597,9 +597,9 @@ static void ieee80211_report_ack_skb(struct ieee80211_local *local,
 	struct sk_buff *skb;
 	unsigned long flags;
 
-	spin_lock_irqsave(&local->ack_status_lock, flags);
+	spin_lock_irqsave_dbg(&local->ack_status_lock, flags);
 	skb = idr_remove(&local->ack_status_frames, info->status_data);
-	spin_unlock_irqrestore(&local->ack_status_lock, flags);
+	spin_unlock_irqrestore_dbg(&local->ack_status_lock, flags);
 
 	if (!skb)
 		return;
@@ -1105,9 +1105,9 @@ static void __ieee80211_tx_status(struct ieee80211_hw *hw,
 	 * with this test...
 	 */
 	if (!local->monitors && (!send_to_cooked || !local->cooked_mntrs)) {
-		if (status->free_list)
-			list_add_tail(&skb->list, status->free_list);
-		else {
+		if (status->free_list) {
+			list_add_tail_dbg(&skb->list, status->free_list);
+		} else {
 			printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 			dev_kfree_skb(skb);
 		}
@@ -1258,9 +1258,9 @@ free:
 		return;
 
 	ieee80211_report_used_skb(local, skb, false, status->ack_hwtstamp);
-	if (status->free_list)
-		list_add_tail(&skb->list, status->free_list);
-	else {
+	if (status->free_list) {
+		list_add_tail_dbg(&skb->list, status->free_list);
+	} else {
 		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), skb, __func__, __LINE__);
 		dev_kfree_skb(skb);
 	}

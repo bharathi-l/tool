@@ -562,8 +562,8 @@ __sta_info_alloc(struct ieee80211_sub_if_data *sdata,
 
 	sta->sta.cur = &sta->sta.deflink.agg;
 
-	spin_lock_init(&sta->lock);
-	spin_lock_init(&sta->ps_lock);
+	spin_lock_init_dbg(&sta->lock);
+	spin_lock_init_dbg(&sta->ps_lock);
 	INIT_WORK(&sta->drv_deliver_wk, sta_deliver_ps_frames);
 	wiphy_work_init_dbg(&sta->ampdu_mlme.work, ieee80211_ba_session_work);
 #ifdef CONFIG_MAC80211_MESH
@@ -572,7 +572,7 @@ __sta_info_alloc(struct ieee80211_sub_if_data *sdata,
 		if (!sta->mesh)
 			goto free;
 		sta->mesh->plink_sta = sta;
-		spin_lock_init(&sta->mesh->plink_lock);
+		spin_lock_init_dbg(&sta->mesh->plink_lock);
 		if (!sdata->u.mesh.user_mpm)
 			timer_setup_dbg(&sta->mesh->plink_timer, mesh_plink_timer,
 				    0);
@@ -921,7 +921,7 @@ static int sta_info_insert_finish(struct sta_info *sta) __acquires(RCU)
 	if (sta->sta.valid_links)
 		link_sta_info_hash_del(local, &sta->deflink);
 	sta_info_hash_del(local, sta);
-	list_del_rcu(&sta->list);
+	list_del_rcu_dbg(&sta->list);
  out_drop_sta:
 	local->num_sta--;
 	synchronize_net();
@@ -1066,7 +1066,7 @@ static void __sta_info_recalc_tim(struct sta_info *sta, bool ignore_pending)
 	}
 
  done:
-	spin_lock_bh(&local->tim_lock);
+	spin_lock_bh_dbg(&local->tim_lock);
 
 	if (indicate_tim == __bss_tim_get(ps->tim, id))
 		goto out_unlock;
@@ -1083,7 +1083,7 @@ static void __sta_info_recalc_tim(struct sta_info *sta, bool ignore_pending)
 	}
 
 out_unlock:
-	spin_unlock_bh(&local->tim_lock);
+	spin_unlock_bh_dbg(&local->tim_lock);
 }
 
 void sta_info_recalc_tim(struct sta_info *sta)
@@ -1125,13 +1125,13 @@ static bool sta_info_cleanup_expire_buffered_ac(struct ieee80211_local *local,
 	 * total_ps_buffered counter.
 	 */
 	for (;;) {
-		spin_lock_irqsave(&sta->tx_filtered[ac].lock, flags);
+		spin_lock_irqsave_dbg(&sta->tx_filtered[ac].lock, flags);
 		skb = skb_peek(&sta->tx_filtered[ac]);
 		if (sta_info_buffer_expired(sta, skb))
 			skb = __skb_dequeue(&sta->tx_filtered[ac]);
 		else
 			skb = NULL;
-		spin_unlock_irqrestore(&sta->tx_filtered[ac].lock, flags);
+		spin_unlock_irqrestore_dbg(&sta->tx_filtered[ac].lock, flags);
 
 		/*
 		 * Frames are queued in order, so if this one
@@ -1151,13 +1151,13 @@ static bool sta_info_cleanup_expire_buffered_ac(struct ieee80211_local *local,
 	 * buffered frames.
 	 */
 	for (;;) {
-		spin_lock_irqsave(&sta->ps_tx_buf[ac].lock, flags);
+		spin_lock_irqsave_dbg(&sta->ps_tx_buf[ac].lock, flags);
 		skb = skb_peek(&sta->ps_tx_buf[ac]);
 		if (sta_info_buffer_expired(sta, skb))
 			skb = __skb_dequeue(&sta->ps_tx_buf[ac]);
 		else
 			skb = NULL;
-		spin_unlock_irqrestore(&sta->ps_tx_buf[ac].lock, flags);
+		spin_unlock_irqrestore_dbg(&sta->ps_tx_buf[ac].lock, flags);
 
 		/*
 		 * frames are queued in order, so if this one
@@ -1264,7 +1264,7 @@ static int __must_check __sta_info_destroy_part1(struct sta_info *sta)
 		clear_sta_flag(sta, WLAN_STA_TDLS_OFF_CHANNEL);
 	}
 
-	list_del_rcu(&sta->list);
+	list_del_rcu_dbg(&sta->list);
 	sta->removed = true;
 
 	if (sta->uploaded)
@@ -1552,7 +1552,7 @@ int sta_info_init(struct ieee80211_local *local)
 		return err;
 	}
 
-	spin_lock_init(&local->tim_lock);
+	spin_lock_init_dbg(&local->tim_lock);
 	INIT_LIST_HEAD(&local->sta_list);
 
 	timer_setup_dbg(&local->sta_cleanup, sta_info_cleanup, 0);
@@ -1591,7 +1591,7 @@ int __sta_info_flush(struct ieee80211_sub_if_data *sdata, bool vlans,
 			continue;
 
 		if (!WARN_ON(__sta_info_destroy_part1(sta)))
-			list_add(&sta->free_list, &free_list);
+			list_add_dbg(&sta->free_list, &free_list);
 
 		ret++;
 	}
@@ -1725,21 +1725,21 @@ void ieee80211_sta_ps_deliver_wakeup(struct sta_info *sta)
 	skb_queue_head_init(&pending);
 
 	/* sync with ieee80211_tx_h_unicast_ps_buf */
-	spin_lock_bh(&sta->ps_lock);
+	spin_lock_bh_dbg(&sta->ps_lock);
 	/* Send all buffered frames to the station */
 	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
 		int count = skb_queue_len(&pending), tmp;
 
-		spin_lock_irqsave(&sta->tx_filtered[ac].lock, flags);
+		spin_lock_irqsave_dbg(&sta->tx_filtered[ac].lock, flags);
 		skb_queue_splice_tail_init(&sta->tx_filtered[ac], &pending);
-		spin_unlock_irqrestore(&sta->tx_filtered[ac].lock, flags);
+		spin_unlock_irqrestore_dbg(&sta->tx_filtered[ac].lock, flags);
 		tmp = skb_queue_len(&pending);
 		filtered += tmp - count;
 		count = tmp;
 
-		spin_lock_irqsave(&sta->ps_tx_buf[ac].lock, flags);
+		spin_lock_irqsave_dbg(&sta->ps_tx_buf[ac].lock, flags);
 		skb_queue_splice_tail_init(&sta->ps_tx_buf[ac], &pending);
-		spin_unlock_irqrestore(&sta->ps_tx_buf[ac].lock, flags);
+		spin_unlock_irqrestore_dbg(&sta->ps_tx_buf[ac].lock, flags);
 		tmp = skb_queue_len(&pending);
 		buffered += tmp - count;
 	}
@@ -1754,7 +1754,7 @@ void ieee80211_sta_ps_deliver_wakeup(struct sta_info *sta)
 	 */
 	clear_sta_flag(sta, WLAN_STA_PSPOLL);
 	clear_sta_flag(sta, WLAN_STA_UAPSD);
-	spin_unlock_bh(&sta->ps_lock);
+	spin_unlock_bh_dbg(&sta->ps_lock);
 
 	atomic_dec(&ps->num_sta_ps);
 
@@ -2290,14 +2290,14 @@ void ieee80211_sta_register_airtime(struct ieee80211_sta *pubsta, u8 tid,
 	if (sta->local->airtime_flags & AIRTIME_USE_RX)
 		airtime += rx_airtime;
 
-	spin_lock_bh(&local->active_txq_lock[ac]);
+	spin_lock_bh_dbg(&local->active_txq_lock[ac]);
 	sta->airtime[ac].tx_airtime += tx_airtime;
 	sta->airtime[ac].rx_airtime += rx_airtime;
 
 	if (ieee80211_sta_keep_active(sta, ac))
 		sta->airtime[ac].deficit -= airtime;
 
-	spin_unlock_bh(&local->active_txq_lock[ac]);
+	spin_unlock_bh_dbg(&local->active_txq_lock[ac]);
 }
 EXPORT_SYMBOL(ieee80211_sta_register_airtime);
 
@@ -2542,7 +2542,7 @@ static void sta_set_tidstats(struct sta_info *sta,
 	}
 
 	if (tid < IEEE80211_NUM_TIDS) {
-		spin_lock_bh(&local->fq.lock);
+		spin_lock_bh_dbg(&local->fq.lock);
 		rcu_read_lock();
 
 		tidstats->filled |= BIT(NL80211_TID_STATS_TXQ_STATS);
@@ -2550,7 +2550,7 @@ static void sta_set_tidstats(struct sta_info *sta,
 					 to_txq_info(sta->sta.txq[tid]));
 
 		rcu_read_unlock();
-		spin_unlock_bh(&local->fq.lock);
+		spin_unlock_bh_dbg(&local->fq.lock);
 	}
 }
 

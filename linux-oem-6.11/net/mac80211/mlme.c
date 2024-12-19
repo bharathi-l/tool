@@ -3010,10 +3010,10 @@ void ieee80211_dynamic_ps_enable_work(struct wiphy *wiphy,
 		 * dynamic_ps_timer expiry. Postpone the ps timer if it
 		 * is not the actual idle state.
 		 */
-		spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+		spin_lock_irqsave_dbg(&local->queue_stop_reason_lock, flags);
 		for (q = 0; q < local->hw.queues; q++) {
 			if (local->queue_stop_reasons[q]) {
-				spin_unlock_irqrestore(&local->queue_stop_reason_lock,
+				spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock,
 						       flags);
 				mod_timer_dbg(&local->dynamic_ps_timer, jiffies +
 					  msecs_to_jiffies(
@@ -3022,7 +3022,7 @@ void ieee80211_dynamic_ps_enable_work(struct wiphy *wiphy,
 				return;
 			}
 		}
-		spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+		spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock, flags);
 	}
 
 	if (ieee80211_hw_check(&local->hw, PS_NULLFUNC_STACK) &&
@@ -8120,7 +8120,7 @@ void ieee80211_sta_setup_sdata(struct ieee80211_sub_if_data *sdata)
 	ifmgd->uapsd_queues = sdata->local->hw.uapsd_queues;
 	ifmgd->uapsd_max_sp_len = sdata->local->hw.uapsd_max_sp_len;
 	/* Setup TDLS data */
-	spin_lock_init(&ifmgd->teardown_lock);
+	spin_lock_init_dbg(&ifmgd->teardown_lock);
 	ifmgd->teardown_skb = NULL;
 	ifmgd->orig_teardown_skb = NULL;
 	ifmgd->mcast_seq_last = IEEE80211_SN_MODULO;
@@ -9316,7 +9316,7 @@ void ieee80211_mgd_stop(struct ieee80211_sub_if_data *sdata)
 		ieee80211_destroy_assoc_data(sdata, ASSOC_TIMEOUT);
 	if (ifmgd->auth_data)
 		ieee80211_destroy_auth_data(sdata, false);
-	spin_lock_bh(&ifmgd->teardown_lock);
+	spin_lock_bh_dbg(&ifmgd->teardown_lock);
 	if (ifmgd->teardown_skb) {
 		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), ifmgd->teardown_skb, __func__, __LINE__);
 		kfree_skb(ifmgd->teardown_skb);
@@ -9326,7 +9326,7 @@ void ieee80211_mgd_stop(struct ieee80211_sub_if_data *sdata)
 	kfree(ifmgd->assoc_req_ies);
 	ifmgd->assoc_req_ies = NULL;
 	ifmgd->assoc_req_ies_len = 0;
-	spin_unlock_bh(&ifmgd->teardown_lock);
+	spin_unlock_bh_dbg(&ifmgd->teardown_lock);
 	del_timer_sync_dbg(&ifmgd->timer);
 }
 

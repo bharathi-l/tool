@@ -76,9 +76,9 @@ void ieee80211_ocb_rx_no_sta(struct ieee80211_sub_if_data *sdata,
 	sband = local->hw.wiphy->bands[band];
 	sta->sta.deflink.supp_rates[band] = ieee80211_mandatory_rates(sband);
 
-	spin_lock(&ifocb->incomplete_lock);
-	list_add(&sta->list, &ifocb->incomplete_stations);
-	spin_unlock(&ifocb->incomplete_lock);
+	spin_lock_dbg(&ifocb->incomplete_lock);
+	list_add_dbg(&sta->list, &ifocb->incomplete_stations);
+	spin_unlock_dbg(&ifocb->incomplete_lock);
 	
 	wiphy_work_queue_dbg(local->hw.wiphy, &sdata->work);
 }
@@ -128,18 +128,18 @@ void ieee80211_ocb_work(struct ieee80211_sub_if_data *sdata)
 	if (ifocb->joined != true)
 		return;
 
-	spin_lock_bh(&ifocb->incomplete_lock);
+	spin_lock_bh_dbg(&ifocb->incomplete_lock);
 	while (!list_empty(&ifocb->incomplete_stations)) {
 		sta = list_first_entry(&ifocb->incomplete_stations,
 				       struct sta_info, list);
-		list_del(&sta->list);
-		spin_unlock_bh(&ifocb->incomplete_lock);
+		list_del_dbg(&sta->list);
+		spin_unlock_bh_dbg(&ifocb->incomplete_lock);
 
 		ieee80211_ocb_finish_sta(sta);
 		rcu_read_unlock();
-		spin_lock_bh(&ifocb->incomplete_lock);
+		spin_lock_bh_dbg(&ifocb->incomplete_lock);
 	}
-	spin_unlock_bh(&ifocb->incomplete_lock);
+	spin_unlock_bh_dbg(&ifocb->incomplete_lock);
 
 	if (test_and_clear_bit(OCB_WORK_HOUSEKEEPING, &ifocb->wrkq_flags))
 		ieee80211_ocb_housekeeping(sdata);
@@ -165,7 +165,7 @@ void ieee80211_ocb_setup_sdata(struct ieee80211_sub_if_data *sdata)
 	timer_setup_dbg(&ifocb->housekeeping_timer,
 		    ieee80211_ocb_housekeeping_timer, 0);
 	INIT_LIST_HEAD(&ifocb->incomplete_stations);
-	spin_lock_init(&ifocb->incomplete_lock);
+	spin_lock_init_dbg(&ifocb->incomplete_lock);
 }
 
 int ieee80211_ocb_join(struct ieee80211_sub_if_data *sdata,
@@ -214,17 +214,17 @@ int ieee80211_ocb_leave(struct ieee80211_sub_if_data *sdata)
 	ifocb->joined = false;
 	sta_info_flush(sdata, -1);
 
-	spin_lock_bh(&ifocb->incomplete_lock);
+	spin_lock_bh_dbg(&ifocb->incomplete_lock);
 	while (!list_empty(&ifocb->incomplete_stations)) {
 		sta = list_first_entry(&ifocb->incomplete_stations,
 				       struct sta_info, list);
-		list_del(&sta->list);
-		spin_unlock_bh(&ifocb->incomplete_lock);
+		list_del_dbg(&sta->list);
+		spin_unlock_bh_dbg(&ifocb->incomplete_lock);
 
 		sta_info_free(local, sta);
-		spin_lock_bh(&ifocb->incomplete_lock);
+		spin_lock_bh_dbg(&ifocb->incomplete_lock);
 	}
-	spin_unlock_bh(&ifocb->incomplete_lock);
+	spin_unlock_bh_dbg(&ifocb->incomplete_lock);
 
 	netif_carrier_off(sdata->dev);
 	clear_bit(SDATA_STATE_OFFCHANNEL, &sdata->state);

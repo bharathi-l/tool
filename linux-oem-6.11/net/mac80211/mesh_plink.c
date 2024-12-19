@@ -407,7 +407,7 @@ u64 mesh_plink_deactivate(struct sta_info *sta)
 	struct ieee80211_sub_if_data *sdata = sta->sdata;
 	u64 changed;
 
-	spin_lock_bh(&sta->mesh->plink_lock);
+	spin_lock_bh_dbg(&sta->mesh->plink_lock);
 	changed = __mesh_plink_deactivate(sta);
 
 	if (!sdata->u.mesh.user_mpm) {
@@ -416,7 +416,7 @@ u64 mesh_plink_deactivate(struct sta_info *sta)
 				    sta->sta.addr, sta->mesh->llid,
 				    sta->mesh->plid, sta->mesh->reason);
 	}
-	spin_unlock_bh(&sta->mesh->plink_lock);
+	spin_unlock_bh_dbg(&sta->mesh->plink_lock);
 	if (!sdata->u.mesh.user_mpm)
 		del_timer_sync_dbg(&sta->mesh->plink_timer);
 	mesh_path_flush_by_nexthop(sta);
@@ -443,7 +443,7 @@ static void mesh_sta_info_init(struct ieee80211_sub_if_data *sdata,
 	rates = ieee80211_sta_get_rates(sdata, elems, sband->band,
 					&basic_rates);
 
-	spin_lock_bh(&sta->mesh->plink_lock);
+	spin_lock_bh_dbg(&sta->mesh->plink_lock);
 	sta->deflink.rx_stats.last_rx = jiffies;
 
 	/* rates and capabilities don't change during peering */
@@ -492,7 +492,7 @@ static void mesh_sta_info_init(struct ieee80211_sub_if_data *sdata,
 	else
 		rate_control_rate_update(local, sband, sta, 0, changed);
 out:
-	spin_unlock_bh(&sta->mesh->plink_lock);
+	spin_unlock_bh_dbg(&sta->mesh->plink_lock);
 }
 
 static int mesh_allocate_aid(struct ieee80211_sub_if_data *sdata)
@@ -675,7 +675,7 @@ void mesh_plink_timer(struct timer_list *t)
 	if (sta->sdata->local->quiescing)
 		return;
 
-	spin_lock_bh(&sta->mesh->plink_lock);
+	spin_lock_bh_dbg(&sta->mesh->plink_lock);
 
 	/* If a timer fires just before a state transition on another CPU,
 	 * we may have already extended the timeout and changed state by the
@@ -686,7 +686,7 @@ void mesh_plink_timer(struct timer_list *t)
 		mpl_dbg(sta->sdata,
 			"Ignoring timer for %pM in state %s (timer adjusted)",
 			sta->sta.addr, mplstates[sta->mesh->plink_state]);
-		spin_unlock_bh(&sta->mesh->plink_lock);
+		spin_unlock_bh_dbg(&sta->mesh->plink_lock);
 		return;
 	}
 
@@ -696,7 +696,7 @@ void mesh_plink_timer(struct timer_list *t)
 		mpl_dbg(sta->sdata,
 			"Ignoring timer for %pM in state %s (timer deleted)",
 			sta->sta.addr, mplstates[sta->mesh->plink_state]);
-		spin_unlock_bh(&sta->mesh->plink_lock);
+		spin_unlock_bh_dbg(&sta->mesh->plink_lock);
 		return;
 	}
 
@@ -742,7 +742,7 @@ void mesh_plink_timer(struct timer_list *t)
 	default:
 		break;
 	}
-	spin_unlock_bh(&sta->mesh->plink_lock);
+	spin_unlock_bh_dbg(&sta->mesh->plink_lock);
 	if (action)
 		mesh_plink_frame_tx(sdata, sta, action, sta->sta.addr,
 				    sta->mesh->llid, sta->mesh->plid, reason);
@@ -795,16 +795,16 @@ u64 mesh_plink_open(struct sta_info *sta)
 	if (!test_sta_flag(sta, WLAN_STA_AUTH))
 		return 0;
 
-	spin_lock_bh(&sta->mesh->plink_lock);
+	spin_lock_bh_dbg(&sta->mesh->plink_lock);
 	sta->mesh->llid = mesh_get_new_llid(sdata);
 	if (sta->mesh->plink_state != NL80211_PLINK_LISTEN &&
 	    sta->mesh->plink_state != NL80211_PLINK_BLOCKED) {
-		spin_unlock_bh(&sta->mesh->plink_lock);
+		spin_unlock_bh_dbg(&sta->mesh->plink_lock);
 		return 0;
 	}
 	sta->mesh->plink_state = NL80211_PLINK_OPN_SNT;
 	mesh_plink_timer_set(sta, sdata->u.mesh.mshcfg.dot11MeshRetryTimeout);
-	spin_unlock_bh(&sta->mesh->plink_lock);
+	spin_unlock_bh_dbg(&sta->mesh->plink_lock);
 	mpl_dbg(sdata,
 		"Mesh plink: starting establishment with %pM\n",
 		sta->sta.addr);
@@ -821,10 +821,10 @@ u64 mesh_plink_block(struct sta_info *sta)
 {
 	u64 changed;
 
-	spin_lock_bh(&sta->mesh->plink_lock);
+	spin_lock_bh_dbg(&sta->mesh->plink_lock);
 	changed = __mesh_plink_deactivate(sta);
 	sta->mesh->plink_state = NL80211_PLINK_BLOCKED;
-	spin_unlock_bh(&sta->mesh->plink_lock);
+	spin_unlock_bh_dbg(&sta->mesh->plink_lock);
 	mesh_path_flush_by_nexthop(sta);
 
 	return changed;
@@ -880,7 +880,7 @@ static u64 mesh_plink_fsm(struct ieee80211_sub_if_data *sdata,
 	mpl_dbg(sdata, "peer %pM in state %s got event %s\n", sta->sta.addr,
 		mplstates[sta->mesh->plink_state], mplevents[event]);
 
-	spin_lock_bh(&sta->mesh->plink_lock);
+	spin_lock_bh_dbg(&sta->mesh->plink_lock);
 	switch (sta->mesh->plink_state) {
 	case NL80211_PLINK_LISTEN:
 		switch (event) {
@@ -995,7 +995,7 @@ static u64 mesh_plink_fsm(struct ieee80211_sub_if_data *sdata,
 		 */
 		break;
 	}
-	spin_unlock_bh(&sta->mesh->plink_lock);
+	spin_unlock_bh_dbg(&sta->mesh->plink_lock);
 	if (flush)
 		mesh_path_flush_by_nexthop(sta);
 	if (action) {

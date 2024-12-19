@@ -9,6 +9,7 @@
 #include "ieee80211_i.h"
 #include "mesh.h"
 #include "driver-ops.h"
+#include <linux/drv_dbg.h>
 
 /* This is not in the standard.  It represents a tolerable tsf drift below
  * which we do no TSF adjustment.
@@ -55,7 +56,7 @@ void mesh_sync_adjust_tsf(struct ieee80211_sub_if_data *sdata)
 	u64 tsf;
 	u64 tsfdelta;
 
-	spin_lock_bh(&ifmsh->sync_offset_lock);
+	spin_lock_bh_dbg(&ifmsh->sync_offset_lock);
 	if (ifmsh->sync_offset_clockdrift_max < beacon_int_fraction) {
 		msync_dbg(sdata, "TSF : max clockdrift=%lld; adjusting\n",
 			  (long long) ifmsh->sync_offset_clockdrift_max);
@@ -68,7 +69,7 @@ void mesh_sync_adjust_tsf(struct ieee80211_sub_if_data *sdata)
 		tsfdelta = -beacon_int_fraction;
 		ifmsh->sync_offset_clockdrift_max -= beacon_int_fraction;
 	}
-	spin_unlock_bh(&ifmsh->sync_offset_lock);
+	spin_unlock_bh_dbg(&ifmsh->sync_offset_lock);
 
 	if (local->ops->offset_tsf) {
 		drv_offset_tsf(local, sdata, tsfdelta);
@@ -147,10 +148,10 @@ mesh_sync_offset_rx_bcn_presp(struct ieee80211_sub_if_data *sdata, u16 stype,
 			goto no_sync;
 		}
 
-		spin_lock_bh(&ifmsh->sync_offset_lock);
+		spin_lock_bh_dbg(&ifmsh->sync_offset_lock);
 		if (t_clockdrift > ifmsh->sync_offset_clockdrift_max)
 			ifmsh->sync_offset_clockdrift_max = t_clockdrift;
-		spin_unlock_bh(&ifmsh->sync_offset_lock);
+		spin_unlock_bh_dbg(&ifmsh->sync_offset_lock);
 	} else {
 		sta->mesh->t_offset_setpoint = sta->mesh->t_offset - TOFFSET_SET_MARGIN;
 		set_sta_flag(sta, WLAN_STA_TOFFSET_KNOWN);
@@ -172,7 +173,7 @@ static void mesh_sync_offset_adjust_tsf(struct ieee80211_sub_if_data *sdata,
 	WARN_ON(ifmsh->mesh_sp_id != IEEE80211_SYNC_METHOD_NEIGHBOR_OFFSET);
 	WARN_ON(!rcu_read_lock_held());
 
-	spin_lock_bh(&ifmsh->sync_offset_lock);
+	spin_lock_bh_dbg(&ifmsh->sync_offset_lock);
 
 	if (ifmsh->sync_offset_clockdrift_max > TOFFSET_MINIMUM_ADJUSTMENT) {
 		/* Since ajusting the tsf here would
@@ -190,7 +191,7 @@ static void mesh_sync_offset_adjust_tsf(struct ieee80211_sub_if_data *sdata,
 			  (long long)ifmsh->sync_offset_clockdrift_max);
 		ifmsh->sync_offset_clockdrift_max = 0;
 	}
-	spin_unlock_bh(&ifmsh->sync_offset_lock);
+	spin_unlock_bh_dbg(&ifmsh->sync_offset_lock);
 }
 
 static const struct sync_method sync_methods[] = {

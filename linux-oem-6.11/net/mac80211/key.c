@@ -578,7 +578,7 @@ static int ieee80211_key_replace(struct ieee80211_sub_if_data *sdata,
 	}
 
 	if (old)
-		list_del_rcu(&old->list);
+		list_del_rcu_dbg(&old->list);
 
 	return 0;
 }
@@ -628,7 +628,7 @@ ieee80211_key_alloc(u32 cipher, int idx, size_t key_len,
 					get_unaligned_le16(seq);
 			}
 		}
-		spin_lock_init(&key->u.tkip.txlock);
+		spin_lock_init_dbg(&key->u.tkip.txlock);
 		break;
 	case WLAN_CIPHER_SUITE_CCMP:
 		key->conf.iv_len = IEEE80211_CCMP_HDR_LEN;
@@ -1082,7 +1082,7 @@ static void ieee80211_free_keys_iface(struct ieee80211_sub_if_data *sdata,
 		ieee80211_key_replace(key->sdata, NULL, key->sta,
 				      key->conf.flags & IEEE80211_KEY_FLAG_PAIRWISE,
 				      key, NULL);
-		list_add_tail(&key->list, keys);
+		list_add_tail_dbg(&key->list, keys);
 	}
 
 	ieee80211_debugfs_key_update_default(sdata);
@@ -1103,7 +1103,7 @@ void ieee80211_remove_link_keys(struct ieee80211_link_data *link,
 		ieee80211_key_replace(key->sdata, link, key->sta,
 				      key->conf.flags & IEEE80211_KEY_FLAG_PAIRWISE,
 				      key, NULL);
-		list_add_tail(&key->list, keys);
+		list_add_tail_dbg(&key->list, keys);
 	}
 }
 

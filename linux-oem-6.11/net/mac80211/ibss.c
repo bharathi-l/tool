@@ -685,17 +685,17 @@ static void ieee80211_ibss_disconnect(struct ieee80211_sub_if_data *sdata)
 
 	sta_info_flush(sdata, -1);
 
-	spin_lock_bh(&ifibss->incomplete_lock);
+	spin_lock_bh_dbg(&ifibss->incomplete_lock);
 	while (!list_empty(&ifibss->incomplete_stations)) {
 		sta = list_first_entry(&ifibss->incomplete_stations,
 				       struct sta_info, list);
-		list_del(&sta->list);
-		spin_unlock_bh(&ifibss->incomplete_lock);
+		list_del_dbg(&sta->list);
+		spin_unlock_bh_dbg(&ifibss->incomplete_lock);
 
 		sta_info_free(local, sta);
-		spin_lock_bh(&ifibss->incomplete_lock);
+		spin_lock_bh_dbg(&ifibss->incomplete_lock);
 	}
-	spin_unlock_bh(&ifibss->incomplete_lock);
+	spin_unlock_bh_dbg(&ifibss->incomplete_lock);
 
 	netif_carrier_off(sdata->dev);
 
@@ -1224,9 +1224,9 @@ void ieee80211_ibss_rx_no_sta(struct ieee80211_sub_if_data *sdata,
 	sta->sta.deflink.supp_rates[band] = supp_rates |
 			ieee80211_mandatory_rates(sband);
 
-	spin_lock(&ifibss->incomplete_lock);
-	list_add(&sta->list, &ifibss->incomplete_stations);
-	spin_unlock(&ifibss->incomplete_lock);
+	spin_lock_dbg(&ifibss->incomplete_lock);
+	list_add_dbg(&sta->list, &ifibss->incomplete_stations);
+	spin_unlock_dbg(&ifibss->incomplete_lock);
 	
 	wiphy_work_queue_dbg(local->hw.wiphy, &sdata->work);
 }
@@ -1660,18 +1660,18 @@ void ieee80211_ibss_work(struct ieee80211_sub_if_data *sdata)
 	if (!ifibss->ssid_len)
 		return;
 
-	spin_lock_bh(&ifibss->incomplete_lock);
+	spin_lock_bh_dbg(&ifibss->incomplete_lock);
 	while (!list_empty(&ifibss->incomplete_stations)) {
 		sta = list_first_entry(&ifibss->incomplete_stations,
 				       struct sta_info, list);
-		list_del(&sta->list);
-		spin_unlock_bh(&ifibss->incomplete_lock);
+		list_del_dbg(&sta->list);
+		spin_unlock_bh_dbg(&ifibss->incomplete_lock);
 
 		ieee80211_ibss_finish_sta(sta);
 		rcu_read_unlock();
-		spin_lock_bh(&ifibss->incomplete_lock);
+		spin_lock_bh_dbg(&ifibss->incomplete_lock);
 	}
-	spin_unlock_bh(&ifibss->incomplete_lock);
+	spin_unlock_bh_dbg(&ifibss->incomplete_lock);
 
 	switch (ifibss->state) {
 	case IEEE80211_IBSS_MLME_SEARCH:
@@ -1701,7 +1701,7 @@ void ieee80211_ibss_setup_sdata(struct ieee80211_sub_if_data *sdata)
 
 	timer_setup_dbg(&ifibss->timer, ieee80211_ibss_timer, 0);
 	INIT_LIST_HEAD(&ifibss->incomplete_stations);
-	spin_lock_init(&ifibss->incomplete_lock);
+	spin_lock_init_dbg(&ifibss->incomplete_lock);
 	wiphy_work_init_dbg(&ifibss->csa_connection_drop_work,
 			ieee80211_csa_connection_drop_work);
 }

@@ -390,7 +390,7 @@ void ieee80211_ba_session_work(struct wiphy *wiphy, struct wiphy_work *work)
 				sta, tid, WLAN_BACK_RECIPIENT,
 				0, false);
 
-		spin_lock_bh(&sta->lock);
+		spin_lock_bh_dbg(&sta->lock);
 
 		tid_tx = sta->ampdu_mlme.tid_start_tx[tid];
 		if (!blocked && tid_tx) {
@@ -399,7 +399,7 @@ void ieee80211_ba_session_work(struct wiphy *wiphy, struct wiphy_work *work)
 				vif_to_sdata(txqi->txq.vif);
 			struct fq *fq = &sdata->local->fq;
 
-			spin_lock_bh(&fq->lock);
+			spin_lock_bh_dbg(&fq->lock);
 
 			/* Allow only frags to be dequeued */
 			set_bit(IEEE80211_TXQ_STOP, &txqi->flags);
@@ -409,8 +409,8 @@ void ieee80211_ba_session_work(struct wiphy *wiphy, struct wiphy_work *work)
 				 * finish. Reschedule worker to retry later.
 				 */
 
-				spin_unlock_bh(&fq->lock);
-				spin_unlock_bh(&sta->lock);
+				spin_unlock_bh_dbg(&fq->lock);
+				spin_unlock_bh_dbg(&sta->lock);
 
 				/* Give the task working on the txq a chance
 				 * to send out the queued frags
@@ -423,7 +423,7 @@ void ieee80211_ba_session_work(struct wiphy *wiphy, struct wiphy_work *work)
 				return;
 			}
 
-			spin_unlock_bh(&fq->lock);
+			spin_unlock_bh_dbg(&fq->lock);
 
 			/*
 			 * Assign it over to the normal tid_tx array
@@ -436,12 +436,12 @@ void ieee80211_ba_session_work(struct wiphy *wiphy, struct wiphy_work *work)
 				kfree(tid_tx);
 			else
 				ieee80211_assign_tid_tx(sta, tid, tid_tx);
-			spin_unlock_bh(&sta->lock);
+			spin_unlock_bh_dbg(&sta->lock);
 
 			ieee80211_tx_ba_session_handle_start(sta, tid);
 			continue;
 		}
-		spin_unlock_bh(&sta->lock);
+		spin_unlock_bh_dbg(&sta->lock);
 
 		tid_tx = rcu_dereference_protected_tid_tx(sta, tid);
 		if (!tid_tx)

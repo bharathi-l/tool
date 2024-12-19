@@ -14,6 +14,7 @@
 #include "driver-ops.h"
 #include "rate.h"
 #include "debugfs.h"
+#include <linux/drv_dbg.h>
 
 #define DEBUGFS_FORMAT_BUFFER_SIZE 100
 
@@ -82,7 +83,7 @@ static ssize_t aqm_read(struct file *file,
 	char buf[200];
 	int len = 0;
 
-	spin_lock_bh(&local->fq.lock);
+	spin_lock_bh_dbg(&local->fq.lock);
 	rcu_read_lock();
 
 	len = scnprintf(buf, sizeof(buf),
@@ -107,7 +108,7 @@ static ssize_t aqm_read(struct file *file,
 			fq->quantum);
 
 	rcu_read_unlock();
-	spin_unlock_bh(&local->fq.lock);
+	spin_unlock_bh_dbg(&local->fq.lock);
 
 	return simple_read_from_buffer(user_buf, count, ppos,
 				       buf, len);
@@ -571,12 +572,12 @@ static ssize_t queues_read(struct file *file, char __user *user_buf,
 	char buf[IEEE80211_MAX_QUEUES * 20];
 	int q, res = 0;
 
-	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+	spin_lock_irqsave_dbg(&local->queue_stop_reason_lock, flags);
 	for (q = 0; q < local->hw.queues; q++)
 		res += sprintf(buf + res, "%02d: %#.8lx/%d\n", q,
 				local->queue_stop_reasons[q],
 				skb_queue_len(&local->pending[q]));
-	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+	spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock, flags);
 
 	return simple_read_from_buffer(user_buf, count, ppos, buf, res);
 }

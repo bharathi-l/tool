@@ -405,12 +405,12 @@ static int ieee80211_add_nan_func(struct wiphy *wiphy,
 		return -ENETDOWN;
 	}
 
-	spin_lock_bh(&sdata->u.nan.func_lock);
+	spin_lock_bh_dbg(&sdata->u.nan.func_lock);
 
 	ret = idr_alloc(&sdata->u.nan.function_inst_ids,
 			nan_func, 1, sdata->local->hw.max_nan_de_entries + 1,
 			GFP_ATOMIC);
-	spin_unlock_bh(&sdata->u.nan.func_lock);
+	spin_unlock_bh_dbg(&sdata->u.nan.func_lock);
 
 	if (ret < 0) {
 		printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
@@ -423,10 +423,10 @@ static int ieee80211_add_nan_func(struct wiphy *wiphy,
 
 	ret = drv_add_nan_func(sdata->local, sdata, nan_func);
 	if (ret) {
-		spin_lock_bh(&sdata->u.nan.func_lock);
+		spin_lock_bh_dbg(&sdata->u.nan.func_lock);
 		idr_remove(&sdata->u.nan.function_inst_ids,
 			   nan_func->instance_id);
-		spin_unlock_bh(&sdata->u.nan.func_lock);
+		spin_unlock_bh_dbg(&sdata->u.nan.func_lock);
 	}
 
 	printk("[%s] [%d] : EXIT\n", __func__, __LINE__);
@@ -465,13 +465,13 @@ static void ieee80211_del_nan_func(struct wiphy *wiphy,
 		return;
 	}
 
-	spin_lock_bh(&sdata->u.nan.func_lock);
+	spin_lock_bh_dbg(&sdata->u.nan.func_lock);
 
 	func = ieee80211_find_nan_func_by_cookie(sdata, cookie);
 	if (func)
 		instance_id = func->instance_id;
 
-	spin_unlock_bh(&sdata->u.nan.func_lock);
+	spin_unlock_bh_dbg(&sdata->u.nan.func_lock);
 
 	if (instance_id)
 		drv_del_nan_func(sdata->local, sdata, instance_id);
@@ -4483,10 +4483,10 @@ int ieee80211_attach_ack_skb(struct ieee80211_local *local, struct sk_buff *skb,
 	if (!ack_skb)
 		return -ENOMEM;
 
-	spin_lock_irqsave(&local->ack_status_lock, spin_flags);
+	spin_lock_irqsave_dbg(&local->ack_status_lock, spin_flags);
 	id = idr_alloc(&local->ack_status_frames, ack_skb,
 		       1, 0x2000, GFP_ATOMIC);
-	spin_unlock_irqrestore(&local->ack_status_lock, spin_flags);
+	spin_unlock_irqrestore_dbg(&local->ack_status_lock, spin_flags);
 
 	if (id < 0) {
 		printk("[MODULE -> %s], [THREAD -> %s] [FREE_SKB -> %p] [%s] [%d]\n", THIS_MODULE->name, get_thread_name(), ack_skb, __func__, __LINE__);
@@ -4896,18 +4896,18 @@ void ieee80211_nan_func_terminated(struct ieee80211_vif *vif,
 	if (WARN_ON(vif->type != NL80211_IFTYPE_NAN))
 		return;
 
-	spin_lock_bh(&sdata->u.nan.func_lock);
+	spin_lock_bh_dbg(&sdata->u.nan.func_lock);
 
 	func = idr_find(&sdata->u.nan.function_inst_ids, inst_id);
 	if (WARN_ON(!func)) {
-		spin_unlock_bh(&sdata->u.nan.func_lock);
+		spin_unlock_bh_dbg(&sdata->u.nan.func_lock);
 		return;
 	}
 
 	cookie = func->cookie;
 	idr_remove(&sdata->u.nan.function_inst_ids, inst_id);
 
-	spin_unlock_bh(&sdata->u.nan.func_lock);
+	spin_unlock_bh_dbg(&sdata->u.nan.func_lock);
 
 	cfg80211_free_nan_func(func);
 
@@ -4926,16 +4926,16 @@ void ieee80211_nan_func_match(struct ieee80211_vif *vif,
 	if (WARN_ON(vif->type != NL80211_IFTYPE_NAN))
 		return;
 
-	spin_lock_bh(&sdata->u.nan.func_lock);
+	spin_lock_bh_dbg(&sdata->u.nan.func_lock);
 
 	func = idr_find(&sdata->u.nan.function_inst_ids,  match->inst_id);
 	if (WARN_ON(!func)) {
-		spin_unlock_bh(&sdata->u.nan.func_lock);
+		spin_unlock_bh_dbg(&sdata->u.nan.func_lock);
 		return;
 	}
 	match->cookie = func->cookie;
 
-	spin_unlock_bh(&sdata->u.nan.func_lock);
+	spin_unlock_bh_dbg(&sdata->u.nan.func_lock);
 
 	cfg80211_nan_match(ieee80211_vif_to_wdev(vif), match, gfp);
 }
@@ -5014,7 +5014,7 @@ static int ieee80211_get_txq_stats(struct wiphy *wiphy,
 
     	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [ENTRY]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 
-	spin_lock_bh(&local->fq.lock);
+	spin_lock_bh_dbg(&local->fq.lock);
 	rcu_read_lock();
 
 	if (wdev) {
@@ -5042,7 +5042,7 @@ static int ieee80211_get_txq_stats(struct wiphy *wiphy,
 
 out:
 	rcu_read_unlock();
-	spin_unlock_bh(&local->fq.lock);
+	spin_unlock_bh_dbg(&local->fq.lock);
 
     	printk("[MODULE -> %s], [THREAD -> %s] [%s] [%d] [EXIT]\n", THIS_MODULE->name, get_thread_name(), __func__, __LINE__);
 	return ret;

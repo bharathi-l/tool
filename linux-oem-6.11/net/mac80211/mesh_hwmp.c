@@ -450,7 +450,7 @@ static u32 hwmp_route_info_get(struct ieee80211_sub_if_data *sdata,
 	} else {
 		mpath = mesh_path_lookup(sdata, orig_addr);
 		if (mpath) {
-			spin_lock_bh(&mpath->state_lock);
+			spin_lock_bh_dbg(&mpath->state_lock);
 			if (mpath->flags & MESH_PATH_FIXED)
 				fresh_info = false;
 			else if ((mpath->flags & MESH_PATH_ACTIVE) &&
@@ -491,7 +491,7 @@ static u32 hwmp_route_info_get(struct ieee80211_sub_if_data *sdata,
 				rcu_read_unlock();
 				return 0;
 			}
-			spin_lock_bh(&mpath->state_lock);
+			spin_lock_bh_dbg(&mpath->state_lock);
 		}
 
 		if (fresh_info) {
@@ -507,7 +507,7 @@ static u32 hwmp_route_info_get(struct ieee80211_sub_if_data *sdata,
 					  ?  mpath->exp_time : exp_time;
 			mpath->hop_count = hopcount;
 			mesh_path_activate(mpath);
-			spin_unlock_bh(&mpath->state_lock);
+			spin_unlock_bh_dbg(&mpath->state_lock);
 			if (flush_mpath)
 				mesh_fast_tx_flush_mpath(mpath);
 			ewma_mesh_fail_avg_init(&sta->mesh->fail_avg);
@@ -518,7 +518,7 @@ static u32 hwmp_route_info_get(struct ieee80211_sub_if_data *sdata,
 			 * not seem to be any use for it, skipping by now
 			 */
 		} else
-			spin_unlock_bh(&mpath->state_lock);
+			spin_unlock_bh_dbg(&mpath->state_lock);
 	}
 
 	/* Update and check transmitter routing info */
@@ -530,7 +530,7 @@ static u32 hwmp_route_info_get(struct ieee80211_sub_if_data *sdata,
 
 		mpath = mesh_path_lookup(sdata, ta);
 		if (mpath) {
-			spin_lock_bh(&mpath->state_lock);
+			spin_lock_bh_dbg(&mpath->state_lock);
 			if ((mpath->flags & MESH_PATH_FIXED) ||
 			    ((mpath->flags & MESH_PATH_ACTIVE) &&
 			     ((rcu_access_pointer(mpath->next_hop) != sta ?
@@ -543,7 +543,7 @@ static u32 hwmp_route_info_get(struct ieee80211_sub_if_data *sdata,
 				rcu_read_unlock();
 				return 0;
 			}
-			spin_lock_bh(&mpath->state_lock);
+			spin_lock_bh_dbg(&mpath->state_lock);
 		}
 
 		if (fresh_info) {
@@ -557,7 +557,7 @@ static u32 hwmp_route_info_get(struct ieee80211_sub_if_data *sdata,
 					  ?  mpath->exp_time : exp_time;
 			mpath->hop_count = 1;
 			mesh_path_activate(mpath);
-			spin_unlock_bh(&mpath->state_lock);
+			spin_unlock_bh_dbg(&mpath->state_lock);
 			if (flush_mpath)
 				mesh_fast_tx_flush_mpath(mpath);
 			ewma_mesh_fail_avg_init(&sta->mesh->fail_avg);
@@ -565,7 +565,7 @@ static u32 hwmp_route_info_get(struct ieee80211_sub_if_data *sdata,
 			ewma_mesh_fail_avg_add(&sta->mesh->fail_avg, 1);
 			mesh_path_tx_pending(mpath);
 		} else
-			spin_unlock_bh(&mpath->state_lock);
+			spin_unlock_bh_dbg(&mpath->state_lock);
 	}
 
 	rcu_read_unlock();
@@ -739,16 +739,17 @@ static void hwmp_prep_frame_process(struct ieee80211_sub_if_data *sdata,
 
 	rcu_read_lock();
 	mpath = mesh_path_lookup(sdata, orig_addr);
-	if (mpath)
-		spin_lock_bh(&mpath->state_lock);
-	else
+	if (mpath) {
+		spin_lock_bh_dbg(&mpath->state_lock);
+	} else {
 		goto fail;
+	}
 	if (!(mpath->flags & MESH_PATH_ACTIVE)) {
-		spin_unlock_bh(&mpath->state_lock);
+		spin_unlock_bh_dbg(&mpath->state_lock);
 		goto fail;
 	}
 	memcpy(next_hop, next_hop_deref_protected(mpath)->sta.addr, ETH_ALEN);
-	spin_unlock_bh(&mpath->state_lock);
+	spin_unlock_bh_dbg(&mpath->state_lock);
 	--ttl;
 	flags = PREP_IE_FLAGS(prep_elem);
 	lifetime = PREP_IE_LIFETIME(prep_elem);
@@ -798,7 +799,7 @@ static void hwmp_perr_frame_process(struct ieee80211_sub_if_data *sdata,
 	if (mpath) {
 		struct sta_info *sta;
 
-		spin_lock_bh(&mpath->state_lock);
+		spin_lock_bh_dbg(&mpath->state_lock);
 		sta = next_hop_deref_protected(mpath);
 		if (mpath->flags & MESH_PATH_ACTIVE &&
 		    ether_addr_equal(ta, sta->sta.addr) &&
@@ -810,14 +811,14 @@ static void hwmp_perr_frame_process(struct ieee80211_sub_if_data *sdata,
 				mpath->sn = target_sn;
 			else
 				mpath->sn += 1;
-			spin_unlock_bh(&mpath->state_lock);
+			spin_unlock_bh_dbg(&mpath->state_lock);
 			if (!ifmsh->mshcfg.dot11MeshForwarding)
 				goto endperr;
 			mesh_path_error_tx(sdata, ttl, target_addr,
 					   target_sn, target_rcode,
 					   broadcast_addr);
 		} else
-			spin_unlock_bh(&mpath->state_lock);
+			spin_unlock_bh_dbg(&mpath->state_lock);
 	}
 endperr:
 	rcu_read_unlock();
@@ -1001,19 +1002,19 @@ static void mesh_queue_preq(struct mesh_path *mpath, u8 flags)
 		return;
 	}
 
-	spin_lock_bh(&ifmsh->mesh_preq_queue_lock);
+	spin_lock_bh_dbg(&ifmsh->mesh_preq_queue_lock);
 	if (ifmsh->preq_queue_len == MAX_PREQ_QUEUE_LEN) {
-		spin_unlock_bh(&ifmsh->mesh_preq_queue_lock);
+		spin_unlock_bh_dbg(&ifmsh->mesh_preq_queue_lock);
 		kfree(preq_node);
 		if (printk_ratelimit())
 			mhwmp_dbg(sdata, "PREQ node queue full\n");
 		return;
 	}
 
-	spin_lock(&mpath->state_lock);
+	spin_lock_dbg(&mpath->state_lock);
 	if (mpath->flags & MESH_PATH_REQ_QUEUED) {
-		spin_unlock(&mpath->state_lock);
-		spin_unlock_bh(&ifmsh->mesh_preq_queue_lock);
+		spin_unlock_dbg(&mpath->state_lock);
+		spin_unlock_bh_dbg(&ifmsh->mesh_preq_queue_lock);
 		kfree(preq_node);
 		return;
 	}
@@ -1022,11 +1023,11 @@ static void mesh_queue_preq(struct mesh_path *mpath, u8 flags)
 	preq_node->flags = flags;
 
 	mpath->flags |= MESH_PATH_REQ_QUEUED;
-	spin_unlock(&mpath->state_lock);
+	spin_unlock_dbg(&mpath->state_lock);
 
-	list_add_tail(&preq_node->list, &ifmsh->preq_queue.list);
+	list_add_tail_dbg(&preq_node->list, &ifmsh->preq_queue.list);
 	++ifmsh->preq_queue_len;
-	spin_unlock_bh(&ifmsh->mesh_preq_queue_lock);
+	spin_unlock_bh_dbg(&ifmsh->mesh_preq_queue_lock);
 
 	if (time_after(jiffies, ifmsh->last_preq + min_preq_int_jiff(sdata))) {
 		
@@ -1059,34 +1060,34 @@ void mesh_path_start_discovery(struct ieee80211_sub_if_data *sdata)
 	const u8 *da;
 	u32 lifetime;
 
-	spin_lock_bh(&ifmsh->mesh_preq_queue_lock);
+	spin_lock_bh_dbg(&ifmsh->mesh_preq_queue_lock);
 	if (!ifmsh->preq_queue_len ||
 		time_before(jiffies, ifmsh->last_preq +
 				min_preq_int_jiff(sdata))) {
-		spin_unlock_bh(&ifmsh->mesh_preq_queue_lock);
+		spin_unlock_bh_dbg(&ifmsh->mesh_preq_queue_lock);
 		return;
 	}
 
 	preq_node = list_first_entry(&ifmsh->preq_queue.list,
 			struct mesh_preq_queue, list);
-	list_del(&preq_node->list);
+	list_del_dbg(&preq_node->list);
 	--ifmsh->preq_queue_len;
-	spin_unlock_bh(&ifmsh->mesh_preq_queue_lock);
+	spin_unlock_bh_dbg(&ifmsh->mesh_preq_queue_lock);
 
 	rcu_read_lock();
 	mpath = mesh_path_lookup(sdata, preq_node->dst);
 	if (!mpath)
 		goto enddiscovery;
 
-	spin_lock_bh(&mpath->state_lock);
+	spin_lock_bh_dbg(&mpath->state_lock);
 	if (mpath->flags & (MESH_PATH_DELETED | MESH_PATH_FIXED)) {
-		spin_unlock_bh(&mpath->state_lock);
+		spin_unlock_bh_dbg(&mpath->state_lock);
 		goto enddiscovery;
 	}
 	mpath->flags &= ~MESH_PATH_REQ_QUEUED;
 	if (preq_node->flags & PREQ_Q_F_START) {
 		if (mpath->flags & MESH_PATH_RESOLVING) {
-			spin_unlock_bh(&mpath->state_lock);
+			spin_unlock_bh_dbg(&mpath->state_lock);
 			goto enddiscovery;
 		} else {
 			mpath->flags &= ~MESH_PATH_RESOLVED;
@@ -1097,7 +1098,7 @@ void mesh_path_start_discovery(struct ieee80211_sub_if_data *sdata)
 	} else if (!(mpath->flags & MESH_PATH_RESOLVING) ||
 			mpath->flags & MESH_PATH_RESOLVED) {
 		mpath->flags &= ~MESH_PATH_RESOLVING;
-		spin_unlock_bh(&mpath->state_lock);
+		spin_unlock_bh_dbg(&mpath->state_lock);
 		goto enddiscovery;
 	}
 
@@ -1113,7 +1114,7 @@ void mesh_path_start_discovery(struct ieee80211_sub_if_data *sdata)
 	ttl = sdata->u.mesh.mshcfg.element_ttl;
 	if (ttl == 0) {
 		sdata->u.mesh.mshstats.dropped_frames_ttl++;
-		spin_unlock_bh(&mpath->state_lock);
+		spin_unlock_bh_dbg(&mpath->state_lock);
 		goto enddiscovery;
 	}
 
@@ -1122,16 +1123,16 @@ void mesh_path_start_discovery(struct ieee80211_sub_if_data *sdata)
 	else
 		target_flags &= ~IEEE80211_PREQ_TO_FLAG;
 
-	spin_unlock_bh(&mpath->state_lock);
+	spin_unlock_bh_dbg(&mpath->state_lock);
 	da = (mpath->is_root) ? mpath->rann_snd_addr : broadcast_addr;
 	mesh_path_sel_frame_tx(MPATH_PREQ, 0, sdata->vif.addr, ifmsh->sn,
 			       target_flags, mpath->dst, mpath->sn, da, 0,
 			       ttl, lifetime, 0, ifmsh->preq_id++, sdata);
 
-	spin_lock_bh(&mpath->state_lock);
+	spin_lock_bh_dbg(&mpath->state_lock);
 	if (!(mpath->flags & MESH_PATH_DELETED))
 		mod_timer_dbg(&mpath->timer, jiffies + mpath->discovery_timeout);
-	spin_unlock_bh(&mpath->state_lock);
+	spin_unlock_bh_dbg(&mpath->state_lock);
 
 enddiscovery:
 	rcu_read_unlock();
@@ -1295,23 +1296,23 @@ void mesh_path_timer(struct timer_list *t)
 	if (sdata->local->quiescing)
 		return;
 
-	spin_lock_bh(&mpath->state_lock);
+	spin_lock_bh_dbg(&mpath->state_lock);
 	if (mpath->flags & MESH_PATH_RESOLVED ||
 			(!(mpath->flags & MESH_PATH_RESOLVING))) {
 		mpath->flags &= ~(MESH_PATH_RESOLVING | MESH_PATH_RESOLVED);
-		spin_unlock_bh(&mpath->state_lock);
+		spin_unlock_bh_dbg(&mpath->state_lock);
 	} else if (mpath->discovery_retries < max_preq_retries(sdata)) {
 		++mpath->discovery_retries;
 		mpath->discovery_timeout *= 2;
 		mpath->flags &= ~MESH_PATH_REQ_QUEUED;
-		spin_unlock_bh(&mpath->state_lock);
+		spin_unlock_bh_dbg(&mpath->state_lock);
 		mesh_queue_preq(mpath, 0);
 	} else {
 		mpath->flags &= ~(MESH_PATH_RESOLVING |
 				  MESH_PATH_RESOLVED |
 				  MESH_PATH_REQ_QUEUED);
 		mpath->exp_time = jiffies;
-		spin_unlock_bh(&mpath->state_lock);
+		spin_unlock_bh_dbg(&mpath->state_lock);
 		if (!mpath->is_gate && mesh_gate_num(sdata) > 0) {
 			ret = mesh_path_send_to_gates(mpath);
 			if (ret)

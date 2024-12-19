@@ -1102,7 +1102,7 @@ ieee80211_tdls_prep_mgmt_packet(struct wiphy *wiphy, struct net_device *dev,
 		try_resend = sta && test_sta_flag(sta, WLAN_STA_TDLS_PEER_AUTH);
 		rcu_read_unlock();
 
-		spin_lock_bh(&sdata->u.mgd.teardown_lock);
+		spin_lock_bh_dbg(&sdata->u.mgd.teardown_lock);
 		if (try_resend && !sdata->u.mgd.teardown_skb) {
 			/* Mark it as requiring TX status callback  */
 			flags |= IEEE80211_TX_CTL_REQ_TX_STATUS |
@@ -1118,7 +1118,7 @@ ieee80211_tdls_prep_mgmt_packet(struct wiphy *wiphy, struct net_device *dev,
 			sdata->u.mgd.teardown_skb = skb_copy(skb, GFP_ATOMIC);
 			sdata->u.mgd.orig_teardown_skb = skb;
 		}
-		spin_unlock_bh(&sdata->u.mgd.teardown_lock);
+		spin_unlock_bh_dbg(&sdata->u.mgd.teardown_lock);
 	}
 
 	/* disable bottom halves when entering the Tx path */

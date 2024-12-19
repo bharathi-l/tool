@@ -207,9 +207,9 @@ ieee80211_agg_stop_txq(struct sta_info *sta, int tid)
 	fq = &sdata->local->fq;
 
 	/* Lock here to protect against further seqno updates on dequeue */
-	spin_lock_bh(&fq->lock);
+	spin_lock_bh_dbg(&fq->lock);
 	set_bit(IEEE80211_TXQ_STOP, &txqi->flags);
-	spin_unlock_bh(&fq->lock);
+	spin_unlock_bh_dbg(&fq->lock);
 }
 
 static void
@@ -258,11 +258,11 @@ ieee80211_agg_splice_packets(struct ieee80211_sub_if_data *sdata,
 		return;
 
 	if (!skb_queue_empty(&tid_tx->pending)) {
-		spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+		spin_lock_irqsave_dbg(&local->queue_stop_reason_lock, flags);
 		/* copy over remaining packets */
 		skb_queue_splice_tail_init(&tid_tx->pending,
 					   &local->pending[queue]);
-		spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+		spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock, flags);
 	}
 }
 
@@ -332,7 +332,7 @@ int __ieee80211_stop_tx_ba_session(struct sta_info *sta, u16 tid,
 		return -EINVAL;
 	}
 
-	spin_lock_bh(&sta->lock);
+	spin_lock_bh_dbg(&sta->lock);
 
 	/* free struct pending for start, if present */
 	tid_tx = sta->ampdu_mlme.tid_start_tx[tid];
@@ -341,7 +341,7 @@ int __ieee80211_stop_tx_ba_session(struct sta_info *sta, u16 tid,
 
 	tid_tx = rcu_dereference_protected_tid_tx(sta, tid);
 	if (!tid_tx) {
-		spin_unlock_bh(&sta->lock);
+		spin_unlock_bh_dbg(&sta->lock);
 		return -ENOENT;
 	}
 
@@ -350,7 +350,7 @@ int __ieee80211_stop_tx_ba_session(struct sta_info *sta, u16 tid,
 	 * unless we're destroying it in which case notify the driver
 	 */
 	if (test_bit(HT_AGG_STATE_STOPPING, &tid_tx->state)) {
-		spin_unlock_bh(&sta->lock);
+		spin_unlock_bh_dbg(&sta->lock);
 		if (reason != AGG_STOP_DESTROY_STA)
 			return -EALREADY;
 		params.action = IEEE80211_AMPDU_TX_STOP_FLUSH_CONT;
@@ -362,7 +362,7 @@ int __ieee80211_stop_tx_ba_session(struct sta_info *sta, u16 tid,
 	if (test_bit(HT_AGG_STATE_WANT_START, &tid_tx->state)) {
 		/* not even started yet! */
 		ieee80211_assign_tid_tx(sta, tid, NULL);
-		spin_unlock_bh(&sta->lock);
+		spin_unlock_bh_dbg(&sta->lock);
 		kfree_rcu(tid_tx, rcu_head);
 		return 0;
 	}
@@ -371,7 +371,7 @@ int __ieee80211_stop_tx_ba_session(struct sta_info *sta, u16 tid,
 
 	ieee80211_agg_stop_txq(sta, tid);
 
-	spin_unlock_bh(&sta->lock);
+	spin_unlock_bh_dbg(&sta->lock);
 
 	ht_dbg(sta->sdata, "Tx BA session stop requested for %pM tid %u\n",
 	       sta->sta.addr, tid);
@@ -473,10 +473,10 @@ static void ieee80211_send_addba_with_timeout(struct sta_info *sta,
 	ht_dbg(sdata, "activated addBA response timer on %pM tid %d\n",
 	       sta->sta.addr, tid);
 
-	spin_lock_bh(&sta->lock);
+	spin_lock_bh_dbg(&sta->lock);
 	sta->ampdu_mlme.last_addba_req_time[tid] = jiffies;
 	sta->ampdu_mlme.addba_req_num[tid]++;
-	spin_unlock_bh(&sta->lock);
+	spin_unlock_bh_dbg(&sta->lock);
 
 	if (sta->sta.deflink.he_cap.has_he) {
 		buf_size = local->hw.max_tx_aggregation_subframes;
@@ -546,11 +546,11 @@ void ieee80211_tx_ba_session_handle_start(struct sta_info *sta, int tid)
 		ht_dbg(sdata,
 		       "BA request denied - HW unavailable for %pM tid %d\n",
 		       sta->sta.addr, tid);
-		spin_lock_bh(&sta->lock);
+		spin_lock_bh_dbg(&sta->lock);
 		ieee80211_agg_splice_packets(sdata, tid_tx, tid);
 		ieee80211_assign_tid_tx(sta, tid, NULL);
 		ieee80211_agg_splice_finish(sdata, tid);
-		spin_unlock_bh(&sta->lock);
+		spin_unlock_bh_dbg(&sta->lock);
 
 		ieee80211_agg_start_txq(sta, tid, false);
 
@@ -682,7 +682,7 @@ int ieee80211_start_tx_ba_session(struct ieee80211_sta *pubsta, u16 tid,
 		return -EINVAL;
 	}
 
-	spin_lock_bh(&sta->lock);
+	spin_lock_bh_dbg(&sta->lock);
 
 	/* we have tried too many times, receiver does not want A-MPDU */
 	if (sta->ampdu_mlme.addba_req_num[tid] > HT_AGG_MAX_RETRIES) {
@@ -751,7 +751,7 @@ int ieee80211_start_tx_ba_session(struct ieee80211_sta *pubsta, u16 tid,
 
 	/* this flow continues off the work */
  err_unlock_sta:
-	spin_unlock_bh(&sta->lock);
+	spin_unlock_bh_dbg(&sta->lock);
 	return ret;
 }
 EXPORT_SYMBOL(ieee80211_start_tx_ba_session);
@@ -783,7 +783,7 @@ static void ieee80211_agg_tx_operational(struct ieee80211_local *local,
 	 * synchronize with TX path, while splicing the TX path
 	 * should block so it won't put more packets onto pending.
 	 */
-	spin_lock_bh(&sta->lock);
+	spin_lock_bh_dbg(&sta->lock);
 
 	ieee80211_agg_splice_packets(sta->sdata, tid_tx, tid);
 	/*
@@ -794,7 +794,7 @@ static void ieee80211_agg_tx_operational(struct ieee80211_local *local,
 	set_bit(HT_AGG_STATE_OPERATIONAL, &tid_tx->state);
 	ieee80211_agg_splice_finish(sta->sdata, tid);
 
-	spin_unlock_bh(&sta->lock);
+	spin_unlock_bh_dbg(&sta->lock);
 
 	ieee80211_agg_start_txq(sta, tid, true);
 }
@@ -889,7 +889,7 @@ int ieee80211_stop_tx_ba_session(struct ieee80211_sta *pubsta, u16 tid)
 	if (tid >= IEEE80211_NUM_TIDS)
 		return -EINVAL;
 
-	spin_lock_bh(&sta->lock);
+	spin_lock_bh_dbg(&sta->lock);
 	tid_tx = rcu_dereference_protected_tid_tx(sta, tid);
 
 	if (!tid_tx) {
@@ -911,7 +911,7 @@ int ieee80211_stop_tx_ba_session(struct ieee80211_sta *pubsta, u16 tid)
 	wiphy_work_queue_dbg(local->hw.wiphy, &sta->ampdu_mlme.work);
 
  unlock:
-	spin_unlock_bh(&sta->lock);
+	spin_unlock_bh_dbg(&sta->lock);
 	return ret;
 }
 EXPORT_SYMBOL(ieee80211_stop_tx_ba_session);
@@ -926,7 +926,7 @@ void ieee80211_stop_tx_ba_cb(struct sta_info *sta, int tid,
 	ht_dbg(sdata, "Stopping Tx BA session for %pM tid %d\n",
 	       sta->sta.addr, tid);
 
-	spin_lock_bh(&sta->lock);
+	spin_lock_bh_dbg(&sta->lock);
 
 	if (!test_bit(HT_AGG_STATE_STOPPING, &tid_tx->state)) {
 		ht_dbg(sdata,
@@ -942,7 +942,7 @@ void ieee80211_stop_tx_ba_cb(struct sta_info *sta, int tid,
 	start_txq = true;
 
  unlock_sta:
-	spin_unlock_bh(&sta->lock);
+	spin_unlock_bh_dbg(&sta->lock);
 
 	if (start_txq)
 		ieee80211_agg_start_txq(sta, tid, false);

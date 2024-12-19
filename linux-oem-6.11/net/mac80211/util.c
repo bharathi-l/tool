@@ -308,7 +308,7 @@ void ieee80211_handle_wake_tx_queue(struct ieee80211_hw *hw,
 	struct ieee80211_sub_if_data *sdata = vif_to_sdata(txq->vif);
 	struct ieee80211_txq *queue;
 
-	spin_lock(&local->handle_wake_tx_queue_lock);
+	spin_lock_dbg(&local->handle_wake_tx_queue_lock);
 
 	/* Use ieee80211_next_txq() for airtime fairness accounting */
 	ieee80211_txq_schedule_start(hw, txq->ac);
@@ -317,7 +317,7 @@ void ieee80211_handle_wake_tx_queue(struct ieee80211_hw *hw,
 		ieee80211_return_txq(hw, queue, false);
 	}
 	ieee80211_txq_schedule_end(hw, txq->ac);
-	spin_unlock(&local->handle_wake_tx_queue_lock);
+	spin_unlock_dbg(&local->handle_wake_tx_queue_lock);
 }
 EXPORT_SYMBOL(ieee80211_handle_wake_tx_queue);
 
@@ -332,7 +332,7 @@ static void __ieee80211_wake_txqs(struct ieee80211_sub_if_data *sdata, int ac)
 	int i;
 
 	local_bh_disable();
-	spin_lock(&fq->lock);
+	spin_lock_dbg(&fq->lock);
 
 	if (!test_bit(SDATA_STATE_RUNNING, &sdata->state))
 		goto out;
@@ -359,9 +359,9 @@ static void __ieee80211_wake_txqs(struct ieee80211_sub_if_data *sdata, int ac)
 						&txqi->flags))
 				continue;
 
-			spin_unlock(&fq->lock);
+			spin_unlock_dbg(&fq->lock);
 			drv_wake_tx_queue(local, txqi);
-			spin_lock(&fq->lock);
+			spin_lock_dbg(&fq->lock);
 		}
 	}
 
@@ -374,13 +374,13 @@ static void __ieee80211_wake_txqs(struct ieee80211_sub_if_data *sdata, int ac)
 	    (ps && atomic_read(&ps->num_sta_ps)) || ac != vif->txq->ac)
 		goto out;
 
-	spin_unlock(&fq->lock);
+	spin_unlock_dbg(&fq->lock);
 
 	drv_wake_tx_queue(local, txqi);
 	local_bh_enable();
 	return;
 out:
-	spin_unlock(&fq->lock);
+	spin_unlock_dbg(&fq->lock);
 	local_bh_enable();
 }
 
@@ -402,7 +402,7 @@ _ieee80211_wake_txqs(struct ieee80211_local *local, unsigned long *flags)
 		if (local->queue_stop_reasons[i])
 			continue;
 
-		spin_unlock_irqrestore(&local->queue_stop_reason_lock, *flags);
+		spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock, *flags);
 		list_for_each_entry_rcu(sdata, &local->interfaces, list) {
 			int ac;
 
@@ -414,7 +414,7 @@ _ieee80211_wake_txqs(struct ieee80211_local *local, unsigned long *flags)
 					__ieee80211_wake_txqs(sdata, ac);
 			}
 		}
-		spin_lock_irqsave(&local->queue_stop_reason_lock, *flags);
+		spin_lock_irqsave_dbg(&local->queue_stop_reason_lock, *flags);
 	}
 
 	rcu_read_unlock();
@@ -426,9 +426,9 @@ void ieee80211_wake_txqs(struct tasklet_struct *t)
 						     wake_txqs_tasklet);
 	unsigned long flags;
 
-	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+	spin_lock_irqsave_dbg(&local->queue_stop_reason_lock, flags);
 	_ieee80211_wake_txqs(local, &flags);
-	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+	spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock, flags);
 }
 
 static void __ieee80211_wake_queue(struct ieee80211_hw *hw, int queue,
@@ -485,9 +485,9 @@ void ieee80211_wake_queue_by_reason(struct ieee80211_hw *hw, int queue,
 	struct ieee80211_local *local = hw_to_local(hw);
 	unsigned long flags;
 
-	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+	spin_lock_irqsave_dbg(&local->queue_stop_reason_lock, flags);
 	__ieee80211_wake_queue(hw, queue, reason, refcounted, &flags);
-	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+	spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock, flags);
 }
 
 void ieee80211_wake_queue(struct ieee80211_hw *hw, int queue)
@@ -524,9 +524,9 @@ void ieee80211_stop_queue_by_reason(struct ieee80211_hw *hw, int queue,
 	struct ieee80211_local *local = hw_to_local(hw);
 	unsigned long flags;
 
-	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+	spin_lock_irqsave_dbg(&local->queue_stop_reason_lock, flags);
 	__ieee80211_stop_queue(hw, queue, reason, refcounted);
-	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+	spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock, flags);
 }
 
 void ieee80211_stop_queue(struct ieee80211_hw *hw, int queue)
@@ -550,13 +550,13 @@ void ieee80211_add_pending_skb(struct ieee80211_local *local,
 		return;
 	}
 
-	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+	spin_lock_irqsave_dbg(&local->queue_stop_reason_lock, flags);
 	__ieee80211_stop_queue(hw, queue, IEEE80211_QUEUE_STOP_REASON_SKB_ADD,
 			       false);
 	__skb_queue_tail(&local->pending[queue], skb);
 	__ieee80211_wake_queue(hw, queue, IEEE80211_QUEUE_STOP_REASON_SKB_ADD,
 			       false, &flags);
-	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+	spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock, flags);
 }
 
 void ieee80211_add_pending_skbs(struct ieee80211_local *local,
@@ -567,7 +567,7 @@ void ieee80211_add_pending_skbs(struct ieee80211_local *local,
 	unsigned long flags;
 	int queue, i;
 
-	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+	spin_lock_irqsave_dbg(&local->queue_stop_reason_lock, flags);
 	while ((skb = skb_dequeue(skbs))) {
 		struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 
@@ -589,7 +589,7 @@ void ieee80211_add_pending_skbs(struct ieee80211_local *local,
 		__ieee80211_wake_queue(hw, i,
 			IEEE80211_QUEUE_STOP_REASON_SKB_ADD,
 			false, &flags);
-	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+	spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock, flags);
 }
 
 void ieee80211_stop_queues_by_reason(struct ieee80211_hw *hw,
@@ -601,12 +601,12 @@ void ieee80211_stop_queues_by_reason(struct ieee80211_hw *hw,
 	unsigned long flags;
 	int i;
 
-	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+	spin_lock_irqsave_dbg(&local->queue_stop_reason_lock, flags);
 
 	for_each_set_bit(i, &queues, hw->queues)
 		__ieee80211_stop_queue(hw, i, reason, refcounted);
 
-	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+	spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock, flags);
 }
 
 void ieee80211_stop_queues(struct ieee80211_hw *hw)
@@ -626,10 +626,10 @@ int ieee80211_queue_stopped(struct ieee80211_hw *hw, int queue)
 	if (WARN_ON(queue >= hw->queues))
 		return true;
 
-	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+	spin_lock_irqsave_dbg(&local->queue_stop_reason_lock, flags);
 	ret = test_bit(IEEE80211_QUEUE_STOP_REASON_DRIVER,
 		       &local->queue_stop_reasons[queue]);
-	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+	spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock, flags);
 	return ret;
 }
 EXPORT_SYMBOL(ieee80211_queue_stopped);
@@ -643,12 +643,12 @@ void ieee80211_wake_queues_by_reason(struct ieee80211_hw *hw,
 	unsigned long flags;
 	int i;
 
-	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+	spin_lock_irqsave_dbg(&local->queue_stop_reason_lock, flags);
 
 	for_each_set_bit(i, &queues, hw->queues)
 		__ieee80211_wake_queue(hw, i, reason, refcounted, &flags);
 
-	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+	spin_unlock_irqrestore_dbg(&local->queue_stop_reason_lock, flags);
 }
 
 void ieee80211_wake_queues(struct ieee80211_hw *hw)
@@ -792,9 +792,9 @@ void ieee80211_iterate_interfaces(
 {
 	struct ieee80211_local *local = hw_to_local(hw);
 
-	mutex_lock(&local->iflist_mtx);
+	mutex_lock_dbg(&local->iflist_mtx);
 	__iterate_interfaces(local, iter_flags, iterator, data);
-	mutex_unlock(&local->iflist_mtx);
+	mutex_unlock_dbg(&local->iflist_mtx);
 }
 EXPORT_SYMBOL_GPL(ieee80211_iterate_interfaces);
 
@@ -1710,12 +1710,12 @@ static int ieee80211_reconfig_nan(struct ieee80211_sub_if_data *sdata)
 	 * This is a little bit ugly. We need to call a potentially sleeping
 	 * callback for each NAN function, so we can't hold the spinlock.
 	 */
-	spin_lock_bh(&sdata->u.nan.func_lock);
+	spin_lock_bh_dbg(&sdata->u.nan.func_lock);
 
 	idr_for_each_entry(&sdata->u.nan.function_inst_ids, func, id)
 		funcs[i++] = func;
 
-	spin_unlock_bh(&sdata->u.nan.func_lock);
+	spin_unlock_bh_dbg(&sdata->u.nan.func_lock);
 
 	for (i = 0; funcs[i]; i++) {
 		res = drv_add_nan_func(sdata->local, sdata, funcs[i]);

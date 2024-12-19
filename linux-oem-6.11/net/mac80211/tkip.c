@@ -16,6 +16,7 @@
 #include "key.h"
 #include "tkip.h"
 #include "wep.h"
+#include <linux/drv_dbg.h>
 
 #define PHASE1_LOOP_COUNT 8
 
@@ -175,10 +176,10 @@ void ieee80211_get_tkip_p1k_iv(struct ieee80211_key_conf *keyconf,
 			container_of(keyconf, struct ieee80211_key, conf);
 	struct tkip_ctx *ctx = &key->u.tkip.tx;
 
-	spin_lock_bh(&key->u.tkip.txlock);
+	spin_lock_bh_dbg(&key->u.tkip.txlock);
 	ieee80211_compute_tkip_p1k(key, iv32);
 	memcpy(p1k, ctx->p1k, sizeof(ctx->p1k));
-	spin_unlock_bh(&key->u.tkip.txlock);
+	spin_unlock_bh_dbg(&key->u.tkip.txlock);
 }
 EXPORT_SYMBOL(ieee80211_get_tkip_p1k_iv);
 
@@ -205,10 +206,10 @@ void ieee80211_get_tkip_p2k(struct ieee80211_key_conf *keyconf,
 	u32 iv32 = get_unaligned_le32(&data[4]);
 	u16 iv16 = data[2] | (data[0] << 8);
 
-	spin_lock(&key->u.tkip.txlock);
+	spin_lock_dbg(&key->u.tkip.txlock);
 	ieee80211_compute_tkip_p1k(key, iv32);
 	tkip_mixing_phase2(tk, ctx, iv16, p2k);
-	spin_unlock(&key->u.tkip.txlock);
+	spin_unlock_dbg(&key->u.tkip.txlock);
 }
 EXPORT_SYMBOL(ieee80211_get_tkip_p2k);
 
