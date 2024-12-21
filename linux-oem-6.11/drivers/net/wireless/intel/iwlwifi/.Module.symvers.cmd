@@ -1,0 +1,1 @@
+savedcmd_drivers/net/wireless/intel/iwlwifi/Module.symvers :=  scripts/mod/modpost -M -m -a      -o drivers/net/wireless/intel/iwlwifi/Module.symvers -T drivers/net/wireless/intel/iwlwifi/modules.order -i Module.symvers -e 
